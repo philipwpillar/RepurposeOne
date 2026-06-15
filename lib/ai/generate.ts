@@ -1,5 +1,10 @@
 import OpenAI from "openai";
-import { AI_CONFIG, getModelForFormat } from "@/lib/config";
+import {
+  AI_CONFIG,
+  getModelForFormat,
+  getTierForFormat,
+  type ModelTier,
+} from "@/lib/config";
 import {
   buildBrandVoiceBlock,
   buildGenerationPrompt,
@@ -17,11 +22,14 @@ export interface GenerateInput {
   brandVoice: BrandVoiceInput;
   targetFormat: TargetFormat;
   targetTweets?: number;
+  /** Optional tier override; defaults to FORMAT_MODEL_TIER mapping. */
+  modelTier?: ModelTier;
 }
 
 export interface GenerateResult {
   output: RepurposeOutput;
   model: string;
+  modelTier: ModelTier;
   tokensUsed?: number;
   promptTokens?: number;
   completionTokens?: number;
@@ -56,7 +64,8 @@ function parseJsonResponse(raw: string): unknown {
 
 /**
  * Core AI generation abstraction.
- * Model selection is config-driven via AI_MODEL_FAST / AI_MODEL_STRONG env vars.
+ * Model selection is routed via FORMAT_MODEL_TIER in lib/config.ts
+ * (override tiers with AI_MODEL_FAST / AI_MODEL_STRONG env vars).
  */
 export async function generateRepurpose(
   input: GenerateInput
@@ -72,7 +81,8 @@ export async function generateRepurpose(
   };
 
   const { system, user } = buildGenerationPrompt(ctx);
-  const model = getModelForFormat(input.targetFormat);
+  const modelTier = input.modelTier ?? getTierForFormat(input.targetFormat);
+  const model = getModelForFormat(input.targetFormat, modelTier);
 
   const client = getAiClient();
 
@@ -108,6 +118,7 @@ export async function generateRepurpose(
   return {
     output: validated.data,
     model,
+    modelTier,
     tokensUsed: response.usage?.total_tokens,
     promptTokens: response.usage?.prompt_tokens,
     completionTokens: response.usage?.completion_tokens,
