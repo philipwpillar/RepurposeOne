@@ -1,6 +1,21 @@
 import { createServerClient, type SetAllCookies } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+const PROTECTED_PREFIXES = ["/dashboard", "/new", "/history", "/upgrade"];
+const AUTH_ROUTES = ["/sign-in", "/sign-up"];
+
+function isProtectedPath(pathname: string): boolean {
+  return PROTECTED_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+}
+
+function isAuthPath(pathname: string): boolean {
+  return AUTH_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  );
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -25,8 +40,24 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Refresh session if expired — required for Server Components.
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { pathname } = request.nextUrl;
+
+  if (isProtectedPath(pathname) && !user) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/sign-in";
+    url.searchParams.set("redirect", pathname);
+    return NextResponse.redirect(url);
+  }
+
+  if (isAuthPath(pathname) && user) {
+    const redirect = request.nextUrl.searchParams.get("redirect");
+    const destination = redirect && redirect.startsWith("/") ? redirect : "/dashboard";
+    return NextResponse.redirect(new URL(destination, request.url));
+  }
 
   return supabaseResponse;
 }

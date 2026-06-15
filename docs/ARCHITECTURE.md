@@ -49,6 +49,19 @@ Keep the core loop boringly simple. Inputs normalise to plain text **before** th
 | Types | `types/index.ts` | Zod schemas for request, output, API responses |
 | Test UI | `app/test-generate/page.tsx` | Manual test page + curl example |
 
+### Auth + product UI slice (implemented)
+
+| Piece | Path | Notes |
+| --- | --- | --- |
+| Auth pages | `app/(auth)/sign-in`, `sign-up` | Email/password + optional Google OAuth |
+| OAuth callback | `app/auth/callback/route.ts` | Exchanges code for session |
+| Middleware | `lib/supabase/middleware.ts` | Session refresh + route protection |
+| App shell | `app/(app)/layout.tsx` | Protected layout with usage from `lib/usage.ts` |
+| Dashboard | `app/(app)/dashboard` | Usage summary + recent repurposes |
+| Create flow | `app/(app)/new` | Form → `/api/generate` → X thread output |
+| History | `app/(app)/history` | Complete rows only; detail at `/history/[id]` |
+| Upgrade placeholder | `app/(app)/upgrade` | CTA target; Stripe wired in next slice |
+
 ---
 
 ## 3. Suggested folder structure

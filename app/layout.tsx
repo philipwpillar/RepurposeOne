@@ -2,8 +2,12 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "RepurposeOne",
-  description: "AI-powered content repurposing platform",
+  title: {
+    default: "RepurposeOne",
+    template: "%s | RepurposeOne",
+  },
+  description:
+    "Turn one piece of content into platform-native outputs in your brand voice — X threads, LinkedIn, and more.",
 };
 
 export default function RootLayout({
@@ -13,7 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">{children}</body>
+      <body className="min-h-screen antialiased">{children}</body>
     </html>
   );
 }
