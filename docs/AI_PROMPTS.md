@@ -2,7 +2,7 @@
 
 > **Living document. Grok owns the content of these prompts; Claude wires them in.**
 > Every prompt used in the product is documented here as the canonical, reviewed version.
-> Keep this in sync with the implementations in `/lib/ai`. Last updated: 2026-06-15
+> Keep this in sync with the implementations in `/lib/ai`. Last updated: 2026-06-15 (x_thread JSON output wired)
 
 Prompt quality is the #1 differentiator. Treat these like source code: version them, test them, review changes.
 
@@ -49,13 +49,33 @@ Output: the profile only, no preamble.
 
 These are scaffolds to make the pipeline real. Grok should tighten wording, add few-shot examples, and validate on real inputs.
 
-### 2.1 X/Twitter thread — `x_thread v1`
+### 2.1 X/Twitter thread — `x_thread v1` (implemented)
+
+**Implementation:** `lib/ai/prompts.ts` → `buildGenerationPrompt()`. Returns structured JSON validated by `XThreadOutputSchema` in `types/index.ts`.
+
+**Brand voice handling:** Inline `brand_voice` (samples + description) or loaded from `brand_voices` table by ID. Passed as a single `{{brand_voice}}` block — distilled profile caching is a future optimisation (see §1).
+
 ```
 SYSTEM:
 You are an expert ghostwriter for X/Twitter. You write threads that hook in the
 first tweet, keep momentum, and end with a clear takeaway or soft CTA.
 Stay strictly in the user's brand voice. Never use hashtags unless the voice
 profile asks for them.
+
+You MUST respond with valid JSON only — no markdown fences, no commentary.
+Schema:
+{
+  "format": "x_thread",
+  "tweets": [
+    { "number": 1, "text": "...", "media_suggestion": "optional" }
+  ],
+  "thread_summary": "one-line summary"
+}
+
+Rules:
+- Each tweet ≤ 280 chars, numbered sequentially.
+- Open with a scroll-stopping first tweet (no "thread 🧵" cliché unless on-brand).
+- media_suggestion optional — only when a visual would help.
 
 USER:
 Brand voice:
@@ -65,13 +85,12 @@ Source content:
 {{source_text}}
 
 Task: Write an X thread repurposing the source.
-- Open with a scroll-stopping first tweet (no "thread 🧵" cliché unless on-brand).
-- Each tweet ≤ 280 chars, numbered (1/, 2/, …).
-- Aim for {{target_tweets}} tweets; use fewer if the content is thin.
+- Target approximately {{target_tweets}} tweets.
 - End with one takeaway or soft CTA.
-Output the thread only.
+Return JSON matching the required schema.
 ```
-Variables: `{{brand_voice}}`, `{{source_text}}`, `{{target_tweets}}` (default: model decides, suggest 5–9).
+
+Variables: `{{brand_voice}}`, `{{source_text}}`, `{{target_tweets}}` (default: 7).
 
 ### 2.2 LinkedIn post + carousel ideas — `linkedin v1`
 ```
@@ -139,10 +158,17 @@ Park until 3 core formats are validated. Spec TBD with Grok.
 
 ## 3. Output formatting contract
 
-Generation returns plain text/Markdown. The app handles copy/export. Prompts should:
-- avoid wrapping output in code fences,
-- avoid meta commentary ("Here's your thread…"),
-- use the headings specified per format so the UI can split sections if needed.
+Generation returns **structured JSON** (validated with Zod before save). For `x_thread`:
+
+```json
+{
+  "format": "x_thread",
+  "tweets": [{ "number": 1, "text": "...", "media_suggestion": "..." }],
+  "thread_summary": "..."
+}
+```
+
+Future formats will follow the same pattern: format-specific Zod schema → `repurposes.output` jsonb.
 
 ---
 
@@ -172,4 +198,5 @@ Newest first.
 
 | Date | Prompt | Version | Change | Author |
 | --- | --- | --- | --- | --- |
+| 2026-06-15 | x_thread | v1 (implemented) | JSON structured output + Zod validation | Claude |
 | 2026-06-15 | all | v1 (draft) | Initial scaffolds to make pipeline real | Claude (for Grok to refine) |

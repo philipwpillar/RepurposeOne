@@ -25,13 +25,29 @@
 ```
 Input (paste / .txt / .pdf / audio)
   → [parse / transcribe to plain text]
-  → build prompt (brand voice + input + format spec)
-  → LLM generation per selected format
-  → store result (repurposes table)
+  → POST /api/generate (server-side only)
+      1. Authenticate (Supabase session)
+      2. Validate request (Zod)
+      3. Check monthly usage (count repurposes rows — reject before AI)
+      4. Insert repurposes row (status: pending)
+      5. Build prompt → LLM → validate JSON output (Zod)
+      6. Update row (status: complete | failed)
+  → return structured output to client
   → render outputs with one-click copy/export
 ```
 
 Keep the core loop boringly simple. Inputs normalise to plain text **before** the prompt layer, so the generation code never cares whether the source was a PDF or a transcript.
+
+### Generation slice (implemented)
+
+| Piece | Path | Notes |
+| --- | --- | --- |
+| API route | `app/api/generate/route.ts` | Auth → usage → AI → save. Returns 402 on limit. |
+| AI layer | `lib/ai/generate.ts` | Config-driven models via `AI_MODEL_FAST` / `AI_MODEL_STRONG` |
+| Prompts | `lib/ai/prompts.ts` | Canonical copy also in `AI_PROMPTS.md` |
+| Usage | `lib/usage.ts` | Counts `repurposes` rows in current calendar month |
+| Types | `types/index.ts` | Zod schemas for request, output, API responses |
+| Test UI | `app/test-generate/page.tsx` | Manual test page + curl example |
 
 ---
 
@@ -46,7 +62,7 @@ Keep the core loop boringly simple. Inputs normalise to plain text **before** th
     /library          # history
     /settings         # brand voice, billing
   /api
-    /repurpose        # generation endpoint (server-side only)
+    /generate         # generation endpoint (server-side only) — IMPLEMENTED
     /stripe/webhook   # Stripe events
     /transcribe       # audio → text
 /components           # shadcn/ui + app components
@@ -64,61 +80,44 @@ Keep the core loop boringly simple. Inputs normalise to plain text **before** th
 
 ---
 
-## 4. Data model (initial)
+## 4. Data model (implemented — generation slice)
 
-All tables namespaced to the user via `user_id` and protected by RLS.
+Migration: `supabase/migrations/20250615000000_initial_schema.sql`
+
+All tables protected by RLS. Usage is **derived** by counting `repurposes` rows in the current calendar month (no mutable counter table).
 
 ```sql
--- profiles: 1:1 with auth.users, holds plan + usage
 profiles (
-  id            uuid primary key references auth.users(id),
-  email         text,
-  plan          text not null default 'free',   -- 'free' | 'creator' | 'pro'
-  stripe_customer_id text,
-  created_at    timestamptz default now()
+  id                      uuid primary key references auth.users(id),
+  stripe_customer_id      text,
+  stripe_subscription_id  text,
+  plan                    text not null default 'free',  -- 'free' | 'creator' | 'pro'
+  created_at              timestamptz default now()
 )
 
--- brand_voices: a user can save voice profiles
 brand_voices (
-  id          uuid primary key default gen_random_uuid(),
+  id          uuid primary key,
   user_id     uuid not null references auth.users(id),
-  name        text not null,
-  description text,                  -- short written description, OR
-  samples     text[],               -- 2–3 pasted samples
+  samples     text[],
+  description text,
   created_at  timestamptz default now()
 )
 
--- repurposes: one record per run (one input, many outputs)
 repurposes (
-  id            uuid primary key default gen_random_uuid(),
-  user_id       uuid not null references auth.users(id),
-  brand_voice_id uuid references brand_voices(id),
-  source_type   text not null,      -- 'paste' | 'txt' | 'pdf' | 'audio'
-  source_text   text not null,      -- normalised plain text
-  created_at    timestamptz default now()
-)
-
--- outputs: one record per (repurpose, format)
-outputs (
-  id            uuid primary key default gen_random_uuid(),
-  repurpose_id  uuid not null references repurposes(id) on delete cascade,
-  user_id       uuid not null references auth.users(id),
-  format        text not null,      -- 'x_thread' | 'linkedin' | 'instagram' | 'email' | ...
-  content       text not null,
-  tokens_used   int,                -- for cost tracking
-  created_at    timestamptz default now()
-)
-
--- usage_counters: monthly metering for plan limits
-usage_counters (
-  user_id       uuid not null references auth.users(id),
-  period        text not null,      -- 'YYYY-MM'
-  repurpose_count int not null default 0,
-  primary key (user_id, period)
+  id              uuid primary key,
+  user_id         uuid not null references auth.users(id),
+  input_type      text not null,       -- 'paste' | 'txt' | 'pdf' | 'audio'
+  input_content   text not null,
+  brand_voice_id  uuid references brand_voices(id),
+  target_format   text not null,       -- 'x_thread' (more formats later)
+  output          jsonb,               -- validated structured output
+  status          text default 'pending',  -- 'pending' | 'complete' | 'failed'
+  error_message   text,
+  created_at      timestamptz default now()
 )
 ```
 
-> **Metering decision needed** (see PRODUCT_SPEC §8): does `repurpose_count` increment per run or per output format? Schema above assumes **per run** (1 input → many formats = 1 unit). Confirm with Grok before wiring billing.
+> **Metering:** one `repurposes` row = one unit, regardless of format. Multi-format runs in a future slice may use one parent row + child outputs; for now each generation is one row.
 
 ---
 
@@ -170,3 +169,5 @@ Newest first.
 | 2026-06-15 | Normalise all inputs to plain text before the prompt layer | Keeps generation code source-agnostic |
 | 2026-06-15 | `repurposes` (run) + `outputs` (per format) split | Clean history, per-format cost tracking, independent format swaps |
 | 2026-06-15 | RLS on all tables; AI calls server-side only | Security baseline |
+| 2026-06-15 | Generation slice: `/api/generate`, single `repurposes` row with `output` jsonb | Simpler MVP schema; usage from row count |
+| 2026-06-15 | Model selection via env (`AI_MODEL_FAST`, `AI_MODEL_STRONG`) | Swap models without code changes |
