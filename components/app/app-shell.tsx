@@ -74,7 +74,7 @@ export function AppShell({ children, usage }: AppShellProps) {
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              repurposes this month
+              successful repurposes this month
             </p>
             <Button asChild size="sm" className="w-full" variant={atLimit ? "default" : "outline"}>
               <Link href="/upgrade">Upgrade</Link>

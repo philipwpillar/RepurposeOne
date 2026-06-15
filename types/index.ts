@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  INPUT_CONTENT_MAX_LENGTH,
+  INPUT_CONTENT_MIN_LENGTH,
+} from "@/lib/config";
 
 // ---------------------------------------------------------------------------
 // Plan & usage
@@ -54,7 +58,16 @@ export type RepurposeStatus = z.infer<typeof RepurposeStatusSchema>;
 
 export const GenerateRequestSchema = z.object({
   input_type: InputTypeSchema.default("paste"),
-  input_content: z.string().min(50).max(50_000),
+  input_content: z
+    .string()
+    .min(
+      INPUT_CONTENT_MIN_LENGTH,
+      `Source content must be at least ${INPUT_CONTENT_MIN_LENGTH} characters`
+    )
+    .max(
+      INPUT_CONTENT_MAX_LENGTH,
+      `Source content must be at most ${INPUT_CONTENT_MAX_LENGTH.toLocaleString()} characters`
+    ),
   brand_voice_id: z.string().uuid().optional(),
   brand_voice: BrandVoiceInputSchema.optional(),
   target_format: TargetFormatSchema.default("x_thread"),
@@ -122,8 +135,16 @@ export type GenerateSuccessResponse = z.infer<typeof GenerateSuccessResponseSche
 
 export const GenerateErrorResponseSchema = z.object({
   error: z.string(),
-  code: z.enum(["unauthorized", "validation_error", "limit_exceeded", "generation_failed", "internal_error"]),
+  code: z.enum([
+    "unauthorized",
+    "validation_error",
+    "limit_exceeded",
+    "rate_limited",
+    "generation_failed",
+    "internal_error",
+  ]),
   usage: UsageInfoSchema.optional(),
   upgrade_message: z.string().optional(),
+  retry_after_seconds: z.number().int().optional(),
 });
 export type GenerateErrorResponse = z.infer<typeof GenerateErrorResponseSchema>;

@@ -24,6 +24,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FormatSelector } from "@/components/repurpose/format-selector";
 import { XThreadOutputDisplay } from "@/components/repurpose/x-thread-output";
 import { UpgradePrompt } from "@/components/repurpose/upgrade-prompt";
+import {
+  INPUT_CONTENT_MAX_LENGTH,
+  INPUT_CONTENT_MIN_LENGTH,
+} from "@/lib/config";
 
 interface NewRepurposeFormProps {
   initialUsage: UsageInfo;
@@ -41,6 +45,9 @@ export function NewRepurposeForm({ initialUsage }: NewRepurposeFormProps) {
   const [usage, setUsage] = useState(initialUsage);
 
   const atLimit = usage.used >= usage.limit;
+  const overMaxLength = inputContent.length > INPUT_CONTENT_MAX_LENGTH;
+  const underMinLength =
+    inputContent.length > 0 && inputContent.length < INPUT_CONTENT_MIN_LENGTH;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -76,6 +83,11 @@ export function NewRepurposeForm({ initialUsage }: NewRepurposeFormProps) {
       if (res.status === 402) {
         setError(data as GenerateErrorResponse);
         if (data.usage) setUsage(data.usage);
+        return;
+      }
+
+      if (res.status === 429) {
+        setError(data as GenerateErrorResponse);
         return;
       }
 
@@ -133,8 +145,9 @@ export function NewRepurposeForm({ initialUsage }: NewRepurposeFormProps) {
           <CardHeader>
             <CardTitle className="text-lg">Source content</CardTitle>
             <CardDescription>
-              Paste a blog post, newsletter, transcript, or notes (min. 50
-              characters)
+              Paste a blog post, newsletter, transcript, or notes (
+              {INPUT_CONTENT_MIN_LENGTH.toLocaleString()}–
+              {INPUT_CONTENT_MAX_LENGTH.toLocaleString()} characters)
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -144,10 +157,20 @@ export function NewRepurposeForm({ initialUsage }: NewRepurposeFormProps) {
               placeholder="Paste your long-form content here..."
               rows={10}
               required
-              minLength={50}
+              minLength={INPUT_CONTENT_MIN_LENGTH}
+              maxLength={INPUT_CONTENT_MAX_LENGTH}
             />
-            <p className="mt-2 text-xs text-muted-foreground">
-              {inputContent.length.toLocaleString()} characters
+            <p
+              className={`mt-2 text-xs ${
+                overMaxLength
+                  ? "font-medium text-destructive"
+                  : "text-muted-foreground"
+              }`}
+            >
+              {inputContent.length.toLocaleString()} /{" "}
+              {INPUT_CONTENT_MAX_LENGTH.toLocaleString()} characters
+              {underMinLength &&
+                ` (minimum ${INPUT_CONTENT_MIN_LENGTH.toLocaleString()})`}
             </p>
           </CardContent>
         </Card>
@@ -228,7 +251,12 @@ export function NewRepurposeForm({ initialUsage }: NewRepurposeFormProps) {
           type="submit"
           size="lg"
           className="w-full sm:w-auto"
-          disabled={loading || atLimit}
+          disabled={
+            loading ||
+            atLimit ||
+            overMaxLength ||
+            inputContent.length < INPUT_CONTENT_MIN_LENGTH
+          }
         >
           {loading ? (
             <>

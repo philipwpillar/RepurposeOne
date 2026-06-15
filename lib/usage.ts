@@ -1,6 +1,6 @@
-import { startOfMonth, endOfMonth, formatISO } from "date-fns";
+import { startOfMonth, endOfMonth, formatISO, subMinutes } from "date-fns";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { PLAN_LIMITS, UPGRADE_MESSAGES } from "@/lib/config";
+import { PLAN_LIMITS, RATE_LIMIT, UPGRADE_MESSAGES } from "@/lib/config";
 import type { Plan, UsageInfo } from "@/types";
 
 export function getCurrentBillingPeriod(now = new Date()) {
@@ -11,8 +11,9 @@ export function getCurrentBillingPeriod(now = new Date()) {
 }
 
 /**
- * Count repurposes in the current calendar month.
- * All rows count (including failed) to prevent limit bypass via retries.
+ * Count successful repurposes in the current calendar month.
+ * Only rows with status = 'complete' consume monthly quota.
+ * Failed generations are free retries; pending rows are not billed until complete.
  */
 export async function getMonthlyUsage(
   supabase: SupabaseClient,
@@ -24,6 +25,7 @@ export async function getMonthlyUsage(
     .from("repurposes")
     .select("*", { count: "exact", head: true })
     .eq("user_id", userId)
+    .eq("status", "complete")
     .gte("created_at", formatISO(start))
     .lte("created_at", formatISO(end));
 
@@ -76,4 +78,32 @@ export async function checkUsageLimit(
 
 export function getUpgradeMessage(plan: Plan): string {
   return UPGRADE_MESSAGES[plan];
+}
+
+/**
+ * Short-window burst limit to protect the AI endpoint from abuse.
+ * Counts complete + pending rows in the rolling window (failed rows excluded).
+ */
+export async function checkRateLimit(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<{ allowed: boolean; retryAfterSeconds: number }> {
+  const windowStart = subMinutes(new Date(), RATE_LIMIT.windowMinutes);
+
+  const { count, error } = await supabase
+    .from("repurposes")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .in("status", ["complete", "pending"])
+    .gte("created_at", formatISO(windowStart));
+
+  if (error) {
+    throw new Error(`Failed to check rate limit: ${error.message}`);
+  }
+
+  const used = count ?? 0;
+  return {
+    allowed: used < RATE_LIMIT.maxRequests,
+    retryAfterSeconds: RATE_LIMIT.windowMinutes * 60,
+  };
 }

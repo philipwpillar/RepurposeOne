@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { generateRepurpose } from "@/lib/ai/generate";
 import { createClient } from "@/lib/supabase/server";
-import { checkUsageLimit, getUpgradeMessage } from "@/lib/usage";
+import { checkRateLimit, checkUsageLimit, getUpgradeMessage } from "@/lib/usage";
 import {
   GenerateRequestSchema,
   type BrandVoiceInput,
@@ -13,6 +13,28 @@ function errorResponse(
   body: GenerateErrorResponse
 ): NextResponse {
   return NextResponse.json(body, { status });
+}
+
+function toUserFacingGenerationError(err: unknown): string {
+  if (!(err instanceof Error)) {
+    return "Generation failed unexpectedly. Please try again — this attempt won't count toward your monthly limit.";
+  }
+
+  const msg = err.message.toLowerCase();
+
+  if (msg.includes("timeout") || msg.includes("timed out")) {
+    return "Generation timed out. Try again with shorter content — this attempt won't count toward your monthly limit.";
+  }
+
+  if (msg.includes("rate") && msg.includes("limit")) {
+    return "The AI service is temporarily busy. Please wait a minute and try again.";
+  }
+
+  if (msg.includes("invalid") || msg.includes("validation") || msg.includes("parse")) {
+    return "The AI returned an unexpected format. Please try again — this attempt won't count toward your monthly limit.";
+  }
+
+  return "We couldn't generate your thread. Please try again — this attempt won't count toward your monthly limit.";
 }
 
 async function resolveBrandVoice(
@@ -52,7 +74,8 @@ async function resolveBrandVoice(
  * Hardened generation endpoint:
  * 1. Authenticate
  * 2. Validate input
- * 3. Check plan usage (count repurposes rows — no AI call if over limit)
+ * 3. Check burst rate limit (recent complete + pending rows)
+ * 4. Check plan usage (complete rows only — no AI call if over limit)
  * 4. Insert pending repurpose
  * 5. Call AI + validate output with Zod
  * 6. Update to complete or failed
@@ -99,7 +122,27 @@ export async function POST(request: Request) {
     target_tweets,
   } = parsed.data;
 
-  // --- Usage check BEFORE any AI spend ---
+  // --- Burst rate limit before any DB write or AI spend ---
+  let rateCheck;
+  try {
+    rateCheck = await checkRateLimit(supabase, user.id);
+  } catch (err) {
+    console.error("Rate limit check failed:", err);
+    return errorResponse(500, {
+      error: "Failed to check rate limits",
+      code: "internal_error",
+    });
+  }
+
+  if (!rateCheck.allowed) {
+    return errorResponse(429, {
+      error: `Too many generation requests. Please wait ${Math.ceil(rateCheck.retryAfterSeconds / 60)} minutes before trying again.`,
+      code: "rate_limited",
+      retry_after_seconds: rateCheck.retryAfterSeconds,
+    });
+  }
+
+  // --- Monthly usage check BEFORE any AI spend ---
   let usageCheck;
   try {
     usageCheck = await checkUsageLimit(supabase, user.id);
@@ -194,14 +237,13 @@ export async function POST(request: Request) {
       tokens_used: result.tokensUsed,
     });
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Generation failed unexpectedly";
+    const message = toUserFacingGenerationError(err);
 
     await supabase
       .from("repurposes")
       .update({
         status: "failed",
-        error_message: message,
+        error_message: err instanceof Error ? err.message : message,
       })
       .eq("id", repurpose.id)
       .eq("user_id", user.id);

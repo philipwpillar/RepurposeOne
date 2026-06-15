@@ -10,7 +10,7 @@
 | Layer | Choice | Why |
 | --- | --- | --- |
 | Framework | Next.js (App Router) + TypeScript | Server components, fast to ship, Vercel-native |
-| Styling | Tailwind CSS + shadcn/ui | Speed, consistent components, no design debt early |
+| Styling | Tailwind CSS + shadcn/ui + lucide-react `^1.18.0` | Speed, consistent components; lucide 1.x verified with Next 15 + React 19 |
 | Auth | Supabase Auth (email + Google OAuth) | One provider for auth + DB + storage |
 | Database | Supabase Postgres | Row-Level Security, easy from Next.js |
 | Storage | Supabase Storage | Uploaded `.txt`/`.pdf`/audio files |
@@ -28,7 +28,7 @@ Input (paste / .txt / .pdf / audio)
   → POST /api/generate (server-side only)
       1. Authenticate (Supabase session)
       2. Validate request (Zod)
-      3. Check monthly usage (count repurposes rows — reject before AI)
+      3. Check monthly usage (count complete repurposes — reject before AI)
       4. Insert repurposes row (status: pending)
       5. Build prompt → LLM → validate JSON output (Zod)
       6. Update row (status: complete | failed)
@@ -45,7 +45,7 @@ Keep the core loop boringly simple. Inputs normalise to plain text **before** th
 | API route | `app/api/generate/route.ts` | Auth → usage → AI → save. Returns 402 on limit. |
 | AI layer | `lib/ai/generate.ts` | Config-driven models via `AI_MODEL_FAST` / `AI_MODEL_STRONG` |
 | Prompts | `lib/ai/prompts.ts` | Canonical copy also in `AI_PROMPTS.md` |
-| Usage | `lib/usage.ts` | Counts `repurposes` rows in current calendar month |
+| Usage | `lib/usage.ts` | Counts `complete` repurposes in current calendar month; burst rate limit on generate |
 | Types | `types/index.ts` | Zod schemas for request, output, API responses |
 | Test UI | `app/test-generate/page.tsx` | Manual test page + curl example |
 

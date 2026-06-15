@@ -71,7 +71,7 @@ export default async function DashboardPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Used this month</CardDescription>
+            <CardDescription>Successful this month</CardDescription>
             <CardTitle>
               {usage.used} / {usage.limit}
             </CardTitle>

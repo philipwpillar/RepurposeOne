@@ -1,7 +1,7 @@
 import type { Plan, TargetFormat } from "@/types";
 
 /**
- * Plan limits — monthly repurpose count derived from repurposes table rows.
+ * Plan limits — monthly repurpose count from complete repurposes rows only.
  * Adjust via env or here; no mutable counter table.
  */
 export const PLAN_LIMITS: Record<Plan, number> = {
@@ -9,6 +9,16 @@ export const PLAN_LIMITS: Record<Plan, number> = {
   creator: Number(process.env.PLAN_LIMIT_CREATOR ?? 100),
   pro: Number(process.env.PLAN_LIMIT_PRO ?? 1000),
 };
+
+/** Burst rate limit for POST /api/generate (per user, rolling window). */
+export const RATE_LIMIT = {
+  maxRequests: Number(process.env.RATE_LIMIT_MAX_REQUESTS ?? 10),
+  windowMinutes: Number(process.env.RATE_LIMIT_WINDOW_MINUTES ?? 10),
+} as const;
+
+/** Client + server max length for pasted source content. */
+export const INPUT_CONTENT_MAX_LENGTH = 20_000;
+export const INPUT_CONTENT_MIN_LENGTH = 50;
 
 export const UPGRADE_MESSAGES: Record<Plan, string> = {
   free: "You've used all your free repurposes this month. Upgrade to Creator (£19/mo) for 100 repurposes/month.",
