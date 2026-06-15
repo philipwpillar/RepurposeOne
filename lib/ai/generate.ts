@@ -65,7 +65,8 @@ function parseJsonResponse(raw: string): unknown {
 /**
  * Core AI generation abstraction.
  * Model selection is routed via FORMAT_MODEL_TIER in lib/config.ts
- * (override tiers with AI_MODEL_FAST / AI_MODEL_STRONG env vars).
+ * (override model IDs with AI_MODEL_FAST / AI_MODEL_STRONG env vars).
+ * x_thread uses the strong tier (STRONG_MODEL) for multi-tweet coherence.
  */
 export async function generateRepurpose(
   input: GenerateInput

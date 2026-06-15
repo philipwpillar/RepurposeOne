@@ -44,36 +44,51 @@ const AI_PROVIDER = parseAiProvider(process.env.AI_PROVIDER);
 //   strong — higher quality; better for multi-part outputs that need coherence
 //            (X threads, newsletters, long-form posts).
 //
-// Override model IDs via env (no code changes):
-//   AI_MODEL_FAST    — fast-tier model  (e.g. openai/gpt-4o-mini on OpenRouter)
-//   AI_MODEL_STRONG  — strong-tier model (e.g. openai/gpt-4o on OpenRouter)
+// Defaults below are starting points only — override without code changes:
+//   AI_MODEL_FAST    — fast-tier model
+//   AI_MODEL_STRONG  — strong-tier model
 //
 // To assign a new format to a tier, add it to FORMAT_MODEL_TIER below.
 
 export type ModelTier = "fast" | "strong";
 
-/** Provider-specific defaults when env vars are not set. */
+/**
+ * Provider-specific defaults when AI_MODEL_FAST / AI_MODEL_STRONG are unset.
+ *
+ * OpenRouter:
+ *   fast   — google/gemini-2.0-flash: very low cost, low latency; fine for short outputs.
+ *   strong — anthropic/claude-3.5-sonnet: strong instruction-following and JSON
+ *            structure at a similar or better price than gpt-4o on OpenRouter.
+ *
+ * OpenAI (direct):
+ *   fast   — gpt-4o-mini: native fast/cheap tier on the OpenAI API.
+ *   strong — gpt-4o: best available quality when not routing through OpenRouter.
+ */
 const PROVIDER_DEFAULT_MODELS: Record<AiProvider, Record<ModelTier, string>> = {
   openai: {
     fast: "gpt-4o-mini",
     strong: "gpt-4o",
   },
   openrouter: {
-    fast: "openai/gpt-4o-mini",
-    strong: "openai/gpt-4o",
+    fast: "google/gemini-2.0-flash",
+    strong: "anthropic/claude-3.5-sonnet",
   },
 };
 
-/** Fast/cheap tier — used for simple, short outputs. */
+/** Fast/cheap tier — simple, short outputs. Override via AI_MODEL_FAST. */
 export const FAST_MODEL =
   process.env.AI_MODEL_FAST ?? PROVIDER_DEFAULT_MODELS[AI_PROVIDER].fast;
 
-/** Strong/high-quality tier — used for important, multi-part formats. */
+/** Strong/high-quality tier — multi-part, coherence-heavy formats. Override via AI_MODEL_STRONG. */
 export const STRONG_MODEL =
   process.env.AI_MODEL_STRONG ?? PROVIDER_DEFAULT_MODELS[AI_PROVIDER].strong;
 
 /**
  * Maps each output format to a model tier.
+ *
+ *   x_thread → strong — threads need coherent multi-tweet arcs, hooks, and pacing;
+ *                       routed to STRONG_MODEL (Claude 3.5 Sonnet on OpenRouter by default).
+ *
  * Add new formats here when they ship (e.g. linkedin_post → "fast").
  */
 export const FORMAT_MODEL_TIER: Record<TargetFormat, ModelTier> = {
