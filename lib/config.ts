@@ -29,10 +29,22 @@ export const UPGRADE_MESSAGES: Record<Plan, string> = {
 /** Formats that use the stronger (quality) model tier. */
 export const STRONG_MODEL_FORMATS: TargetFormat[] = ["x_thread"];
 
+export type AiProvider = "openai" | "openrouter";
+
+function parseAiProvider(value: string | undefined): AiProvider {
+  return value === "openrouter" ? "openrouter" : "openai";
+}
+
+const AI_PROVIDER = parseAiProvider(process.env.AI_PROVIDER);
+
 export const AI_CONFIG = {
-  provider: (process.env.AI_PROVIDER ?? "openai") as "openai",
-  fastModel: process.env.AI_MODEL_FAST ?? "gpt-4o-mini",
-  strongModel: process.env.AI_MODEL_STRONG ?? "gpt-4o",
+  provider: AI_PROVIDER,
+  fastModel:
+    process.env.AI_MODEL_FAST ??
+    (AI_PROVIDER === "openrouter" ? "openai/gpt-4o-mini" : "gpt-4o-mini"),
+  strongModel:
+    process.env.AI_MODEL_STRONG ??
+    (AI_PROVIDER === "openrouter" ? "openai/gpt-4o" : "gpt-4o"),
   maxInputChars: Number(process.env.AI_MAX_INPUT_CHARS ?? 30_000),
   temperature: Number(process.env.AI_TEMPERATURE ?? 0.7),
 } as const;

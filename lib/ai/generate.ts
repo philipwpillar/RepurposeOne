@@ -27,7 +27,18 @@ export interface GenerateResult {
   completionTokens?: number;
 }
 
-function getOpenAIClient(): OpenAI {
+function getAiClient(): OpenAI {
+  if (AI_CONFIG.provider === "openrouter") {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      throw new Error("OPENROUTER_API_KEY is not configured");
+    }
+    return new OpenAI({
+      apiKey,
+      baseURL: "https://openrouter.ai/api/v1",
+    });
+  }
+
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     throw new Error("OPENAI_API_KEY is not configured");
@@ -63,11 +74,7 @@ export async function generateRepurpose(
   const { system, user } = buildGenerationPrompt(ctx);
   const model = getModelForFormat(input.targetFormat);
 
-  if (AI_CONFIG.provider !== "openai") {
-    throw new Error(`Unsupported AI provider: ${AI_CONFIG.provider}`);
-  }
-
-  const client = getOpenAIClient();
+  const client = getAiClient();
 
   const response = await client.chat.completions.create({
     model,
