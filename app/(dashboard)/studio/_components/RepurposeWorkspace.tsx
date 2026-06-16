@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { INPUT_CONTENT_MIN_LENGTH } from '@/lib/config';
 import type {
   BrandVoiceInput,
   GenerateErrorResponse,
@@ -116,6 +117,14 @@ export default function RepurposeWorkspace({
   };
 
   const generateTwitter = async (lengthOverride?: number) => {
+    const trimmed = inputSummary.trim();
+    if (trimmed.length < INPUT_CONTENT_MIN_LENGTH) {
+      setTwitterError(
+        `Source content must be at least ${INPUT_CONTENT_MIN_LENGTH} characters.`
+      );
+      return;
+    }
+
     const targetLength = clampTargetTweets(lengthOverride ?? pendingTwitterLength);
     setTwitterError(null);
     setIsTwitterLoading(true);
