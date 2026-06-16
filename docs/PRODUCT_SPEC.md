@@ -2,7 +2,7 @@
 
 > **Living document.** This is the shared source of truth for product decisions, scope, and roadmap.
 > Grok owns strategic direction; Claude (Cursor) owns implementation. Update this file whenever a decision is made.
-> Last updated: 2026-06-15
+> Last updated: 2026-06-16
 
 ---
 
@@ -81,7 +81,7 @@ Primary objective: **speed to first revenue.** Every decision is weighed against
 - Credit packs (£9–15 for 20–30 extra repurposes) — add after first 2–3 weeks based on demand.
 - All billing via Stripe Checkout + customer portal.
 
-> **Open question:** Is a repurpose counted as one input→all-formats run, or per output format? This materially affects free-tier generosity and cost. **Needs a decision before billing is wired.** (See ARCHITECTURE.md §usage metering.)
+> **Resolved (2026-06-16):** A repurpose = one *generation*. A multi-format run counts as one unit (shared `generation_id`); single-format runs count individually. See ARCHITECTURE.md §4a.
 
 ---
 
@@ -116,6 +116,7 @@ Append decisions here with date + who made the call. Newest at top.
 
 | Date | Decision | Owner | Notes |
 | --- | --- | --- | --- |
+| 2026-06-16 | Billing unit = one generation, not per-format row | User | Implemented: `generation_id` + DISTINCT-count RPC. Resolves former open question #1. See ARCHITECTURE.md §4a |
 | 2026-06-15 | Start with shared docs before any code | User | Repo was empty; docs are highest-leverage first step |
 | 2026-06-15 | *(proposed)* Default Cursor coding model = Claude Sonnet 4.6; test Haiku 4.5 for generation calls as a cost lever | Claude | Needs Grok sign-off; "3.5 Sonnet / Claude 4" in brief is outdated |
 
@@ -123,8 +124,7 @@ Append decisions here with date + who made the call. Newest at top.
 
 ## 8. Open questions (resolve with Grok)
 
-1. **Repurpose unit definition** for metering/billing (per run vs per format). *Blocks billing.*
-2. **Annual plans** from launch or Month 2?
-3. **Model choice** per task (generation vs transcription) — quality/cost trade-off.
-4. **Free-tier limit**: 5 or 10 repurposes/month?
-5. Which 3 output formats ship **first** (recommend: X thread, LinkedIn, Email — broadest appeal, least formatting risk).
+1. **Annual plans** from launch or Month 2?
+2. **Model choice** per task (generation vs transcription) — quality/cost trade-off.
+3. **Free-tier limit**: 5 or 10 repurposes/month?
+4. Which 3 output formats ship **first** (recommend: X thread, LinkedIn, Email — broadest appeal, least formatting risk).

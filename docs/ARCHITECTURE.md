@@ -28,7 +28,7 @@ Input (paste / .txt / .pdf / audio)
   → POST /api/generate (server-side only)
       1. Authenticate (Supabase session)
       2. Validate request (Zod)
-      3. Check monthly usage (count complete repurposes — reject before AI)
+      3. Check monthly usage (count DISTINCT generation_id, complete rows — reject before AI)
       4. Insert repurposes row (status: pending)
       5. Build prompt → LLM → validate JSON output (Zod)
       6. Update row (status: complete | failed)
@@ -45,7 +45,7 @@ Keep the core loop boringly simple. Inputs normalise to plain text **before** th
 | API route | `app/api/generate/route.ts` | Auth → usage → AI → save. Returns 402 on limit. |
 | AI layer | `lib/ai/generate.ts` | Config-driven models via `AI_MODEL_FAST` / `AI_MODEL_STRONG` |
 | Prompts | `lib/ai/prompts.ts` | Canonical copy also in `AI_PROMPTS.md` |
-| Usage | `lib/usage.ts` | Counts `complete` repurposes in current calendar month; burst rate limit on generate |
+| Usage | `lib/usage.ts` | Counts DISTINCT `generation_id` (complete) in current calendar month via `count_monthly_generations` RPC; burst rate limit still counts rows |
 | Types | `types/index.ts` | Zod schemas for request, output, API responses |
 | Test UI | `app/test-generate/page.tsx` | Manual test page + curl example |
 
@@ -130,7 +130,27 @@ repurposes (
 )
 ```
 
-> **Metering:** one `repurposes` row = one unit, regardless of format. Multi-format runs in a future slice may use one parent row + child outputs; for now each generation is one row.
+> **Metering:** billing counts *generations*, not rows. A multi-format "Regenerate All" run shares one `generation_id` and counts as ONE unit; single-format runs each get their own. See §4a.
+
+## 4a. Metering & billing
+
+**Billing unit = one generation, not one row.** A single user action that fans out to multiple formats ("Regenerate All") produces several `repurposes` rows but counts once. Single-format generations and single-format regenerates each count as their own unit.
+
+**Why:** repurposing one input into 4 formats is one unit of delivered value. Charging 4 would burn the free-tier limit in a single click and damage free→paid conversion (target 8–15%). The meter should match perceived value.
+
+| Concern | Mechanism |
+| --- | --- |
+| Grouping | Shared `generation_id` (uuid) on `repurposes` |
+| Multi-format run | Client mints ONE `crypto.randomUUID()`, passes it to every format |
+| Single-format run | No id sent → DB default `gen_random_uuid()` per row |
+| Usage count | `count_monthly_generations` RPC: `COUNT(DISTINCT generation_id)` where status='complete' in period |
+| Abuse protection | `checkRateLimit` counts ROWS (unchanged) — a shared id must not mask high-volume abuse |
+
+**Deliberate asymmetry (do not "simplify"):** usage metering counts generations (billing fairness); rate limiting counts rows (abuse protection). Collapsing both to one counter either over-charges users or opens an abuse hole.
+
+**Key files:** `supabase/migrations/20250616000000_add_generation_id.sql` (column + RPC + backfill), `lib/usage.ts` (`getMonthlyUsage`), `app/api/generate/route.ts` (passes `generation_id`), `types/index.ts` (`GenerateRequestSchema.generation_id`), `app/(dashboard)/studio/_components/RepurposeWorkspace.tsx` (`regenerateAll` shares the id).
+
+**Open:** credit packs — confirm a credit maps to a generation (recommended, consistent), not a row. Carousel image generation (post-MVP) — decide if images are a separate unit or bundled into the parent generation.
 
 ---
 
@@ -179,6 +199,7 @@ Newest first.
 
 | Date | Decision | Notes |
 | --- | --- | --- |
+| 2026-06-16 | Billing unit = generation, not row: `generation_id` + `count_monthly_generations` DISTINCT RPC; rate limit still counts rows | Supersedes the 2026-06-15 "one row = one unit" assumption. See §4a |
 | 2026-06-15 | Normalise all inputs to plain text before the prompt layer | Keeps generation code source-agnostic |
 | 2026-06-15 | `repurposes` (run) + `outputs` (per format) split | Clean history, per-format cost tracking, independent format swaps |
 | 2026-06-15 | RLS on all tables; AI calls server-side only | Security baseline |
