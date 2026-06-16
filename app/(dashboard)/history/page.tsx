@@ -58,7 +58,7 @@ export default async function HistoryPage() {
           </CardHeader>
           <CardContent>
             <Link
-              href="/new"
+              href="/studio"
               className="text-sm font-medium text-foreground underline-offset-4 hover:underline"
             >
               Create your first repurpose →

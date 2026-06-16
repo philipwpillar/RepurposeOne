@@ -4,6 +4,7 @@ import {
   type DashboardUser,
 } from "./_components/dashboard-shell";
 import { createClient } from "@/lib/supabase/server";
+import { checkUsageLimit } from "@/lib/usage";
 
 function getDisplayName(metadata: Record<string, unknown> | undefined, email: string | undefined) {
   const fullName = metadata?.full_name ?? metadata?.name;
@@ -33,6 +34,8 @@ export default async function DashboardLayout({
     redirect("/sign-in");
   }
 
+  const { usage } = await checkUsageLimit(supabase, user.id);
+
   const dashboardUser: DashboardUser = {
     email: user.email,
     name: getDisplayName(user.user_metadata, user.email),
@@ -42,5 +45,9 @@ export default async function DashboardLayout({
         : undefined,
   };
 
-  return <DashboardShell user={dashboardUser}>{children}</DashboardShell>;
+  return (
+    <DashboardShell user={dashboardUser} usage={usage}>
+      {children}
+    </DashboardShell>
+  );
 }

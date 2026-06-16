@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { INPUT_CONTENT_MIN_LENGTH } from '@/lib/config';
 import type {
   BrandVoiceInput,
@@ -21,10 +22,11 @@ function formatXThreadOutput(output: XThreadOutput): string {
 }
 
 interface RepurposeWorkspaceProps {
-  // Ready for real data later
   initialInput?: string;
   initialTwitterOutput?: string;
   initialTwitterLength?: number;
+  repurposesUsed: number;
+  repurposesLimit: number;
   onTwitterGenerate?: (output: string) => void;
 }
 
@@ -32,11 +34,15 @@ export default function RepurposeWorkspace({
   initialInput = "How I built and launched my first SaaS in 30 days while working full-time",
   initialTwitterOutput,
   initialTwitterLength,
+  repurposesUsed,
+  repurposesLimit,
   onTwitterGenerate,
 }: RepurposeWorkspaceProps) {
   
   // === State ===
-  const [inputSummary] = useState(initialInput);
+  const [inputSummary, setInputSummary] = useState(initialInput);
+  const [draftInputContent, setDraftInputContent] = useState(initialInput);
+  const [inputModalError, setInputModalError] = useState<string | null>(null);
   const [isInputModalOpen, setIsInputModalOpen] = useState(false);
   
   const [twitterLength, setTwitterLength] = useState(
@@ -62,11 +68,12 @@ export default function RepurposeWorkspace({
 
   const [isLoading, setIsLoading] = useState(false);
 
-  // Mock usage for MVP
-  const [repurposesUsed] = useState(7);
-  const repurposesLimit = 10;
-
   // === Handlers ===
+  const openInputModal = () => {
+    setDraftInputContent(inputSummary);
+    setInputModalError(null);
+    setIsInputModalOpen(true);
+  };
   const callGenerateApi = async (
     inputContent: string,
     targetTweets: number
@@ -116,8 +123,11 @@ export default function RepurposeWorkspace({
     return data.output;
   };
 
-  const generateTwitter = async (lengthOverride?: number) => {
-    const trimmed = inputSummary.trim();
+  const generateTwitter = async (
+    lengthOverride?: number,
+    inputContentOverride?: string
+  ) => {
+    const trimmed = (inputContentOverride ?? inputSummary).trim();
     if (trimmed.length < INPUT_CONTENT_MIN_LENGTH) {
       setTwitterError(
         `Source content must be at least ${INPUT_CONTENT_MIN_LENGTH} characters.`
@@ -131,7 +141,7 @@ export default function RepurposeWorkspace({
     setIsLoading(true);
 
     try {
-      const output = await callGenerateApi(inputSummary, targetLength);
+      const output = await callGenerateApi(trimmed, targetLength);
       const displayText = formatXThreadOutput(output);
 
       setTwitterLength(targetLength);
@@ -180,6 +190,21 @@ export default function RepurposeWorkspace({
     void generateTwitter();
   };
 
+  const handleInputUpdate = () => {
+    const trimmed = draftInputContent.trim();
+    if (trimmed.length < INPUT_CONTENT_MIN_LENGTH) {
+      setInputModalError(
+        `Source content must be at least ${INPUT_CONTENT_MIN_LENGTH} characters.`
+      );
+      return;
+    }
+
+    setInputSummary(trimmed);
+    setIsInputModalOpen(false);
+    setInputModalError(null);
+    void generateTwitter(undefined, trimmed);
+  };
+
   const copyToClipboard = (format: string) => {
     if (format === 'twitter') {
       void navigator.clipboard.writeText(twitterOutput);
@@ -203,17 +228,19 @@ export default function RepurposeWorkspace({
 
       {/* Input Summary (Collapsed) */}
       <div 
-        onClick={() => setIsInputModalOpen(true)}
+        onClick={openInputModal}
         className="bg-white border border-slate-200 rounded-2xl p-4 mb-5 cursor-pointer active:bg-slate-50 transition-colors"
       >
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <div className="text-xs font-medium text-slate-500 mb-1">SOURCE CONTENT</div>
             <div className="font-medium text-slate-800 line-clamp-2 pr-4">{inputSummary}</div>
-            <div className="text-xs text-slate-500 mt-1">1,842 characters • Blog post</div>
+            <div className="text-xs text-slate-500 mt-1">
+              {inputSummary.length.toLocaleString()} characters • Blog post
+            </div>
           </div>
           <button 
-            onClick={(e) => { e.stopPropagation(); setIsInputModalOpen(true); }}
+            onClick={(e) => { e.stopPropagation(); openInputModal(); }}
             className="text-xs px-3 py-1.5 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50"
           >
             Change
@@ -248,12 +275,12 @@ export default function RepurposeWorkspace({
         <div className="text-slate-600">
           <span className="font-medium">{repurposesUsed} / {repurposesLimit}</span> repurposes used this month
         </div>
-        <button 
-          onClick={() => alert("Upgrade flow (to be connected to Stripe)")}
+        <Link
+          href="/upgrade"
           className="text-teal-600 hover:text-teal-700 text-xs font-medium"
         >
           Upgrade →
-        </button>
+        </Link>
       </div>
 
       {/* Section Header */}
@@ -465,20 +492,22 @@ export default function RepurposeWorkspace({
         <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-[60]">
           <div className="bg-white w-full sm:w-[480px] sm:rounded-3xl rounded-t-3xl p-5">
             <div className="font-semibold mb-3">Source Content</div>
-            <textarea 
-              className="w-full h-40 border rounded-2xl p-4 text-sm" 
-              defaultValue={inputSummary}
+            <textarea
+              className="w-full h-40 border rounded-2xl p-4 text-sm"
+              value={draftInputContent}
+              onChange={(e) => setDraftInputContent(e.target.value)}
             />
+            {inputModalError ? (
+              <p className="mt-2 text-xs text-red-600">{inputModalError}</p>
+            ) : null}
             <div className="flex gap-3 mt-4">
               <button onClick={() => setIsInputModalOpen(false)} className="flex-1 py-2.5 rounded-2xl border">Cancel</button>
-              <button 
-                onClick={() => {
-                  setIsInputModalOpen(false);
-                  // TODO: trigger regeneration with new input
-                }} 
-                className="flex-1 py-2.5 rounded-2xl bg-teal-500 text-white font-medium"
+              <button
+                onClick={handleInputUpdate}
+                disabled={isTwitterLoading}
+                className="flex-1 py-2.5 rounded-2xl bg-teal-500 text-white font-medium disabled:opacity-50"
               >
-                Update & Regenerate
+                {isTwitterLoading ? 'Generating…' : 'Update & Regenerate'}
               </button>
             </div>
           </div>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { UsageInfo } from "@/types";
 import {
   Bell,
   CreditCard,
@@ -104,9 +105,60 @@ function NavLinks({
 interface DashboardShellProps {
   children: React.ReactNode;
   user: DashboardUser;
+  usage: UsageInfo;
 }
 
-export function DashboardShell({ children, user }: DashboardShellProps) {
+function UsageIndicator({ usage, compact = false }: { usage: UsageInfo; compact?: boolean }) {
+  const atLimit = usage.used >= usage.limit;
+  const usagePercent = Math.min(100, (usage.used / usage.limit) * 100);
+
+  if (compact) {
+    return (
+      <div className="flex items-center gap-2 text-sm">
+        <span className={cn("font-medium", atLimit ? "text-red-600" : "text-slate-700")}>
+          {usage.used} / {usage.limit}
+        </span>
+        <Link
+          href="/upgrade"
+          className="text-xs font-medium text-teal-600 hover:text-teal-700"
+        >
+          Upgrade
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+      <div className="flex items-center justify-between text-xs">
+        <span className="font-medium text-slate-500">Monthly usage</span>
+        <span className={cn("font-semibold", atLimit ? "text-red-600" : "text-slate-800")}>
+          {usage.used} / {usage.limit}
+        </span>
+      </div>
+      <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
+        <div
+          className={cn(
+            "h-full rounded-full transition-all",
+            atLimit ? "bg-red-500" : "bg-teal-500"
+          )}
+          style={{ width: `${usagePercent}%` }}
+        />
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] text-slate-500">repurposes this month</span>
+        <Link
+          href="/upgrade"
+          className="text-[11px] font-medium text-teal-600 hover:text-teal-700"
+        >
+          Upgrade →
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+export function DashboardShell({ children, user, usage }: DashboardShellProps) {
   const pathname = usePathname();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
@@ -125,6 +177,7 @@ export function DashboardShell({ children, user }: DashboardShellProps) {
         </nav>
 
         <div className="space-y-3 border-t border-slate-200 p-4">
+          <UsageIndicator usage={usage} />
           <div className="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2.5">
             <UserAvatar user={user} />
             <div className="min-w-0 flex-1">
@@ -159,7 +212,10 @@ export function DashboardShell({ children, user }: DashboardShellProps) {
             </Link>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:block">
+              <UsageIndicator usage={usage} compact />
+            </div>
             <Button
               variant="ghost"
               size="icon"
@@ -180,7 +236,7 @@ export function DashboardShell({ children, user }: DashboardShellProps) {
           </div>
         </header>
 
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 p-4 md:p-8 [&:has(.max-w-screen-md)]:p-0">{children}</main>
       </div>
 
       {/* Mobile sidebar overlay */}
@@ -212,6 +268,7 @@ export function DashboardShell({ children, user }: DashboardShellProps) {
             </nav>
 
             <div className="space-y-3 border-t border-slate-200 p-4">
+              <UsageIndicator usage={usage} />
               <div className="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2.5">
                 <UserAvatar user={user} />
                 <div className="min-w-0 flex-1">

@@ -55,7 +55,7 @@ export default async function DashboardPage() {
           </p>
         </div>
         <Button asChild size="lg" disabled={atLimit}>
-          <Link href={atLimit ? "/upgrade" : "/new"}>
+          <Link href={atLimit ? "/upgrade" : "/studio"}>
             <Plus />
             New Repurpose
           </Link>
@@ -117,7 +117,7 @@ export default async function DashboardPage() {
                 No repurposes yet. Create your first one!
               </p>
               <Button asChild className="mt-4">
-                <Link href="/new">Get started</Link>
+                <Link href="/studio">Get started</Link>
               </Button>
             </CardContent>
           </Card>
