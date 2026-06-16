@@ -49,12 +49,19 @@ function isFormatOutput<F extends TargetFormat>(
   return output.format === format;
 }
 
+interface BrandVoiceProp {
+  id: string;
+  samples: string[] | null;
+  description: string | null;
+}
+
 interface RepurposeWorkspaceProps {
   initialInput?: string;
   initialTwitterOutput?: string;
   initialTwitterLength?: number;
   repurposesUsed: number;
   repurposesLimit: number;
+  brandVoice?: BrandVoiceProp | null;
   onTwitterGenerate?: (output: string) => void;
 }
 
@@ -64,6 +71,7 @@ export default function RepurposeWorkspace({
   initialTwitterLength,
   repurposesUsed,
   repurposesLimit,
+  brandVoice = null,
   onTwitterGenerate,
 }: RepurposeWorkspaceProps) {
   const [inputSummary, setInputSummary] = useState(initialInput);
@@ -110,17 +118,21 @@ export default function RepurposeWorkspace({
       targetTweets?: number,
       generationId?: string
     ): Promise<RepurposeOutput> => {
-      const brandVoice: BrandVoiceInput = {
-        samples: [],
-        description: 'Professional, UK founder',
-      };
-
       const body: Record<string, unknown> = {
         input_type: 'paste',
         input_content: inputContent,
         target_format: targetFormat,
-        brand_voice: brandVoice,
       };
+
+      if (brandVoice?.id) {
+        body.brand_voice_id = brandVoice.id;
+      } else {
+        // No saved voice yet — minimal inline fallback so first-run still works.
+        body.brand_voice = {
+          samples: [],
+          description: 'Clear, professional, conversational.',
+        } satisfies BrandVoiceInput;
+      }
 
       if (targetFormat === 'x_thread') {
         body.target_tweets = clampTargetTweets(targetTweets ?? pendingTwitterLength);
@@ -162,7 +174,7 @@ export default function RepurposeWorkspace({
 
       return data.output;
     },
-    [pendingTwitterLength]
+    [brandVoice, pendingTwitterLength]
   );
 
   const applyOutput = useCallback(
@@ -398,7 +410,7 @@ export default function RepurposeWorkspace({
         >
           <div className="bg-white border border-slate-200 rounded-2xl px-3 py-2 flex items-center gap-x-2">
             <i className="fas fa-magic text-teal-500"></i>
-            <span className="text-sm">Brand Voice: <span className="font-medium">Professional, UK founder</span></span>
+            <span className="text-sm">Brand Voice: <span className="font-medium">{brandVoice?.description?.trim() || (brandVoice ? 'Custom voice' : 'No voice set — using default')}</span></span>
           </div>
         </div>
 
