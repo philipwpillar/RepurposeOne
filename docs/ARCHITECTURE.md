@@ -122,7 +122,8 @@ repurposes (
   input_type      text not null,       -- 'paste' | 'txt' | 'pdf' | 'audio'
   input_content   text not null,
   brand_voice_id  uuid references brand_voices(id),
-  target_format   text not null,       -- 'x_thread' (more formats later)
+  generation_id   uuid,                -- groups multi-format runs (shared across sibling rows for one user action)
+  target_format   text not null,       -- 'x_thread' | 'linkedin' | 'instagram' | 'email'
   output          jsonb,               -- validated structured output
   status          text default 'pending',  -- 'pending' | 'complete' | 'failed'
   error_message   text,
@@ -201,7 +202,7 @@ Newest first.
 | --- | --- | --- |
 | 2026-06-16 | Billing unit = generation, not row: `generation_id` + `count_monthly_generations` DISTINCT RPC; rate limit still counts rows | Supersedes the 2026-06-15 "one row = one unit" assumption. See §4a |
 | 2026-06-15 | Normalise all inputs to plain text before the prompt layer | Keeps generation code source-agnostic |
-| 2026-06-15 | `repurposes` (run) + `outputs` (per format) split | Clean history, per-format cost tracking, independent format swaps |
+| 2026-06-15 | `repurposes` (run) + `outputs` (per format) split — **SUPERSEDED / NOT BUILT** | Considered early for clean history, per-format cost tracking, and independent format swaps. Never implemented: shipped model is a single `repurposes` table (one row per format) + `generation_id` grouping. Rejected for MVP to avoid migration on working code and protect speed to first revenue. Revisit only post-revenue if library/history UX or per-run features demand native parent/child. (Decision: 2026-06-16) |
 | 2026-06-15 | RLS on all tables; AI calls server-side only | Security baseline |
 | 2026-06-15 | Generation slice: `/api/generate`, single `repurposes` row with `output` jsonb | Simpler MVP schema; usage from row count |
 | 2026-06-15 | Model selection via env (`AI_MODEL_FAST`, `AI_MODEL_STRONG`) | Swap models without code changes |
