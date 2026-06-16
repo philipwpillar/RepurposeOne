@@ -23,8 +23,8 @@ export function FormatSelector({ value, onChange }: FormatSelectorProps) {
             type="button"
             disabled={isDisabled}
             onClick={() => {
-              if (format.available && format.id === "x_thread") {
-                onChange("x_thread");
+              if (format.available) {
+                onChange(format.id as TargetFormat);
               }
             }}
             className={cn(

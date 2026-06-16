@@ -12,16 +12,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import type { XThreadOutput } from "@/types";
+import { formatLabel, getOutputPreview } from "@/lib/format-output";
+import type { RepurposeOutput } from "@/types";
 
-function formatLabel(targetFormat: string): string {
-  if (targetFormat === "x_thread") return "X Thread";
-  return targetFormat;
-}
-
-function getPreview(output: XThreadOutput | null): string {
-  if (!output?.tweets?.length) return "No preview available";
-  return output.tweets[0].text;
+function getPreview(output: RepurposeOutput | null): string {
+  if (!output) return "No preview available";
+  return getOutputPreview(output);
 }
 
 export default async function DashboardPage() {
@@ -137,7 +133,7 @@ export default async function DashboardPage() {
                         </span>
                       </div>
                       <p className="truncate text-sm">
-                        {getPreview(item.output as XThreadOutput | null)}
+                        {getPreview(item.output as RepurposeOutput | null)}
                       </p>
                     </div>
                     <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />

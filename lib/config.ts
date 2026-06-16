@@ -93,6 +93,9 @@ export const STRONG_MODEL =
  */
 export const FORMAT_MODEL_TIER: Record<TargetFormat, ModelTier> = {
   x_thread: "strong",
+  linkedin: "strong",
+  instagram: "fast",
+  email: "strong",
 };
 
 /** Returns the model tier configured for a given output format. */

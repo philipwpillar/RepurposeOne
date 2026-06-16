@@ -10,17 +10,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { XThreadOutput } from "@/types";
+import { formatLabel, getOutputPreview } from "@/lib/format-output";
+import type { RepurposeOutput } from "@/types";
 
-function formatLabel(targetFormat: string): string {
-  if (targetFormat === "x_thread") return "X Thread";
-  return targetFormat;
-}
-
-function getPreview(output: XThreadOutput | null): string {
-  if (!output?.tweets?.length) return "No preview available";
-  const first = output.tweets[0].text;
-  return first.length > 120 ? `${first.slice(0, 120)}…` : first;
+function getPreview(output: RepurposeOutput | null): string {
+  if (!output) return "No preview available";
+  return getOutputPreview(output);
 }
 
 export default async function HistoryPage() {
@@ -81,7 +76,7 @@ export default async function HistoryPage() {
                       </span>
                     </div>
                     <p className="text-sm font-medium">
-                      {getPreview(item.output as XThreadOutput | null)}
+                      {getPreview(item.output as RepurposeOutput | null)}
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
                       Source: {item.input_content.slice(0, 80)}…

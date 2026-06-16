@@ -134,23 +134,27 @@ export default function TestGeneratePage() {
             </span>
           </div>
 
-          <ol className="space-y-3">
-            {result.output.tweets.map((tweet) => (
-              <li key={tweet.number} className="rounded bg-neutral-50 p-3 text-sm">
-                <span className="font-medium">{tweet.number}/</span> {tweet.text}
-                {tweet.media_suggestion && (
-                  <p className="mt-1 text-xs text-neutral-500">
-                    Media: {tweet.media_suggestion}
-                  </p>
-                )}
-              </li>
-            ))}
-          </ol>
+          {result.output.format === "x_thread" && (
+            <>
+              <ol className="space-y-3">
+                {result.output.tweets.map((tweet) => (
+                  <li key={tweet.number} className="rounded bg-neutral-50 p-3 text-sm">
+                    <span className="font-medium">{tweet.number}/</span> {tweet.text}
+                    {tweet.media_suggestion && (
+                      <p className="mt-1 text-xs text-neutral-500">
+                        Media: {tweet.media_suggestion}
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ol>
 
-          {result.output.thread_summary && (
-            <p className="text-sm text-neutral-600">
-              Summary: {result.output.thread_summary}
-            </p>
+              {result.output.thread_summary && (
+                <p className="text-sm text-neutral-600">
+                  Summary: {result.output.thread_summary}
+                </p>
+              )}
+            </>
           )}
 
           <pre className="overflow-auto rounded bg-neutral-900 p-4 text-xs text-neutral-100">

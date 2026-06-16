@@ -50,7 +50,12 @@ export type BrandVoiceInput = z.infer<typeof BrandVoiceInputSchema>;
 export const InputTypeSchema = z.enum(["paste", "txt", "pdf", "audio"]);
 export type InputType = z.infer<typeof InputTypeSchema>;
 
-export const TargetFormatSchema = z.enum(["x_thread"]);
+export const TargetFormatSchema = z.enum([
+  "x_thread",
+  "linkedin",
+  "instagram",
+  "email",
+]);
 export type TargetFormat = z.infer<typeof TargetFormatSchema>;
 
 export const RepurposeStatusSchema = z.enum(["pending", "complete", "failed"]);
@@ -93,7 +98,55 @@ export const XThreadOutputSchema = z.object({
 });
 export type XThreadOutput = z.infer<typeof XThreadOutputSchema>;
 
-export const RepurposeOutputSchema = XThreadOutputSchema;
+// ---------------------------------------------------------------------------
+// LinkedIn output (structured)
+// ---------------------------------------------------------------------------
+
+export const LinkedInSlideSchema = z.object({
+  number: z.number().int().min(1),
+  title: z.string().min(1).max(200),
+  body: z.string().max(500).optional(),
+});
+export type LinkedInSlide = z.infer<typeof LinkedInSlideSchema>;
+
+export const LinkedInOutputSchema = z.object({
+  format: z.literal("linkedin"),
+  post: z.string().min(1).max(3000),
+  carousel_slides: z.array(LinkedInSlideSchema).min(3).max(15),
+  post_summary: z.string().max(500).optional(),
+});
+export type LinkedInOutput = z.infer<typeof LinkedInOutputSchema>;
+
+// ---------------------------------------------------------------------------
+// Instagram output (structured)
+// ---------------------------------------------------------------------------
+
+export const InstagramOutputSchema = z.object({
+  format: z.literal("instagram"),
+  caption: z.string().min(1).max(2200),
+  hook_variations: z.array(z.string().min(1).max(300)).min(2).max(5),
+  hashtags: z.array(z.string().min(1).max(100)).min(5).max(30),
+});
+export type InstagramOutput = z.infer<typeof InstagramOutputSchema>;
+
+// ---------------------------------------------------------------------------
+// Email newsletter output (structured)
+// ---------------------------------------------------------------------------
+
+export const EmailOutputSchema = z.object({
+  format: z.literal("email"),
+  subject_line: z.string().min(1).max(200),
+  preview_text: z.string().max(200).optional(),
+  body: z.string().min(1).max(15_000),
+});
+export type EmailOutput = z.infer<typeof EmailOutputSchema>;
+
+export const RepurposeOutputSchema = z.discriminatedUnion("format", [
+  XThreadOutputSchema,
+  LinkedInOutputSchema,
+  InstagramOutputSchema,
+  EmailOutputSchema,
+]);
 export type RepurposeOutput = z.infer<typeof RepurposeOutputSchema>;
 
 export const RepurposeSchema = z.object({

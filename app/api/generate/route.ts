@@ -34,7 +34,7 @@ function toUserFacingGenerationError(err: unknown): string {
     return "The AI returned an unexpected format. Please try again — this attempt won't count toward your monthly limit.";
   }
 
-  return "We couldn't generate your thread. Please try again — this attempt won't count toward your monthly limit.";
+  return "We couldn't generate your content. Please try again — this attempt won't count toward your monthly limit.";
 }
 
 async function resolveBrandVoice(

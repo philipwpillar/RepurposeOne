@@ -274,10 +274,68 @@ export function NewRepurposeForm({ initialUsage }: NewRepurposeFormProps) {
 
       {result && (
         <div className="space-y-4">
-          <XThreadOutputDisplay
-            output={result.output}
-            repurposeId={result.repurpose_id}
-          />
+          {result.output.format === "x_thread" && (
+            <XThreadOutputDisplay
+              output={result.output}
+              repurposeId={result.repurpose_id}
+            />
+          )}
+          {result.output.format === "linkedin" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">LinkedIn post</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="whitespace-pre-wrap text-sm">{result.output.post}</p>
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground">Carousel slides</p>
+                  {result.output.carousel_slides.map((slide) => (
+                    <div key={slide.number} className="rounded-md border p-3 text-sm">
+                      <p className="font-medium">{slide.title}</p>
+                      {slide.body && <p className="mt-1 text-muted-foreground">{slide.body}</p>}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          {result.output.format === "instagram" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Instagram caption</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="whitespace-pre-wrap text-sm">{result.output.caption}</p>
+                <div>
+                  <p className="mb-2 text-xs font-medium text-muted-foreground">Hook variations</p>
+                  <ul className="list-disc space-y-1 pl-5 text-sm">
+                    {result.output.hook_variations.map((hook, i) => (
+                      <li key={i}>{hook}</li>
+                    ))}
+                  </ul>
+                </div>
+                <p className="text-sm text-teal-700">
+                  {result.output.hashtags.map((t) => (t.startsWith("#") ? t : `#${t}`)).join(" ")}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+          {result.output.format === "email" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Email newsletter</CardTitle>
+                <CardDescription>{result.output.subject_line}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {result.output.preview_text && (
+                  <p className="mb-3 text-sm text-muted-foreground">
+                    Preview: {result.output.preview_text}
+                  </p>
+                )}
+                <p className="whitespace-pre-wrap text-sm">{result.output.body}</p>
+              </CardContent>
+            </Card>
+          )}
           <div className="flex gap-3">
             <Button asChild variant="outline">
               <Link href={`/history/${result.repurpose_id}`}>View in history</Link>
