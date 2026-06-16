@@ -120,6 +120,7 @@ export async function POST(request: Request) {
     brand_voice,
     target_format,
     target_tweets,
+    generation_id,
   } = parsed.data;
 
   // --- Burst rate limit before any DB write or AI spend ---
@@ -188,6 +189,8 @@ export async function POST(request: Request) {
       brand_voice_id: brand_voice_id ?? null,
       target_format,
       status: "pending",
+      // undefined → DB default (gen_random_uuid()), i.e. its own generation
+      generation_id: generation_id ?? undefined,
     })
     .select("id")
     .single();

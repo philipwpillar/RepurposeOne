@@ -107,7 +107,8 @@ export default function RepurposeWorkspace({
     async (
       inputContent: string,
       targetFormat: TargetFormat,
-      targetTweets?: number
+      targetTweets?: number,
+      generationId?: string
     ): Promise<RepurposeOutput> => {
       const brandVoice: BrandVoiceInput = {
         samples: [],
@@ -123,6 +124,10 @@ export default function RepurposeWorkspace({
 
       if (targetFormat === 'x_thread') {
         body.target_tweets = clampTargetTweets(targetTweets ?? pendingTwitterLength);
+      }
+
+      if (generationId) {
+        body.generation_id = generationId;
       }
 
       const response = await fetch('/api/generate', {
@@ -192,7 +197,7 @@ export default function RepurposeWorkspace({
   const generateFormat = useCallback(
     async (
       format: TargetFormat,
-      options?: { inputContent?: string; targetTweets?: number }
+      options?: { inputContent?: string; targetTweets?: number; generationId?: string }
     ) => {
       const trimmed = (options?.inputContent ?? inputSummary).trim();
       if (trimmed.length < INPUT_CONTENT_MIN_LENGTH) {
@@ -210,7 +215,8 @@ export default function RepurposeWorkspace({
         const output = await callGenerateApi(
           trimmed,
           format,
-          options?.targetTweets
+          options?.targetTweets,
+          options?.generationId
         );
         applyOutput(format, output);
 
@@ -259,7 +265,11 @@ export default function RepurposeWorkspace({
 
   const regenerateAll = async () => {
     setIsRegeneratingAll(true);
-    await Promise.allSettled(ALL_FORMATS.map((format) => generateFormat(format)));
+    // One id shared across all four formats → billed as a single generation.
+    const generationId = crypto.randomUUID();
+    await Promise.allSettled(
+      ALL_FORMATS.map((format) => generateFormat(format, { generationId }))
+    );
     setIsRegeneratingAll(false);
   };
 

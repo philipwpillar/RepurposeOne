@@ -11,9 +11,17 @@ export function getCurrentBillingPeriod(now = new Date()) {
 }
 
 /**
- * Count successful repurposes in the current calendar month.
- * Only rows with status = 'complete' consume monthly quota.
- * Failed generations are free retries; pending rows are not billed until complete.
+ * Count billable generations in the current calendar month.
+ *
+ * A "generation" is one user action (single format, or a Regenerate All that
+ * fans out to up to 4 formats), grouped by generation_id. Multi-format runs
+ * therefore count as ONE repurpose, not one-per-format.
+ *
+ * Only rows with status = 'complete' consume quota. Failed generations are
+ * free retries; pending rows are not billed until complete.
+ *
+ * Uses the count_monthly_generations RPC because PostgREST cannot express
+ * COUNT(DISTINCT generation_id) through the query builder.
  */
 export async function getMonthlyUsage(
   supabase: SupabaseClient,
@@ -21,19 +29,17 @@ export async function getMonthlyUsage(
 ): Promise<number> {
   const { start, end } = getCurrentBillingPeriod();
 
-  const { count, error } = await supabase
-    .from("repurposes")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .eq("status", "complete")
-    .gte("created_at", formatISO(start))
-    .lte("created_at", formatISO(end));
+  const { data, error } = await supabase.rpc("count_monthly_generations", {
+    p_user_id: userId,
+    p_start: formatISO(start),
+    p_end: formatISO(end),
+  });
 
   if (error) {
     throw new Error(`Failed to fetch usage: ${error.message}`);
   }
 
-  return count ?? 0;
+  return data ?? 0;
 }
 
 export async function getUserPlan(

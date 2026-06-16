@@ -107,3 +107,4 @@ next-env.d.ts
 *.cache
 tmp/
 temp/
+docs/CURSOR_TASK_generation_id.md
