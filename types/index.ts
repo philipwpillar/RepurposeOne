@@ -77,10 +77,7 @@ export const GenerateRequestSchema = z.object({
   brand_voice: BrandVoiceInputSchema.optional(),
   target_format: TargetFormatSchema.default("x_thread"),
   target_tweets: z.number().int().min(3).max(15).optional(),
-  // Shared across the 1–4 format requests of a single "Regenerate All" so they
-  // count as ONE generation for billing. Omitted on single-format runs (the DB
-  // then assigns each row its own generation_id via column default).
-  generation_id: z.string().uuid().optional(),
+  generation_id: z.string().uuid().optional(), // shared across a multi-format run (e.g. Regenerate All)
 });
 export type GenerateRequest = z.infer<typeof GenerateRequestSchema>;
 

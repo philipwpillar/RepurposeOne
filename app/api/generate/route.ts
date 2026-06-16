@@ -189,8 +189,7 @@ export async function POST(request: Request) {
       brand_voice_id: brand_voice_id ?? null,
       target_format,
       status: "pending",
-      // undefined → DB default (gen_random_uuid()), i.e. its own generation
-      generation_id: generation_id ?? undefined,
+      generation_id: generation_id ?? undefined, // undefined → DB default (own uuid); shared id groups a multi-format run for billing
     })
     .select("id")
     .single();

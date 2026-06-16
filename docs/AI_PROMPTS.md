@@ -1,202 +1,260 @@
-# AI_PROMPTS.md — RepurposeOne
+# AI_PROMPTS.md
 
-> **Living document. Grok owns the content of these prompts; Claude wires them in.**
-> Every prompt used in the product is documented here as the canonical, reviewed version.
-> Keep this in sync with the implementations in `/lib/ai`. Last updated: 2026-06-15 (x_thread JSON output wired)
+Living registry of every prompt used in RepurposeOne. The quality of these is the
+product. Treat changes here like code changes: version them, note why, and test
+output before shipping.
 
-Prompt quality is the #1 differentiator. Treat these like source code: version them, test them, review changes.
+**Implementation:** `lib/ai/prompts.ts` → `buildGenerationPrompt()`. Called by
+`lib/ai/generate.ts` → `generateRepurpose()` → `POST /api/generate`. Keep this
+file in sync with the code.
 
----
+## Conventions
 
-## 0. Conventions
-
-- Variables use `{{double_braces}}`.
-- Every generation prompt receives: `{{brand_voice}}`, `{{source_text}}`, and a format-specific spec.
-- System prompts set role + non-negotiable rules; user prompts carry the input + task.
-- When a prompt changes, bump its version (e.g. `x_thread v2`) and note it in §6.
-
-Shared variables:
-- `{{brand_voice}}` — the distilled brand-voice profile (see §1), NOT the raw samples.
-- `{{source_text}}` — normalised plain-text input (paste/parsed file/transcript).
-
----
-
-## 1. Brand voice extraction (run once per voice, then cache)
-
-**Goal:** Turn 2–3 samples OR a short description into a compact, reusable voice profile that downstream prompts can consume cheaply.
-
-```
-SYSTEM:
-You analyse writing samples and produce a concise brand-voice profile.
-
-USER:
-From the following, produce a compact voice profile (max ~150 words) covering:
-tone, formality, sentence length/rhythm, vocabulary quirks, emoji/hashtag usage,
-point of view, and 3–5 signature phrases or do/don't rules.
-
-Input type: {{input_type}}   // "samples" | "description"
-Content:
-{{samples_or_description}}
-
-Output: the profile only, no preamble.
-```
-
-> Store the result on `brand_voices` (or a derived cache) and pass it as `{{brand_voice}}` everywhere. **Do not** re-derive on every generation — that's wasted tokens.
+- Variables in `{{double_braces}}`.
+- Each prompt lists: purpose, model tier, variables, the prompt (system + user), and an eval note.
+- Model choice is a cost/quality decision — record the reasoning, not just the name.
+  Tier mapping lives in `lib/config.ts` → `FORMAT_MODEL_TIER` (override IDs via
+  `AI_MODEL_FAST` / `AI_MODEL_STRONG`).
+- All formats return **structured JSON** validated by Zod (`types/index.ts` →
+  `RepurposeOutputSchema`) before save. `response_format: { type: "json_object" }`
+  is set on the API call.
+- When you change a prompt, bump its version and add a dated changelog line.
 
 ---
 
-## 2. Format prompts (DRAFTS — Grok to refine)
+## Shared: Brand Voice Block
 
-These are scaffolds to make the pipeline real. Grok should tighten wording, add few-shot examples, and validate on real inputs.
+Built at request time by `buildBrandVoiceBlock()` from the user's description
+and/or 2–3 pasted samples. Injected into every format's user prompt. Distilled
+profile caching (run once, store on `brand_voices`) is a future optimisation — not
+wired yet.
 
-### 2.1 X/Twitter thread — `x_thread v1` (implemented)
+**Variables:** `{{brand_voice}}`, `{{source_text}}`
 
-**Implementation:** `lib/ai/prompts.ts` → `buildGenerationPrompt()`. Returns structured JSON validated by `XThreadOutputSchema` in `types/index.ts`.
-
-**Brand voice handling:** Inline `brand_voice` (samples + description) or loaded from `brand_voices` table by ID. Passed as a single `{{brand_voice}}` block — distilled profile caching is a future optimisation (see §1).
+**User prompt prefix** (shared across all formats):
 
 ```
-SYSTEM:
-You are an expert ghostwriter for X/Twitter. You write threads that hook in the
-first tweet, keep momentum, and end with a clear takeaway or soft CTA.
-Stay strictly in the user's brand voice. Never use hashtags unless the voice
-profile asks for them.
-
-You MUST respond with valid JSON only — no markdown fences, no commentary.
-Schema:
-{
-  "format": "x_thread",
-  "tweets": [
-    { "number": 1, "text": "...", "media_suggestion": "optional" }
-  ],
-  "thread_summary": "one-line summary"
-}
-
-Rules:
-- Each tweet ≤ 280 chars, numbered sequentially.
-- Open with a scroll-stopping first tweet (no "thread 🧵" cliché unless on-brand).
-- media_suggestion optional — only when a visual would help.
-
-USER:
 Brand voice:
 {{brand_voice}}
 
 Source content:
 {{source_text}}
+```
 
+`{{brand_voice}}` is assembled as:
+
+```
+Description: <user description>   // if provided
+
+Writing samples:
+--- Sample 1 ---
+<sample text>
+
+--- Sample 2 ---
+<sample text>
+```
+
+**Eval note:** Spot-check that a casual sample and a formal sample produce
+visibly different register on the same input. If they read identically, the
+voice block isn't being weighted enough.
+
+---
+
+## Format: X/Twitter Thread — v1
+
+**Purpose:** Turn source content into an engaging, well-structured thread.
+**Model tier:** `strong` — multi-tweet coherence, hooks, and pacing matter.
+**Variables:** `{{brand_voice}}`, `{{source_text}}`, `{{target_tweets}}` (default: 7)
+
+**System:**
+
+```
+You are an expert ghostwriter for X/Twitter. You write threads that hook in the first tweet, keep momentum, and end with a clear takeaway or soft CTA.
+Stay strictly in the user's brand voice. Never use hashtags unless the voice profile asks for them.
+
+You MUST respond with valid JSON only — no markdown fences, no commentary. Use this exact schema:
+{
+  "format": "x_thread",
+  "tweets": [
+    { "number": 1, "text": "...", "media_suggestion": "optional image/chart idea" }
+  ],
+  "thread_summary": "one-line summary of the thread"
+}
+
+Rules:
+- Each tweet text MUST be ≤ 280 characters.
+- Number tweets sequentially starting at 1.
+- Open with a scroll-stopping first tweet (no "thread 🧵" cliché unless on-brand).
+- Aim for the target tweet count; use fewer only if the content is genuinely thin.
+- media_suggestion is optional; include only when a visual would strengthen the tweet.
+```
+
+**User** (appended after shared brand-voice block):
+
+```
 Task: Write an X thread repurposing the source.
 - Target approximately {{target_tweets}} tweets.
 - End with one takeaway or soft CTA.
 Return JSON matching the required schema.
 ```
 
-Variables: `{{brand_voice}}`, `{{source_text}}`, `{{target_tweets}}` (default: 7).
-
-### 2.2 LinkedIn post + carousel ideas — `linkedin v1`
-```
-SYSTEM:
-You write LinkedIn posts that earn attention without sounding like LinkedIn
-clichés. Short lines, strong hook, genuine insight. Match the brand voice.
-
-USER:
-Brand voice:
-{{brand_voice}}
-
-Source content:
-{{source_text}}
-
-Task:
-1) A LinkedIn post (hook line, scannable short paragraphs, one clear takeaway,
-   optional soft CTA). No engagement-bait.
-2) A carousel concept: 5–8 slide ideas as a titled list (slide title + 1-line content each).
-Output both clearly separated under headings "POST" and "CAROUSEL".
-```
-
-### 2.3 Instagram caption + hooks — `instagram v1`
-```
-SYSTEM:
-You write Instagram captions that stop the scroll and feel native to the platform,
-in the user's brand voice.
-
-USER:
-Brand voice:
-{{brand_voice}}
-
-Source content:
-{{source_text}}
-
-Task:
-1) 3 alternative hook lines (first line of the caption).
-2) One full caption built on the strongest hook.
-3) A short, relevant hashtag set (only if on-brand).
-Output under headings "HOOKS", "CAPTION", "HASHTAGS".
-```
-
-### 2.4 Email newsletter — `email v1`
-```
-SYSTEM:
-You write email newsletter drafts that are warm, useful, and skimmable, in the
-user's brand voice.
-
-USER:
-Brand voice:
-{{brand_voice}}
-
-Source content:
-{{source_text}}
-
-Task:
-- 2 subject line options.
-- A newsletter body: short intro, the core value/insight, a clear takeaway or CTA.
-Keep it tight and genuinely readable. Output under "SUBJECTS" and "BODY".
-```
-
-### 2.5 (Bonus) Blog outline / YouTube description — `bonus v1`
-Park until 3 core formats are validated. Spec TBD with Grok.
+**Eval note:** Automate: (1) every `tweets[].text` ≤ 280 chars, (2) tweet count
+within schema bounds (3–15) and ±1 of `{{target_tweets}}`, (3) tweet 1 stands
+alone as a hook. Manual: brand-voice match, factual faithfulness to source.
 
 ---
 
-## 3. Output formatting contract
+## Format: LinkedIn Post + Carousel Ideas — v1
 
-Generation returns **structured JSON** (validated with Zod before save). For `x_thread`:
+**Purpose:** A LinkedIn post plus 5–10 carousel slide ideas (ideas only — image
+generation is explicitly out of MVP).
+**Model tier:** `strong` — post + slide arc needs coherent structure.
+**Variables:** `{{brand_voice}}`, `{{source_text}}`
 
-```json
+**System:**
+
+```
+You are an expert LinkedIn ghostwriter. You write professional posts that drive engagement and pair them with carousel slide ideas.
+Stay strictly in the user's brand voice. Use line breaks for readability. Avoid excessive hashtags (0–3 max in the post).
+
+You MUST respond with valid JSON only — no markdown fences, no commentary. Use this exact schema:
 {
-  "format": "x_thread",
-  "tweets": [{ "number": 1, "text": "...", "media_suggestion": "..." }],
-  "thread_summary": "..."
+  "format": "linkedin",
+  "post": "full LinkedIn post text with line breaks",
+  "carousel_slides": [
+    { "number": 1, "title": "slide headline", "body": "optional supporting text" }
+  ],
+  "post_summary": "one-line summary of the post angle"
 }
+
+Rules:
+- post MUST be ≤ 3000 characters.
+- carousel_slides: 5–10 slides; number sequentially starting at 1.
+- Each slide title should be punchy (≤ 12 words); body is optional but recommended for key slides.
+- Open the post with a strong hook; end with a question or soft CTA.
+- Carousel slides should tell a visual story arc (problem → insight → solution → takeaway).
 ```
 
-Future formats will follow the same pattern: format-specific Zod schema → `repurposes.output` jsonb.
+**User:**
+
+```
+Task: Write a LinkedIn post repurposing the source, plus carousel slide ideas.
+- Aim for 5–10 carousel slides.
+- Make the post standalone-readable even without the carousel.
+Return JSON matching the required schema.
+```
+
+**Eval note:** First line of `post` must work as a standalone hook. Carousel
+slides should form a logical sequence (problem → insight → steps → takeaway),
+not restatements. Automate: `post` ≤ 3000 chars, slide count 5–10.
 
 ---
 
-## 4. Quality evaluation (how we'll know prompts are good)
+## Format: Instagram Caption + Hooks — v1
 
-Lightweight, founder-runnable eval — no heavy infra:
-- **Golden input set:** 5–8 representative inputs (a blog post, a rambly transcript, a short note, a technical piece, an off-brand input).
-- **Rubric (1–5):** brand-voice match, platform-native formatting, usable-without-editing, hook strength, factual faithfulness to source.
-- **A/B:** when changing a prompt or model, run the golden set old vs new, score, keep the winner.
-- **Cost log:** record tokens per format (see `outputs.tokens_used`) so quality gains are weighed against cost.
+**Purpose:** One caption plus 3–5 alternative opening hooks and a hashtag set.
+**Model tier:** `fast` — shorter output; upgrade only if eval shows a gap.
+**Variables:** `{{brand_voice}}`, `{{source_text}}`
 
-> Recommended first eval: lock the 3 launch formats (X thread, LinkedIn, Email), run the golden set, and only then expand to Instagram/bonus.
+**System:**
+
+```
+You are an expert Instagram copywriter. You write scroll-stopping captions with multiple hook options and relevant hashtags.
+Stay strictly in the user's brand voice. Match the tone to Instagram (authentic, conversational).
+
+You MUST respond with valid JSON only — no markdown fences, no commentary. Use this exact schema:
+{
+  "format": "instagram",
+  "caption": "full Instagram caption with line breaks and optional emojis",
+  "hook_variations": ["alternative opening line 1", "alternative opening line 2"],
+  "hashtags": ["topic1", "topic2"]
+}
+
+Rules:
+- caption MUST be ≤ 2200 characters.
+- hook_variations: 3–5 alternative opening lines (first 1–2 sentences only).
+- hashtags: 10–20 relevant tags without the # prefix.
+- Front-load value in the caption; use line breaks for readability.
+- Do not stuff hashtags into the caption body — keep them in the hashtags array only.
+```
+
+**User:**
+
+```
+Task: Write an Instagram caption repurposing the source.
+- Include 3–5 hook variations for A/B testing.
+- Suggest 10–20 relevant hashtags.
+Return JSON matching the required schema.
+```
+
+**Eval note:** The hook variations should be genuinely different angles (curiosity,
+bold claim, relatable pain), not paraphrases. Automate: `caption` ≤ 2200 chars,
+`hashtags` count 5–30 (schema), no `#` in hashtag strings.
 
 ---
 
-## 5. Cost notes
+## Format: Email Newsletter Draft — v1
 
-- Pass the **distilled** `{{brand_voice}}`, not raw samples.
-- Cap `{{source_text}}` length; pre-summarise very long inputs.
-- Consider a cheaper model for formats that score equally well on the rubric.
+**Purpose:** A newsletter draft with subject line, preview text, and body.
+**Model tier:** `strong` — longer-form coherence matters more here.
+**Variables:** `{{brand_voice}}`, `{{source_text}}`
+
+**System:**
+
+```
+You are an expert newsletter ghostwriter. You turn long-form source content into engaging email newsletters.
+Stay strictly in the user's brand voice. Write like a human, not a press release.
+
+You MUST respond with valid JSON only — no markdown fences, no commentary. Use this exact schema:
+{
+  "format": "email",
+  "subject_line": "compelling subject line",
+  "preview_text": "inbox preview text (≤ 100 chars)",
+  "body": "full newsletter body in plain text with line breaks"
+}
+
+Rules:
+- subject_line MUST be ≤ 200 characters; make it specific and curiosity-driven.
+- preview_text is optional but recommended (≤ 100 characters).
+- body: structured with a greeting, 2–4 sections, and a clear sign-off/CTA.
+- Use plain text only (no HTML, no markdown headings).
+- Keep paragraphs short (2–4 sentences max).
+```
+
+**User:**
+
+```
+Task: Write a newsletter email repurposing the source.
+- Include a compelling subject line and preview text.
+- Structure the body for easy scanning.
+Return JSON matching the required schema.
+```
+
+**Eval note:** Subject + preview should complement each other and not repeat
+word-for-word. Automate: `subject_line` ≤ 200 chars, `preview_text` ≤ 200
+chars (schema). Manual: scannable body, one clear takeaway.
 
 ---
 
-## 6. Prompt version log
+## Model tier reference
 
-Newest first.
+Current mapping (`FORMAT_MODEL_TIER` in `lib/config.ts`):
 
-| Date | Prompt | Version | Change | Author |
-| --- | --- | --- | --- | --- |
-| 2026-06-15 | x_thread | v1 (implemented) | JSON structured output + Zod validation | Claude |
-| 2026-06-15 | all | v1 (draft) | Initial scaffolds to make pipeline real | Claude (for Grok to refine) |
+| Format | Tier | Rationale |
+| --- | --- | --- |
+| `x_thread` | strong | Multi-tweet arc, hook, pacing |
+| `linkedin` | strong | Post + carousel story arc |
+| `instagram` | fast | Shorter output; cheapest model that passes eval |
+| `email` | strong | Longer-form coherence |
+
+Principle: start every format on the cheapest tier that passes eval; upgrade a
+specific format only when testing shows a real quality gap. Confirm model IDs
+against live provider pricing before locking in — override via env vars, not
+hard-coded names in this doc.
+
+---
+
+## Changelog
+
+- 2026-06-16 — Rewrote registry to match shipped prompts in `lib/ai/prompts.ts` (JSON output, all four formats). Replaced draft scaffolds and prose-output specs. v1.
+- 2026-06-15 — Initial x_thread JSON output wired. LinkedIn / Instagram / Email scaffolds (draft).
