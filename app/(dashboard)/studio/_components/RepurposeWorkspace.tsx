@@ -2,33 +2,33 @@
 
 import React, { useState } from 'react';
 
-interface OutputFormat {
-  id: string;
-  type: string;
-  title: string;
-  preview: string;
-  icon: string;
-}
-
 interface RepurposeWorkspaceProps {
   // Ready for real data later
   initialInput?: string;
-  onGenerate?: (input: string) => void;
-  onRegenerate?: (formatId: string) => void;
+  initialTwitterOutput?: string;
+  initialTwitterLength?: number;
+  onTwitterGenerate?: (output: string) => void;
 }
 
 export default function RepurposeWorkspace({ 
   initialInput = "How I built and launched my first SaaS in 30 days while working full-time",
-  onGenerate,
-  onRegenerate 
+  initialTwitterOutput,
+  initialTwitterLength,
+  onTwitterGenerate,
 }: RepurposeWorkspaceProps) {
   
   // === State ===
-  const [inputSummary, setInputSummary] = useState(initialInput);
+  const [inputSummary] = useState(initialInput);
   const [isInputModalOpen, setIsInputModalOpen] = useState(false);
   
-  const [twitterLength, setTwitterLength] = useState(6);
-  const [pendingTwitterLength, setPendingTwitterLength] = useState(6);
+  const [twitterLength, setTwitterLength] = useState(initialTwitterLength ?? 6);
+  const [pendingTwitterLength, setPendingTwitterLength] = useState(initialTwitterLength ?? 6);
+  const [twitterOutput, setTwitterOutput] = useState(
+    initialTwitterOutput ??
+      "I launched my first SaaS in 30 days while keeping my day job.\nHere’s the exact playbook I used (and the costly mistakes I made)."
+  );
+  const [isTwitterLoading, setIsTwitterLoading] = useState(false);
+  const [twitterError, setTwitterError] = useState<string | null>(null);
   
   const [linkedinSlides, setLinkedinSlides] = useState([
     "The harsh truth about launching a SaaS while employed full-time",
@@ -39,17 +39,76 @@ export default function RepurposeWorkspace({
   ]);
 
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error] = useState<string | null>(null);
 
   // Mock usage for MVP
   const [repurposesUsed] = useState(7);
   const repurposesLimit = 10;
 
   // === Handlers ===
+  const callGenerateApi = async (params: {
+    source: string;
+    targetFormat: string;
+    numTweets?: number;
+  }): Promise<string> => {
+    const response = await fetch('/api/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        source: params.source,
+        targetFormat: params.targetFormat,
+        numTweets: params.numTweets,
+      }),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(text || 'Failed to generate content');
+    }
+
+    const data = await response.json();
+    // Expecting backend to return { output: string }
+    if (typeof data.output !== 'string') {
+      throw new Error('Unexpected response from generation API');
+    }
+
+    return data.output;
+  };
+
+  const generateTwitter = async (lengthOverride?: number) => {
+    const targetLength = lengthOverride ?? pendingTwitterLength;
+    setTwitterError(null);
+    setIsTwitterLoading(true);
+    setIsLoading(true);
+
+    try {
+      const output = await callGenerateApi({
+        source: inputSummary,
+        targetFormat: 'twitter',
+        numTweets: targetLength,
+      });
+
+      setTwitterLength(targetLength);
+      setPendingTwitterLength(targetLength);
+      setTwitterOutput(output);
+      onTwitterGenerate?.(output);
+    } catch (err) {
+      console.error(err);
+      setTwitterError(
+        err instanceof Error
+          ? err.message
+          : 'Something went wrong while generating the Twitter thread. Please try again.'
+      );
+    } finally {
+      setIsTwitterLoading(false);
+      setIsLoading(false);
+    }
+  };
+
   const handleApplyTwitterLength = () => {
-    setTwitterLength(pendingTwitterLength);
-    // In real app: call regeneration API here
-    console.log(`Regenerating Twitter thread with ${pendingTwitterLength} tweets`);
+    void generateTwitter(pendingTwitterLength);
   };
 
   const addLinkedInSlide = () => {
@@ -68,32 +127,28 @@ export default function RepurposeWorkspace({
   };
 
   const regenerateFormat = async (format: string) => {
-    setIsLoading(true);
-    setError(null);
+    // Only X / Twitter is wired to the real API in this iteration.
+    if (format === 'twitter') {
+      void generateTwitter();
+      return;
+    }
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 800));
-
-    // TODO: Replace with real API call
-    console.log(`Regenerating format: ${format}`);
-    
-    setIsLoading(false);
+    setError('Only the X / Twitter format is available right now. Other formats are coming soon.');
   };
 
   const regenerateAll = async () => {
-    setIsLoading(true);
+    // For now, regenerating all just means regenerating the X / Twitter thread.
     setError(null);
-
-    await new Promise(resolve => setTimeout(resolve, 1200));
-    console.log("Regenerating all formats");
-    
-    setIsLoading(false);
+    void generateTwitter();
   };
 
   const copyToClipboard = (format: string) => {
-    // TODO: Connect to real output content
-    navigator.clipboard.writeText(`[Copied content for ${format}]`);
-    alert(`Copied ${format} to clipboard`);
+    if (format === 'twitter') {
+      navigator.clipboard.writeText(twitterOutput);
+      return;
+    }
+
+    setError('Copy is only available for the X / Twitter format right now. Other formats are coming soon.');
   };
 
   const exportBundle = () => {
@@ -185,16 +240,35 @@ export default function RepurposeWorkspace({
                 <div className="text-xs text-slate-500">{twitterLength} tweets</div>
               </div>
             </div>
-            <button onClick={() => copyToClipboard('twitter')} className="text-xs px-3 py-1.5 rounded-2xl border border-slate-200">
+            <button
+              onClick={() => copyToClipboard('twitter')}
+              disabled={isTwitterLoading}
+              className="text-xs px-3 py-1.5 rounded-2xl border border-slate-200 disabled:opacity-50"
+            >
               Copy
             </button>
           </div>
 
           <div className="p-5">
-            <div className="text-sm text-slate-700 mb-4 leading-relaxed">
-              I launched my first SaaS in 30 days while keeping my day job.<br />
-              Here’s the exact playbook I used (and the costly mistakes I made).
+            <div className="text-sm text-slate-700 mb-4 leading-relaxed whitespace-pre-line">
+              {twitterOutput}
             </div>
+
+            {twitterError && (
+              <div className="mb-3 text-xs text-red-700 bg-red-50 border border-red-200 rounded-2xl px-3 py-2 flex items-start gap-2">
+                <i className="fas fa-exclamation-circle mt-0.5"></i>
+                <div className="flex-1">
+                  <div>{twitterError}</div>
+                  <button
+                    type="button"
+                    onClick={() => void generateTwitter()}
+                    className="mt-1 text-[11px] font-medium text-red-700 underline underline-offset-2"
+                  >
+                    Try again
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Twitter Length Control */}
             <div>
@@ -213,16 +287,23 @@ export default function RepurposeWorkspace({
               <div className="flex justify-end mt-2">
                 <button 
                   onClick={handleApplyTwitterLength}
-                  className="text-xs px-4 py-1.5 rounded-2xl bg-teal-500 text-white font-medium"
+                  disabled={isTwitterLoading}
+                  className="text-xs px-4 py-1.5 rounded-2xl bg-teal-500 text-white font-medium disabled:opacity-50"
                 >
-                  Apply & Regenerate
+                  {isTwitterLoading ? 'Generating...' : 'Apply & Regenerate'}
                 </button>
               </div>
             </div>
           </div>
 
           <div className="px-5 py-3 bg-slate-50 border-t flex gap-2">
-            <button onClick={() => regenerateFormat('twitter')} className="flex-1 py-2 text-xs rounded-2xl border border-slate-200">Regenerate</button>
+            <button
+              onClick={() => regenerateFormat('twitter')}
+              disabled={isTwitterLoading}
+              className="flex-1 py-2 text-xs rounded-2xl border border-slate-200 disabled:opacity-50"
+            >
+              {isTwitterLoading ? 'Generating…' : 'Regenerate'}
+            </button>
             <button onClick={() => alert("Edit modal coming soon")} className="flex-1 py-2 text-xs rounded-2xl border border-slate-200">Edit</button>
           </div>
         </div>
@@ -234,10 +315,18 @@ export default function RepurposeWorkspace({
               <i className="fab fa-linkedin text-xl text-blue-600"></i>
               <div>
                 <div className="font-semibold">LinkedIn Carousel</div>
-                <div className="text-xs text-slate-500">{linkedinSlides.length} slides</div>
+                <div className="text-xs text-slate-500">
+                  {linkedinSlides.length} slides • <span className="font-medium text-amber-600">Coming soon</span>
+                </div>
               </div>
             </div>
-            <button onClick={() => copyToClipboard('linkedin')} className="text-xs px-3 py-1.5 rounded-2xl border border-slate-200">Copy</button>
+            <button
+              disabled
+              title="Coming soon"
+              className="text-xs px-3 py-1.5 rounded-2xl border border-slate-200 opacity-50 cursor-not-allowed"
+            >
+              Copy
+            </button>
           </div>
 
           <div className="p-5 space-y-2">
@@ -257,27 +346,61 @@ export default function RepurposeWorkspace({
           </div>
 
           <div className="px-5 py-3 bg-slate-50 border-t flex gap-2">
-            <button onClick={() => regenerateFormat('linkedin')} className="flex-1 py-2 text-xs rounded-2xl border border-slate-200">Regenerate</button>
+            <button
+              disabled
+              title="Coming soon"
+              className="flex-1 py-2 text-xs rounded-2xl border border-slate-200 opacity-50 cursor-not-allowed"
+            >
+              Regenerate
+            </button>
             <button onClick={() => alert("Edit modal coming soon")} className="flex-1 py-2 text-xs rounded-2xl border border-slate-200">Edit</button>
           </div>
         </div>
 
         {/* Instagram & Email (simplified for brevity) */}
         <div className="bg-white border border-slate-200 rounded-3xl p-5">
-          <div className="font-semibold mb-2">Instagram Caption</div>
+          <div className="font-semibold mb-2">
+            Instagram Caption <span className="ml-1 text-[11px] font-medium text-amber-600">Coming soon</span>
+          </div>
           <div className="text-sm text-slate-700">Built my first SaaS in 30 days while working full-time. Here’s the exact framework.</div>
           <div className="flex gap-2 mt-3">
-            <button onClick={() => regenerateFormat('instagram')} className="flex-1 py-2 text-xs rounded-2xl border border-slate-200">Regenerate</button>
-            <button onClick={() => copyToClipboard('instagram')} className="flex-1 py-2 text-xs rounded-2xl border border-slate-200">Copy</button>
+            <button
+              disabled
+              title="Coming soon"
+              className="flex-1 py-2 text-xs rounded-2xl border border-slate-200 opacity-50 cursor-not-allowed"
+            >
+              Regenerate
+            </button>
+            <button
+              disabled
+              title="Coming soon"
+              className="flex-1 py-2 text-xs rounded-2xl border border-slate-200 opacity-50 cursor-not-allowed"
+            >
+              Copy
+            </button>
           </div>
         </div>
 
         <div className="bg-white border border-slate-200 rounded-3xl p-5">
-          <div className="font-semibold mb-2">Email Newsletter</div>
+          <div className="font-semibold mb-2">
+            Email Newsletter <span className="ml-1 text-[11px] font-medium text-amber-600">Coming soon</span>
+          </div>
           <div className="text-sm text-slate-700">Subject: How I launched a SaaS in 30 days (while keeping my job)</div>
           <div className="flex gap-2 mt-3">
-            <button onClick={() => regenerateFormat('email')} className="flex-1 py-2 text-xs rounded-2xl border border-slate-200">Regenerate</button>
-            <button onClick={() => copyToClipboard('email')} className="flex-1 py-2 text-xs rounded-2xl border border-slate-200">Copy</button>
+            <button
+              disabled
+              title="Coming soon"
+              className="flex-1 py-2 text-xs rounded-2xl border border-slate-200 opacity-50 cursor-not-allowed"
+            >
+              Regenerate
+            </button>
+            <button
+              disabled
+              title="Coming soon"
+              className="flex-1 py-2 text-xs rounded-2xl border border-slate-200 opacity-50 cursor-not-allowed"
+            >
+              Copy
+            </button>
           </div>
         </div>
       </div>
@@ -290,7 +413,7 @@ export default function RepurposeWorkspace({
             disabled={isLoading}
             className="flex-1 py-3 text-sm font-medium rounded-2xl border border-slate-300 disabled:opacity-50"
           >
-            {isLoading ? "Regenerating..." : "Regenerate All"}
+            {isLoading ? "Regenerating X / Twitter…" : "Regenerate X / Twitter"}
           </button>
           
           <button 
