@@ -1,6 +1,23 @@
 "use client";
 
 import React, { useState } from 'react';
+import type {
+  BrandVoiceInput,
+  GenerateErrorResponse,
+  GenerateSuccessResponse,
+  XThreadOutput,
+} from '@/types';
+
+const TWITTER_LENGTH_MIN = 3;
+const TWITTER_LENGTH_MAX = 15;
+
+function clampTargetTweets(count: number): number {
+  return Math.min(TWITTER_LENGTH_MAX, Math.max(TWITTER_LENGTH_MIN, count));
+}
+
+function formatXThreadOutput(output: XThreadOutput): string {
+  return output.tweets.map((tweet) => tweet.text).join('\n\n');
+}
 
 interface RepurposeWorkspaceProps {
   // Ready for real data later
@@ -21,8 +38,12 @@ export default function RepurposeWorkspace({
   const [inputSummary] = useState(initialInput);
   const [isInputModalOpen, setIsInputModalOpen] = useState(false);
   
-  const [twitterLength, setTwitterLength] = useState(initialTwitterLength ?? 6);
-  const [pendingTwitterLength, setPendingTwitterLength] = useState(initialTwitterLength ?? 6);
+  const [twitterLength, setTwitterLength] = useState(
+    clampTargetTweets(initialTwitterLength ?? 6)
+  );
+  const [pendingTwitterLength, setPendingTwitterLength] = useState(
+    clampTargetTweets(initialTwitterLength ?? 6)
+  );
   const [twitterOutput, setTwitterOutput] = useState(
     initialTwitterOutput ??
       "I launched my first SaaS in 30 days while keeping my day job.\nHere’s the exact playbook I used (and the costly mistakes I made)."
@@ -39,38 +60,55 @@ export default function RepurposeWorkspace({
   ]);
 
   const [isLoading, setIsLoading] = useState(false);
-  const [error] = useState<string | null>(null);
 
   // Mock usage for MVP
   const [repurposesUsed] = useState(7);
   const repurposesLimit = 10;
 
   // === Handlers ===
-  const callGenerateApi = async (params: {
-    source: string;
-    targetFormat: string;
-    numTweets?: number;
-  }): Promise<string> => {
+  const callGenerateApi = async (
+    inputContent: string,
+    targetTweets: number
+  ): Promise<XThreadOutput> => {
+    // TODO: wire to real brand voice
+    const brandVoice: BrandVoiceInput = {
+      samples: [],
+      description: 'Professional, UK founder',
+    };
+
     const response = await fetch('/api/generate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        source: params.source,
-        targetFormat: params.targetFormat,
-        numTweets: params.numTweets,
+        input_type: 'paste',
+        input_content: inputContent,
+        target_format: 'x_thread',
+        target_tweets: clampTargetTweets(targetTweets),
+        brand_voice: brandVoice,
       }),
     });
 
+    const text = await response.text();
+
     if (!response.ok) {
-      const text = await response.text();
-      throw new Error(text || 'Failed to generate content');
+      let message = 'Failed to generate content';
+      try {
+        const errorData = JSON.parse(text) as GenerateErrorResponse;
+        if (errorData.error) {
+          message = errorData.error;
+        }
+      } catch {
+        if (text) {
+          message = text;
+        }
+      }
+      throw new Error(message);
     }
 
-    const data = await response.json();
-    // Expecting backend to return { output: string }
-    if (typeof data.output !== 'string') {
+    const data = JSON.parse(text) as GenerateSuccessResponse;
+    if (!data.output || data.output.format !== 'x_thread') {
       throw new Error('Unexpected response from generation API');
     }
 
@@ -78,22 +116,19 @@ export default function RepurposeWorkspace({
   };
 
   const generateTwitter = async (lengthOverride?: number) => {
-    const targetLength = lengthOverride ?? pendingTwitterLength;
+    const targetLength = clampTargetTweets(lengthOverride ?? pendingTwitterLength);
     setTwitterError(null);
     setIsTwitterLoading(true);
     setIsLoading(true);
 
     try {
-      const output = await callGenerateApi({
-        source: inputSummary,
-        targetFormat: 'twitter',
-        numTweets: targetLength,
-      });
+      const output = await callGenerateApi(inputSummary, targetLength);
+      const displayText = formatXThreadOutput(output);
 
       setTwitterLength(targetLength);
       setPendingTwitterLength(targetLength);
-      setTwitterOutput(output);
-      onTwitterGenerate?.(output);
+      setTwitterOutput(displayText);
+      onTwitterGenerate?.(displayText);
     } catch (err) {
       console.error(err);
       setTwitterError(
@@ -126,29 +161,20 @@ export default function RepurposeWorkspace({
     setLinkedinSlides(linkedinSlides.filter((_, i) => i !== index));
   };
 
-  const regenerateFormat = async (format: string) => {
-    // Only X / Twitter is wired to the real API in this iteration.
+  const regenerateFormat = (format: string) => {
     if (format === 'twitter') {
       void generateTwitter();
-      return;
     }
-
-    setError('Only the X / Twitter format is available right now. Other formats are coming soon.');
   };
 
-  const regenerateAll = async () => {
-    // For now, regenerating all just means regenerating the X / Twitter thread.
-    setError(null);
+  const regenerateAll = () => {
     void generateTwitter();
   };
 
   const copyToClipboard = (format: string) => {
     if (format === 'twitter') {
-      navigator.clipboard.writeText(twitterOutput);
-      return;
+      void navigator.clipboard.writeText(twitterOutput);
     }
-
-    setError('Copy is only available for the X / Twitter format right now. Other formats are coming soon.');
   };
 
   const exportBundle = () => {
@@ -278,10 +304,10 @@ export default function RepurposeWorkspace({
               </div>
               <input 
                 type="range" 
-                min="4" 
-                max="10" 
+                min={TWITTER_LENGTH_MIN}
+                max={TWITTER_LENGTH_MAX}
                 value={pendingTwitterLength} 
-                onChange={(e) => setPendingTwitterLength(parseInt(e.target.value))}
+                onChange={(e) => setPendingTwitterLength(clampTargetTweets(parseInt(e.target.value, 10)))}
                 className="w-full accent-teal-500" 
               />
               <div className="flex justify-end mt-2">
