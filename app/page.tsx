@@ -48,9 +48,6 @@ export default async function HomePage() {
               <Link href="/sign-up">Start free</Link>
             </Button>
           )}
-          <Button asChild variant="outline" size="lg">
-            <Link href="/test-generate">Test endpoint</Link>
-          </Button>
         </div>
       </section>
     </main>
