@@ -56,8 +56,8 @@ export type ModelTier = "fast" | "strong";
  * Provider-specific defaults when AI_MODEL_FAST / AI_MODEL_STRONG are unset.
  *
  * OpenRouter:
- *   fast   — google/gemini-2.0-flash: very low cost, low latency; fine for short outputs.
- *   strong — anthropic/claude-3.5-sonnet: strong instruction-following and JSON
+ *   fast   — google/gemini-3.1-flash-lite: very low cost, low latency; fine for short outputs.
+ *   strong — anthropic/claude-sonnet-4.6: strong instruction-following and JSON
  *            structure at a similar or better price than gpt-4o on OpenRouter.
  *
  * OpenAI (direct):
@@ -70,8 +70,8 @@ const PROVIDER_DEFAULT_MODELS: Record<AiProvider, Record<ModelTier, string>> = {
     strong: "gpt-4o",
   },
   openrouter: {
-    fast: "google/gemini-2.0-flash",
-    strong: "anthropic/claude-3.5-sonnet",
+    fast: "google/gemini-3.1-flash-lite",
+    strong: "anthropic/claude-sonnet-4.6",
   },
 };
 
@@ -87,7 +87,7 @@ export const STRONG_MODEL =
  * Maps each output format to a model tier.
  *
  *   x_thread → strong — threads need coherent multi-tweet arcs, hooks, and pacing;
- *                       routed to STRONG_MODEL (Claude 3.5 Sonnet on OpenRouter by default).
+ *                       routed to STRONG_MODEL (Claude Sonnet 4.6 on OpenRouter by default).
  *
  * Add new formats here when they ship (e.g. linkedin_post → "fast").
  */
