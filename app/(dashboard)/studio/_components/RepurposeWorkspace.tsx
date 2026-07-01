@@ -18,6 +18,7 @@ import type {
   LinkedInOutput,
   RepurposeOutput,
   TargetFormat,
+  UsageInfo,
   XThreadOutput,
 } from '@/types';
 
@@ -107,6 +108,7 @@ export default function RepurposeWorkspace({
     createFormatRecord(null)
   );
   const [isRegeneratingAll, setIsRegeneratingAll] = useState(false);
+  const [usedCount, setUsedCount] = useState(repurposesUsed);
 
   const isAnyLoading =
     isRegeneratingAll || ALL_FORMATS.some((format) => formatLoading[format]);
@@ -117,7 +119,7 @@ export default function RepurposeWorkspace({
       targetFormat: TargetFormat,
       targetTweets?: number,
       generationId?: string
-    ): Promise<RepurposeOutput> => {
+    ): Promise<{ output: RepurposeOutput; usage: UsageInfo }> => {
       const body: Record<string, unknown> = {
         input_type: 'paste',
         input_content: inputContent,
@@ -172,7 +174,7 @@ export default function RepurposeWorkspace({
         throw new Error('Unexpected response from generation API');
       }
 
-      return data.output;
+      return { output: data.output, usage: data.usage };
     },
     [brandVoice, pendingTwitterLength]
   );
@@ -224,13 +226,14 @@ export default function RepurposeWorkspace({
       setFormatLoading((prev) => ({ ...prev, [format]: true }));
 
       try {
-        const output = await callGenerateApi(
+        const { output, usage } = await callGenerateApi(
           trimmed,
           format,
           options?.targetTweets,
           options?.generationId
         );
         applyOutput(format, output);
+        setUsedCount(usage.used);
 
         if (format === 'x_thread' && options?.targetTweets !== undefined) {
           const length = clampTargetTweets(options.targetTweets);
@@ -425,7 +428,7 @@ export default function RepurposeWorkspace({
 
       <div className="mb-4 px-1 flex items-center justify-between text-sm">
         <div className="text-slate-600">
-          <span className="font-medium">{repurposesUsed} / {repurposesLimit}</span> repurposes used this month
+          <span className="font-medium">{usedCount} / {repurposesLimit}</span> repurposes used this month
         </div>
         <Link
           href="/upgrade"
