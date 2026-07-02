@@ -1,6 +1,6 @@
 # AI_PROMPTS.md
 
-Living registry of every prompt used in RepurposeOne. The quality of these is the
+Living registry of every prompt used in Voiceora. The quality of these is the
 product. Treat changes here like code changes: version them, note why, and test
 output before shipping.
 

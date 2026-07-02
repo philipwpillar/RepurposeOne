@@ -1,4 +1,4 @@
--- RepurposeOne initial schema: profiles, brand_voices, repurposes
+-- Voiceora initial schema: profiles, brand_voices, repurposes
 -- Run via Supabase CLI: supabase db push
 -- Or paste into Supabase SQL Editor
 

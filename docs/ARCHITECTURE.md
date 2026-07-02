@@ -1,4 +1,4 @@
-# ARCHITECTURE.md — RepurposeOne
+# ARCHITECTURE.md — Voiceora
 
 > **Living document.** Technical decisions, stack, data model, and the patterns we commit to.
 > Update whenever an architectural decision is made. Last updated: 2026-06-15

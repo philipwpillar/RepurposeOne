@@ -3,8 +3,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "RepurposeOne",
-    template: "%s | RepurposeOne",
+    default: "Voiceora",
+    template: "%s | Voiceora",
   },
   description:
     "Turn one piece of content into platform-native outputs in your brand voice — X threads, LinkedIn, and more.",

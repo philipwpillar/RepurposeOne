@@ -33,7 +33,7 @@ export function AppShell({ children, usage }: AppShellProps) {
       <aside className="hidden w-64 flex-col border-r border-border bg-card md:flex">
         <div className="flex h-16 items-center border-b border-border px-6">
           <Link href="/dashboard" className="text-lg font-bold tracking-tight">
-            RepurposeOne
+            Voiceora
           </Link>
         </div>
 
@@ -88,7 +88,7 @@ export function AppShell({ children, usage }: AppShellProps) {
         <header className="border-b border-border bg-card md:hidden">
           <div className="flex h-14 items-center justify-between px-4">
             <Link href="/dashboard" className="text-lg font-bold">
-              RepurposeOne
+              Voiceora
             </Link>
             <Badge variant={atLimit ? "destructive" : "secondary"}>
               {usage.used}/{usage.limit}

@@ -100,7 +100,7 @@ export function AuthForm({ mode, redirectTo = "/dashboard", initialError }: Auth
         <CardDescription>
           {isSignUp
             ? "Start repurposing content in your brand voice"
-            : "Sign in to continue to RepurposeOne"}
+            : "Sign in to continue to Voiceora"}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

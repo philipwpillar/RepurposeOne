@@ -1,11 +1,11 @@
-# RepurposeOne
+# Voiceora
 
 AI-powered content repurposing platform. Turn one piece of content into high-quality, brand-consistent outputs for X/Twitter threads, LinkedIn posts & carousels, Instagram captions, email newsletters, and more — in seconds.
 
 **Status**: MVP in active development (solo founder).  
 **Goal**: First paying users in 3–5 weeks, £1–2k MRR within 8–12 weeks.
 
-## What RepurposeOne Does
+## What Voiceora Does
 Users paste or upload content (text, blog posts, transcripts, PDFs, or basic audio) and instantly get platform-optimised outputs that match their brand voice.
 
 **Key Differentiators**

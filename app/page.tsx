@@ -11,7 +11,7 @@ export default async function HomePage() {
   return (
     <main className="flex min-h-screen flex-col">
       <header className="flex items-center justify-between border-b border-border px-6 py-4">
-        <span className="text-lg font-bold tracking-tight">RepurposeOne</span>
+        <span className="text-lg font-bold tracking-tight">Voiceora</span>
         <div className="flex gap-2">
           {user ? (
             <Button asChild>
@@ -35,7 +35,7 @@ export default async function HomePage() {
           One piece of content. Every platform. Your voice.
         </h1>
         <p className="max-w-lg text-lg text-muted-foreground">
-          RepurposeOne turns long-form content into platform-native outputs —
+          Voiceora turns long-form content into platform-native outputs —
           starting with X/Twitter threads that sound like you wrote them.
         </p>
         <div className="flex flex-wrap justify-center gap-3">

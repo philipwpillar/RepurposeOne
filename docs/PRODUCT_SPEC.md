@@ -1,4 +1,4 @@
-# PRODUCT_SPEC.md — RepurposeOne
+# PRODUCT_SPEC.md — Voiceora
 
 > **Living document.** This is the shared source of truth for product decisions, scope, and roadmap.
 > Grok owns strategic direction; Claude (Cursor) owns implementation. Update this file whenever a decision is made.
@@ -8,7 +8,7 @@
 
 ## 1. One-liner
 
-RepurposeOne turns a single piece of content (paste, .txt/.pdf, or basic audio) into high-quality, **brand-consistent** outputs for X/Twitter threads, LinkedIn posts + carousel ideas, Instagram captions + hooks, and email newsletters — in seconds.
+Voiceora turns a single piece of content (paste, .txt/.pdf, or basic audio) into high-quality, **brand-consistent** outputs for X/Twitter threads, LinkedIn posts + carousel ideas, Instagram captions + hooks, and email newsletters — in seconds.
 
 **Differentiators (in priority order):**
 1. Brand voice quality (learns from the user's samples and applies it consistently)

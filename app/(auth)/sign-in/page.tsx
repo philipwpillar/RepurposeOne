@@ -12,7 +12,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-4">
       <Link href="/" className="text-xl font-bold tracking-tight">
-        RepurposeOne
+        Voiceora
       </Link>
       <AuthForm
         mode="sign-in"
