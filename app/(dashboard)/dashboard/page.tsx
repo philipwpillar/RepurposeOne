@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { format } from "date-fns";
 import { ArrowRight, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { checkUsageLimit } from "@/lib/usage";
+import { CheckoutBanner } from "@/components/billing/checkout-banner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -43,6 +45,10 @@ export default async function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
+      <Suspense fallback={null}>
+        <CheckoutBanner />
+      </Suspense>
+
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Dashboard</h1>
