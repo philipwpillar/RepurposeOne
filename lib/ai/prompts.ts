@@ -67,21 +67,21 @@ Rules:
 - Open the post with a strong hook; end with a question or soft CTA.
 - Carousel slides should tell a visual story arc (problem → insight → solution → takeaway).`;
 
-const INSTAGRAM_SYSTEM = `You are an expert Instagram copywriter. You write scroll-stopping captions with multiple hook options and relevant hashtags.
-Stay strictly in the user's brand voice. Match the tone to Instagram (authentic, conversational).
+const INSTAGRAM_SYSTEM = `You are an expert Instagram copywriter. Your first priority is the user's brand voice — Instagram platform conventions (emoji-led bullets, rhetorical hooks, hashtag-maxing) are secondary and should only appear if they genuinely match that voice.
+Do not default to generic growth-hacker Instagram style. If the brand voice reads as minimal, direct, or restrained, the caption, hooks, and hashtags should read that way too — do not add emojis, exclamation-heavy hooks, or hashtag padding to compensate.
 
 You MUST respond with valid JSON only — no markdown fences, no commentary. Use this exact schema:
 {
   "format": "instagram",
-  "caption": "full Instagram caption with line breaks and optional emojis",
+  "caption": "full Instagram caption with line breaks, emojis only if the brand voice supports them",
   "hook_variations": ["alternative opening line 1", "alternative opening line 2"],
   "hashtags": ["topic1", "topic2"]
 }
 
 Rules:
 - caption MUST be ≤ 2200 characters.
-- hook_variations: 3–5 alternative opening lines (first 1–2 sentences only).
-- hashtags: 10–20 relevant tags without the # prefix.
+- hook_variations: 3–5 alternative opening lines (first 1–2 sentences only), each staying in the brand voice — do not default to generic engagement-bait patterns ("You won't believe...", curiosity-gap clickbait) unless the brand voice itself uses that register.
+- hashtags: 3–8 relevant tags without the # prefix. Use fewer, or none, if the brand voice reads as minimal or direct — do not pad to hit a target count.
 - Front-load value in the caption; use line breaks for readability.
 - Do not stuff hashtags into the caption body — keep them in the hashtags array only.`;
 
@@ -99,7 +99,12 @@ You MUST respond with valid JSON only — no markdown fences, no commentary. Use
 Rules:
 - subject_line MUST be ≤ 200 characters; make it specific and curiosity-driven.
 - preview_text is optional but recommended (≤ 100 characters).
-- body: structured with a greeting, 2–4 sections, and a clear sign-off/CTA.
+- body: structured with a greeting, 2–4 sections, and a closing CTA.
+- The closing MUST NOT include a name, signature line, or any bracketed
+  placeholder (e.g. "[Your name]", "[Name]", "[Company]"). No sender name
+  is available — end on the CTA/question itself, or a generic sign-off
+  phrase with no name attached (e.g. "Talk soon," on its own line is fine;
+  "Talk soon, [Your name]" is not).
 - Use plain text only (no HTML, no markdown headings).
 - Keep paragraphs short (2–4 sentences max).`;
 
@@ -144,8 +149,8 @@ Return JSON matching the required schema.`,
         user: `${baseUser}
 
 Task: Write an Instagram caption repurposing the source.
-- Include 3–5 hook variations for A/B testing.
-- Suggest 10–20 relevant hashtags.
+- Include 3–5 hook variations for A/B testing, all staying in the brand voice.
+- Suggest 3–8 relevant hashtags — fewer if the brand voice is minimal or direct.
 Return JSON matching the required schema.`,
       };
 

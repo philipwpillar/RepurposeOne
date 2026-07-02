@@ -126,7 +126,7 @@ export const InstagramOutputSchema = z.object({
   format: z.literal("instagram"),
   caption: z.string().min(1).max(2200),
   hook_variations: z.array(z.string().min(1).max(300)).min(2).max(5),
-  hashtags: z.array(z.string().min(1).max(100)).min(5).max(30),
+  hashtags: z.array(z.string().min(1).max(100)).min(0).max(8),
 });
 export type InstagramOutput = z.infer<typeof InstagramOutputSchema>;
 
