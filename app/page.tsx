@@ -50,6 +50,25 @@ export default async function HomePage() {
           )}
         </div>
       </section>
+
+      <footer className="border-t border-border px-6 py-6 text-center text-sm text-muted-foreground">
+        <p>© 2026 Voiceora</p>
+        <p className="mt-2">
+          <Link
+            href="/privacy"
+            className="underline underline-offset-4 hover:text-foreground"
+          >
+            Privacy Policy
+          </Link>
+          {" · "}
+          <a
+            href="mailto:support@voiceora.app"
+            className="underline underline-offset-4 hover:text-foreground"
+          >
+            support@voiceora.app
+          </a>
+        </p>
+      </footer>
     </main>
   );
 }
