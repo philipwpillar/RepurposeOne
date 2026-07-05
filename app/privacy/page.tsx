@@ -33,10 +33,10 @@ export default function PrivacyPage() {
               United Kingdom. If you have questions about this policy, contact us
               at{" "}
               <a
-                href="mailto:support@voiceora.app"
+                href="mailto:support@voiceora.io"
                 className="text-foreground underline underline-offset-4"
               >
-                support@voiceora.app
+                support@voiceora.io
               </a>
               .
             </p>
@@ -107,10 +107,10 @@ export default function PrivacyPage() {
               active. If you request account deletion, we will delete your data.
               To request deletion, email{" "}
               <a
-                href="mailto:support@voiceora.app"
+                href="mailto:support@voiceora.io"
                 className="text-foreground underline underline-offset-4"
               >
-                support@voiceora.app
+                support@voiceora.io
               </a>
               .
             </p>

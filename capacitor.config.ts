@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.voiceora.app',
+  appId: 'com.voiceora.io',
   appName: 'Voiceora',
   webDir: 'public',
   server: {

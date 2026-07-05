@@ -62,10 +62,10 @@ export default async function HomePage() {
           </Link>
           {" · "}
           <a
-            href="mailto:support@voiceora.app"
+            href="mailto:support@voiceora.io"
             className="underline underline-offset-4 hover:text-foreground"
           >
-            support@voiceora.app
+            support@voiceora.io
           </a>
         </p>
       </footer>

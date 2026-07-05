@@ -25,7 +25,7 @@ This is an initiative on top of the live web product. It must **not** slow the r
 | Payments | **Safari-handoff to web Stripe Checkout** — no Apple IAP | Avoids Apple's 30% cut and IAP integration. See §5 review risk |
 | Share extension | **In v1** | Core value: repurpose from any app's share sheet |
 | Android | **Deferred** post-iOS | Prove demand on one platform first |
-| Bundle ID | `com.voiceora.app` | — |
+| Bundle ID | `com.voiceora.io` | — |
 | Display name | **Voiceora** | — |
 
 ---
