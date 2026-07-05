@@ -50,6 +50,21 @@ function isFormatOutput<F extends TargetFormat>(
   return output.format === format;
 }
 
+class GenerateApiError extends Error {
+  usage?: UsageInfo;
+  code?: GenerateErrorResponse['code'];
+
+  constructor(
+    message: string,
+    opts?: { usage?: UsageInfo; code?: GenerateErrorResponse['code'] }
+  ) {
+    super(message);
+    this.name = 'GenerateApiError';
+    this.usage = opts?.usage;
+    this.code = opts?.code;
+  }
+}
+
 interface BrandVoiceProp {
   id: string;
   samples: string[] | null;
@@ -156,17 +171,21 @@ export default function RepurposeWorkspace({
 
       if (!response.ok) {
         let message = 'Failed to generate content';
+        let usage: UsageInfo | undefined;
+        let code: GenerateErrorResponse['code'] | undefined;
         try {
           const errorData = JSON.parse(text) as GenerateErrorResponse;
           if (errorData.error) {
             message = errorData.error;
           }
+          usage = errorData.usage;
+          code = errorData.code;
         } catch {
           if (text) {
             message = text;
           }
         }
-        throw new Error(message);
+        throw new GenerateApiError(message, { usage, code });
       }
 
       const data = JSON.parse(text) as GenerateSuccessResponse;
@@ -242,6 +261,9 @@ export default function RepurposeWorkspace({
         }
       } catch (err) {
         console.error(err);
+        if (err instanceof GenerateApiError && err.usage) {
+          setUsedCount(err.usage.used);
+        }
         const fallbackMessages: Record<TargetFormat, string> = {
           x_thread: 'Something went wrong while generating the Twitter thread. Please try again.',
           linkedin: 'Something went wrong while generating the LinkedIn content. Please try again.',
