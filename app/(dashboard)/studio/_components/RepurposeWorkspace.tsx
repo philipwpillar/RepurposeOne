@@ -375,14 +375,14 @@ export default function RepurposeWorkspace({
   };
 
   const renderFormatError = (format: TargetFormat, message: string) => (
-    <div className="mb-3 text-xs text-red-700 bg-red-50 border border-red-200 rounded-2xl px-3 py-2 flex items-start gap-2">
+    <div className="mb-3 text-xs text-destructive bg-destructive/10 border border-destructive/30 rounded-2xl px-3 py-2 flex items-start gap-2">
       <i className="fas fa-exclamation-circle mt-0.5"></i>
       <div className="flex-1">
         <div>{message}</div>
         <button
           type="button"
           onClick={() => regenerateFormat(format)}
-          className="mt-1 text-[11px] font-medium text-red-700 underline underline-offset-2"
+          className="mt-1 text-[11px] font-medium text-destructive underline underline-offset-2"
         >
           Try again
         </button>
@@ -395,22 +395,22 @@ export default function RepurposeWorkspace({
     : 'Click Regenerate to generate your X thread from the source content.';
 
   return (
-    <div className="max-w-screen-md mx-auto px-4 pt-6 pb-24 bg-slate-50 min-h-screen">
+    <div className="max-w-screen-md mx-auto px-4 pt-6 pb-24 bg-background min-h-screen">
 
       <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight">Content Studio</h1>
-        <p className="text-sm text-slate-500 mt-1">One input → Multiple high-quality outputs</p>
+        <p className="text-sm text-muted-foreground mt-1">One input → Multiple high-quality outputs</p>
       </div>
 
       <div
         onClick={() => setIsInputModalOpen(true)}
-        className="bg-white border border-slate-200 rounded-2xl p-4 mb-5 cursor-pointer active:bg-slate-50 transition-colors"
+        className="bg-card border border-border rounded-2xl p-4 mb-5 cursor-pointer active:bg-accent transition-colors"
       >
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <div className="text-xs font-medium text-slate-500 mb-1">SOURCE CONTENT</div>
-            <div className="font-medium text-slate-800 line-clamp-2 pr-4">{inputSummary}</div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-xs font-medium text-muted-foreground mb-1">SOURCE CONTENT</div>
+            <div className="font-medium text-foreground line-clamp-2 pr-4">{inputSummary}</div>
+            <div className="text-xs text-muted-foreground mt-1">
               {inputSummary.length.toLocaleString()} characters • Blog post
             </div>
           </div>
@@ -421,7 +421,7 @@ export default function RepurposeWorkspace({
               setInputModalError(null);
               setIsInputModalOpen(true);
             }}
-            className="text-xs px-3 py-1.5 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50"
+            className="text-xs px-3 py-1.5 rounded-xl border border-border text-muted-foreground hover:bg-accent"
           >
             Change
           </button>
@@ -433,48 +433,48 @@ export default function RepurposeWorkspace({
           onClick={() => alert("Brand Voice settings modal (to be connected)")}
           className="flex items-center gap-x-2 cursor-pointer"
         >
-          <div className="bg-white border border-slate-200 rounded-2xl px-3 py-2 flex items-center gap-x-2">
-            <i className="fas fa-magic text-teal-500"></i>
+          <div className="bg-card border border-border rounded-2xl px-3 py-2 flex items-center gap-x-2">
+            <i className="fas fa-magic text-primary"></i>
             <span className="text-sm">Brand Voice: <span className="font-medium">{brandVoice?.description?.trim() || (brandVoice ? 'Custom voice' : 'No voice set — using default')}</span></span>
           </div>
         </div>
 
-        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-2 flex items-center gap-x-2">
-          <i className="fas fa-clock text-emerald-500"></i>
+        <div className="bg-teal-500/10 border border-teal-500/30 rounded-2xl px-4 py-2 flex items-center gap-x-2">
+          <i className="fas fa-clock text-teal-400"></i>
           <div className="text-sm">
-            <span className="font-medium text-emerald-700">~40 min saved</span>
-            <span className="text-emerald-600 text-xs ml-1">(~10 min × 4 formats)</span>
+            <span className="font-medium text-teal-300">~40 min saved</span>
+            <span className="text-teal-400 text-xs ml-1">(~10 min × 4 formats)</span>
           </div>
         </div>
       </div>
 
       <div className="mb-4 px-1 flex items-center justify-between text-sm">
-        <div className="text-slate-600">
+        <div className="text-muted-foreground">
           <span className="font-medium">{usedCount} / {repurposesLimit}</span> repurposes used this month
         </div>
         <Link
           href="/upgrade"
-          className="text-teal-600 hover:text-teal-700 text-xs font-medium"
+          className="text-primary hover:text-primary text-xs font-medium"
         >
           Upgrade →
         </Link>
       </div>
 
       <div className="flex items-center justify-between mb-3 px-1">
-        <div className="text-xs font-semibold tracking-wider text-slate-500">GENERATED OUTPUTS</div>
-        <div className="text-xs text-slate-500">4 formats</div>
+        <div className="text-xs font-semibold tracking-wider text-muted-foreground">GENERATED OUTPUTS</div>
+        <div className="text-xs text-muted-foreground">4 formats</div>
       </div>
 
       <div className="space-y-4">
 
         {/* X / Twitter */}
-        <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden">
-          <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b">
+        <div className="bg-card border border-border rounded-3xl overflow-hidden">
+          <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-border">
             <div className="flex items-center gap-x-3">
               <i className="fab fa-x-twitter text-xl"></i>
               <div>
                 <div className="font-semibold">X / Twitter Thread</div>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-muted-foreground">
                   {xThreadOutput ? `${twitterLength} tweets` : 'Not generated yet'}
                 </div>
               </div>
@@ -482,14 +482,14 @@ export default function RepurposeWorkspace({
             <button
               onClick={() => copyToClipboard('x_thread')}
               disabled={formatLoading.x_thread || !xThreadOutput}
-              className="text-xs px-3 py-1.5 rounded-2xl border border-slate-200 disabled:opacity-50"
+              className="text-xs px-3 py-1.5 rounded-2xl border border-border disabled:opacity-50"
             >
               Copy
             </button>
           </div>
 
           <div className="p-5">
-            <div className={`text-sm mb-4 leading-relaxed whitespace-pre-line ${xThreadOutput ? 'text-slate-700' : 'text-slate-400 italic'}`}>
+            <div className={`text-sm mb-4 leading-relaxed whitespace-pre-line ${xThreadOutput ? 'text-foreground' : 'text-muted-foreground italic'}`}>
               {twitterDisplayText}
             </div>
 
@@ -497,7 +497,7 @@ export default function RepurposeWorkspace({
 
             <div>
               <div className="flex justify-between text-xs mb-1.5">
-                <span className="text-slate-500">Target length</span>
+                <span className="text-muted-foreground">Target length</span>
                 <span className="font-mono">{pendingTwitterLength} tweets</span>
               </div>
               <input
@@ -506,13 +506,13 @@ export default function RepurposeWorkspace({
                 max={TWITTER_LENGTH_MAX}
                 value={pendingTwitterLength}
                 onChange={(e) => setPendingTwitterLength(clampTargetTweets(parseInt(e.target.value, 10)))}
-                className="w-full accent-teal-500"
+                className="w-full accent-primary"
               />
               <div className="flex justify-end mt-2">
                 <button
                   onClick={handleApplyTwitterLength}
                   disabled={formatLoading.x_thread}
-                  className="text-xs px-4 py-1.5 rounded-2xl bg-teal-500 text-white font-medium disabled:opacity-50"
+                  className="text-xs px-4 py-1.5 rounded-2xl bg-primary text-primary-foreground font-medium disabled:opacity-50"
                 >
                   {formatLoading.x_thread ? 'Generating...' : 'Apply & Regenerate'}
                 </button>
@@ -520,26 +520,26 @@ export default function RepurposeWorkspace({
             </div>
           </div>
 
-          <div className="px-5 py-3 bg-slate-50 border-t flex gap-2">
+          <div className="px-5 py-3 bg-secondary border-t border-border flex gap-2">
             <button
               onClick={() => regenerateFormat('x_thread')}
               disabled={formatLoading.x_thread}
-              className="flex-1 py-2 text-xs rounded-2xl border border-slate-200 disabled:opacity-50"
+              className="flex-1 py-2 text-xs rounded-2xl border border-border disabled:opacity-50"
             >
               {formatLoading.x_thread ? 'Generating…' : 'Regenerate'}
             </button>
-            <button onClick={() => alert("Edit modal coming soon")} className="flex-1 py-2 text-xs rounded-2xl border border-slate-200">Edit</button>
+            <button onClick={() => alert("Edit modal coming soon")} className="flex-1 py-2 text-xs rounded-2xl border border-border">Edit</button>
           </div>
         </div>
 
         {/* LinkedIn */}
-        <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden">
-          <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b">
+        <div className="bg-card border border-border rounded-3xl overflow-hidden">
+          <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-border">
             <div className="flex items-center gap-x-3">
               <i className="fab fa-linkedin text-xl text-blue-600"></i>
               <div>
                 <div className="font-semibold">LinkedIn Carousel</div>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-muted-foreground">
                   {linkedinOutput
                     ? `${linkedinOutput.carousel_slides.length} slides`
                     : 'Not generated yet'}
@@ -549,7 +549,7 @@ export default function RepurposeWorkspace({
             <button
               onClick={() => copyToClipboard('linkedin')}
               disabled={formatLoading.linkedin || !linkedinOutput}
-              className="text-xs px-3 py-1.5 rounded-2xl border border-slate-200 disabled:opacity-50"
+              className="text-xs px-3 py-1.5 rounded-2xl border border-border disabled:opacity-50"
             >
               Copy
             </button>
@@ -561,24 +561,24 @@ export default function RepurposeWorkspace({
             {linkedinOutput ? (
               <>
                 <div>
-                  <div className="text-xs font-medium text-slate-500 mb-2">POST</div>
-                  <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-line bg-slate-50 p-4 rounded-2xl">
+                  <div className="text-xs font-medium text-muted-foreground mb-2">POST</div>
+                  <div className="text-sm text-foreground leading-relaxed whitespace-pre-line bg-secondary p-4 rounded-2xl">
                     {linkedinOutput.post}
                   </div>
                 </div>
 
                 <div>
-                  <div className="text-xs font-medium text-slate-500 mb-2">CAROUSEL SLIDES</div>
+                  <div className="text-xs font-medium text-muted-foreground mb-2">CAROUSEL SLIDES</div>
                   <div className="space-y-2">
                     {linkedinOutput.carousel_slides.map((slide) => (
-                      <div key={slide.number} className="flex items-start gap-3 bg-slate-50 p-3 rounded-2xl text-sm">
-                        <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-xs font-medium flex-shrink-0 mt-0.5">
+                      <div key={slide.number} className="flex items-start gap-3 bg-secondary p-3 rounded-2xl text-sm">
+                        <div className="w-5 h-5 rounded-full bg-secondary flex items-center justify-center text-xs font-medium flex-shrink-0 mt-0.5">
                           {slide.number}
                         </div>
                         <div className="flex-1">
-                          <div className="font-medium text-slate-800">{slide.title}</div>
+                          <div className="font-medium text-foreground">{slide.title}</div>
                           {slide.body && (
-                            <div className="text-slate-600 mt-1">{slide.body}</div>
+                            <div className="text-muted-foreground mt-1">{slide.body}</div>
                           )}
                         </div>
                       </div>
@@ -587,32 +587,32 @@ export default function RepurposeWorkspace({
                 </div>
               </>
             ) : (
-              <p className="text-sm text-slate-400 italic">
+              <p className="text-sm text-muted-foreground italic">
                 Click Regenerate to generate your LinkedIn post and carousel slide ideas.
               </p>
             )}
           </div>
 
-          <div className="px-5 py-3 bg-slate-50 border-t flex gap-2">
+          <div className="px-5 py-3 bg-secondary border-t border-border flex gap-2">
             <button
               onClick={() => regenerateFormat('linkedin')}
               disabled={formatLoading.linkedin}
-              className="flex-1 py-2 text-xs rounded-2xl border border-slate-200 disabled:opacity-50"
+              className="flex-1 py-2 text-xs rounded-2xl border border-border disabled:opacity-50"
             >
               {formatLoading.linkedin ? 'Generating…' : 'Regenerate'}
             </button>
-            <button onClick={() => alert("Edit modal coming soon")} className="flex-1 py-2 text-xs rounded-2xl border border-slate-200">Edit</button>
+            <button onClick={() => alert("Edit modal coming soon")} className="flex-1 py-2 text-xs rounded-2xl border border-border">Edit</button>
           </div>
         </div>
 
         {/* Instagram */}
-        <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden">
-          <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b">
+        <div className="bg-card border border-border rounded-3xl overflow-hidden">
+          <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-border">
             <div className="flex items-center gap-x-3">
               <i className="fab fa-instagram text-xl text-pink-600"></i>
               <div>
                 <div className="font-semibold">Instagram Caption</div>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-muted-foreground">
                   {instagramOutput
                     ? `${instagramOutput.hook_variations.length} hook variations`
                     : 'Not generated yet'}
@@ -622,7 +622,7 @@ export default function RepurposeWorkspace({
             <button
               onClick={() => copyToClipboard('instagram')}
               disabled={formatLoading.instagram || !instagramOutput}
-              className="text-xs px-3 py-1.5 rounded-2xl border border-slate-200 disabled:opacity-50"
+              className="text-xs px-3 py-1.5 rounded-2xl border border-border disabled:opacity-50"
             >
               Copy
             </button>
@@ -634,17 +634,17 @@ export default function RepurposeWorkspace({
             {instagramOutput ? (
               <>
                 <div>
-                  <div className="text-xs font-medium text-slate-500 mb-2">CAPTION</div>
-                  <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+                  <div className="text-xs font-medium text-muted-foreground mb-2">CAPTION</div>
+                  <div className="text-sm text-foreground leading-relaxed whitespace-pre-line">
                     {instagramOutput.caption}
                   </div>
                 </div>
 
                 <div>
-                  <div className="text-xs font-medium text-slate-500 mb-2">HOOK VARIATIONS</div>
+                  <div className="text-xs font-medium text-muted-foreground mb-2">HOOK VARIATIONS</div>
                   <ul className="space-y-2">
                     {instagramOutput.hook_variations.map((hook, index) => (
-                      <li key={index} className="text-sm text-slate-700 bg-slate-50 p-3 rounded-2xl">
+                      <li key={index} className="text-sm text-foreground bg-secondary p-3 rounded-2xl">
                         {hook}
                       </li>
                     ))}
@@ -652,8 +652,8 @@ export default function RepurposeWorkspace({
                 </div>
 
                 <div>
-                  <div className="text-xs font-medium text-slate-500 mb-2">HASHTAGS</div>
-                  <div className="text-sm text-teal-700">
+                  <div className="text-xs font-medium text-muted-foreground mb-2">HASHTAGS</div>
+                  <div className="text-sm text-primary">
                     {instagramOutput.hashtags
                       .map((tag) => (tag.startsWith('#') ? tag : `#${tag}`))
                       .join(' ')}
@@ -661,32 +661,32 @@ export default function RepurposeWorkspace({
                 </div>
               </>
             ) : (
-              <p className="text-sm text-slate-400 italic">
+              <p className="text-sm text-muted-foreground italic">
                 Click Regenerate to generate your Instagram caption, hooks, and hashtags.
               </p>
             )}
           </div>
 
-          <div className="px-5 py-3 bg-slate-50 border-t flex gap-2">
+          <div className="px-5 py-3 bg-secondary border-t border-border flex gap-2">
             <button
               onClick={() => regenerateFormat('instagram')}
               disabled={formatLoading.instagram}
-              className="flex-1 py-2 text-xs rounded-2xl border border-slate-200 disabled:opacity-50"
+              className="flex-1 py-2 text-xs rounded-2xl border border-border disabled:opacity-50"
             >
               {formatLoading.instagram ? 'Generating…' : 'Regenerate'}
             </button>
-            <button onClick={() => alert("Edit modal coming soon")} className="flex-1 py-2 text-xs rounded-2xl border border-slate-200">Edit</button>
+            <button onClick={() => alert("Edit modal coming soon")} className="flex-1 py-2 text-xs rounded-2xl border border-border">Edit</button>
           </div>
         </div>
 
         {/* Email */}
-        <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden">
-          <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b">
+        <div className="bg-card border border-border rounded-3xl overflow-hidden">
+          <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-border">
             <div className="flex items-center gap-x-3">
-              <i className="fas fa-envelope text-xl text-slate-600"></i>
+              <i className="fas fa-envelope text-xl text-muted-foreground"></i>
               <div>
                 <div className="font-semibold">Email Newsletter</div>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-muted-foreground">
                   {emailOutput ? 'Newsletter draft' : 'Not generated yet'}
                 </div>
               </div>
@@ -694,7 +694,7 @@ export default function RepurposeWorkspace({
             <button
               onClick={() => copyToClipboard('email')}
               disabled={formatLoading.email || !emailOutput}
-              className="text-xs px-3 py-1.5 rounded-2xl border border-slate-200 disabled:opacity-50"
+              className="text-xs px-3 py-1.5 rounded-2xl border border-border disabled:opacity-50"
             >
               Copy
             </button>
@@ -706,50 +706,50 @@ export default function RepurposeWorkspace({
             {emailOutput ? (
               <>
                 <div>
-                  <div className="text-xs font-medium text-slate-500 mb-1">SUBJECT LINE</div>
-                  <div className="text-sm font-medium text-slate-800">{emailOutput.subject_line}</div>
+                  <div className="text-xs font-medium text-muted-foreground mb-1">SUBJECT LINE</div>
+                  <div className="text-sm font-medium text-foreground">{emailOutput.subject_line}</div>
                 </div>
 
                 {emailOutput.preview_text && (
                   <div>
-                    <div className="text-xs font-medium text-slate-500 mb-1">PREVIEW TEXT</div>
-                    <div className="text-sm text-slate-600">{emailOutput.preview_text}</div>
+                    <div className="text-xs font-medium text-muted-foreground mb-1">PREVIEW TEXT</div>
+                    <div className="text-sm text-muted-foreground">{emailOutput.preview_text}</div>
                   </div>
                 )}
 
                 <div>
-                  <div className="text-xs font-medium text-slate-500 mb-2">BODY</div>
-                  <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-line bg-slate-50 p-4 rounded-2xl">
+                  <div className="text-xs font-medium text-muted-foreground mb-2">BODY</div>
+                  <div className="text-sm text-foreground leading-relaxed whitespace-pre-line bg-secondary p-4 rounded-2xl">
                     {emailOutput.body}
                   </div>
                 </div>
               </>
             ) : (
-              <p className="text-sm text-slate-400 italic">
+              <p className="text-sm text-muted-foreground italic">
                 Click Regenerate to generate your email subject line and newsletter draft.
               </p>
             )}
           </div>
 
-          <div className="px-5 py-3 bg-slate-50 border-t flex gap-2">
+          <div className="px-5 py-3 bg-secondary border-t border-border flex gap-2">
             <button
               onClick={() => regenerateFormat('email')}
               disabled={formatLoading.email}
-              className="flex-1 py-2 text-xs rounded-2xl border border-slate-200 disabled:opacity-50"
+              className="flex-1 py-2 text-xs rounded-2xl border border-border disabled:opacity-50"
             >
               {formatLoading.email ? 'Generating…' : 'Regenerate'}
             </button>
-            <button onClick={() => alert("Edit modal coming soon")} className="flex-1 py-2 text-xs rounded-2xl border border-slate-200">Edit</button>
+            <button onClick={() => alert("Edit modal coming soon")} className="flex-1 py-2 text-xs rounded-2xl border border-border">Edit</button>
           </div>
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t px-4 py-3 z-50">
+      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border px-4 py-3 z-50">
         <div className="max-w-screen-md mx-auto flex gap-3">
           <button
             onClick={() => void regenerateAll()}
             disabled={isAnyLoading}
-            className="flex-1 py-3 text-sm font-medium rounded-2xl border border-slate-300 disabled:opacity-50"
+            className="flex-1 py-3 text-sm font-medium rounded-2xl border border-border disabled:opacity-50"
           >
             {isRegeneratingAll ? 'Regenerating all formats…' : 'Regenerate All'}
           </button>
@@ -757,7 +757,7 @@ export default function RepurposeWorkspace({
           <button
             onClick={exportBundle}
             disabled={!xThreadOutput && !linkedinOutput && !instagramOutput && !emailOutput}
-            className="flex-1 py-3 bg-teal-500 hover:bg-teal-600 text-white text-sm font-semibold rounded-2xl disabled:opacity-50"
+            className="flex-1 py-3 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold rounded-2xl disabled:opacity-50"
           >
             Export Bundle (Text)
           </button>
@@ -766,7 +766,7 @@ export default function RepurposeWorkspace({
 
       {isInputModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-[60]">
-          <div className="bg-white w-full sm:w-[480px] sm:rounded-3xl rounded-t-3xl p-5">
+          <div className="bg-card w-full sm:w-[480px] sm:rounded-3xl rounded-t-3xl p-5">
             <div className="font-semibold mb-3">Source Content</div>
             <textarea
               className="w-full h-40 border rounded-2xl p-4 text-sm"
@@ -774,14 +774,14 @@ export default function RepurposeWorkspace({
               onChange={(e) => setDraftInputContent(e.target.value)}
             />
             {inputModalError ? (
-              <p className="mt-2 text-xs text-red-600">{inputModalError}</p>
+              <p className="mt-2 text-xs text-destructive">{inputModalError}</p>
             ) : null}
             <div className="flex gap-3 mt-4">
               <button onClick={() => setIsInputModalOpen(false)} className="flex-1 py-2.5 rounded-2xl border">Cancel</button>
               <button
                 onClick={handleInputUpdate}
                 disabled={isAnyLoading}
-                className="flex-1 py-2.5 rounded-2xl bg-teal-500 text-white font-medium disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-2xl bg-primary text-primary-foreground font-medium disabled:opacity-50"
               >
                 {isAnyLoading ? 'Generating…' : 'Update & Regenerate All'}
               </button>
@@ -791,10 +791,10 @@ export default function RepurposeWorkspace({
       )}
 
       {isRegeneratingAll && (
-        <div className="fixed inset-0 bg-white/80 flex items-center justify-center z-[70]">
+        <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-[70]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500 mx-auto mb-3"></div>
-            <p className="text-sm text-slate-600">Generating all formats…</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-3"></div>
+            <p className="text-sm text-muted-foreground">Generating all formats…</p>
           </div>
         </div>
       )}
