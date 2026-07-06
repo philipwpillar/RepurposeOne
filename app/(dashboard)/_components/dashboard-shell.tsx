@@ -44,7 +44,7 @@ function UserAvatar({ user, size = "md" }: { user: DashboardUser; size?: "sm" | 
       <img
         src={user.avatarUrl}
         alt={user.name}
-        className={cn(sizeClass, "rounded-full object-cover ring-2 ring-white")}
+        className={cn(sizeClass, "rounded-full object-cover ring-2 ring-background")}
       />
     );
   }
@@ -60,7 +60,7 @@ function UserAvatar({ user, size = "md" }: { user: DashboardUser; size?: "sm" | 
     <div
       className={cn(
         sizeClass,
-        "flex items-center justify-center rounded-full bg-teal-100 font-medium text-teal-700 ring-2 ring-white"
+        "flex items-center justify-center rounded-full bg-primary/20 font-medium text-primary ring-2 ring-background"
       )}
     >
       {initials}
@@ -89,11 +89,11 @@ function NavLinks({
             className={cn(
               "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
               active
-                ? "bg-teal-50 text-teal-700"
-                : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             )}
           >
-            <Icon className={cn("h-4 w-4 shrink-0", active ? "text-teal-600" : "text-slate-400")} />
+            <Icon className={cn("h-4 w-4 shrink-0", active ? "text-primary" : "text-muted-foreground")} />
             {item.label}
           </Link>
         );
@@ -115,12 +115,12 @@ function UsageIndicator({ usage, compact = false }: { usage: UsageInfo; compact?
   if (compact) {
     return (
       <div className="flex items-center gap-2 text-sm">
-        <span className={cn("font-medium", atLimit ? "text-red-600" : "text-slate-700")}>
+        <span className={cn("font-medium", atLimit ? "text-destructive" : "text-foreground")}>
           {usage.used} / {usage.limit}
         </span>
         <Link
           href="/upgrade"
-          className="text-xs font-medium text-teal-600 hover:text-teal-700"
+          className="text-xs font-medium text-primary hover:text-primary/80"
         >
           Upgrade
         </Link>
@@ -129,27 +129,27 @@ function UsageIndicator({ usage, compact = false }: { usage: UsageInfo; compact?
   }
 
   return (
-    <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+    <div className="space-y-2 rounded-xl border border-border bg-secondary px-3 py-2.5">
       <div className="flex items-center justify-between text-xs">
-        <span className="font-medium text-slate-500">Monthly usage</span>
-        <span className={cn("font-semibold", atLimit ? "text-red-600" : "text-slate-800")}>
+        <span className="font-medium text-muted-foreground">Monthly usage</span>
+        <span className={cn("font-semibold", atLimit ? "text-destructive" : "text-foreground")}>
           {usage.used} / {usage.limit}
         </span>
       </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
+      <div className="h-1.5 overflow-hidden rounded-full bg-background">
         <div
           className={cn(
             "h-full rounded-full transition-all",
-            atLimit ? "bg-red-500" : "bg-teal-500"
+            atLimit ? "bg-destructive" : "bg-primary"
           )}
           style={{ width: `${usagePercent}%` }}
         />
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-[11px] text-slate-500">repurposes this month</span>
+        <span className="text-[11px] text-muted-foreground">repurposes this month</span>
         <Link
           href="/upgrade"
-          className="text-[11px] font-medium text-teal-600 hover:text-teal-700"
+          className="text-[11px] font-medium text-primary hover:text-primary/80"
         >
           Upgrade →
         </Link>
@@ -163,12 +163,12 @@ export function DashboardShell({ children, user, usage }: DashboardShellProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-background">
       {/* Desktop sidebar */}
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
-        <div className="flex h-14 items-center border-b border-slate-200 px-5">
-          <Link href="/dashboard" className="text-lg font-semibold tracking-tight text-slate-900">
-            Repurpose<span className="text-teal-600">One</span>
+      <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-card md:flex">
+        <div className="flex h-14 items-center border-b border-border px-5">
+          <Link href="/dashboard" className="text-lg font-semibold tracking-tight text-foreground">
+            Repurpose<span className="text-primary">One</span>
           </Link>
         </div>
 
@@ -176,14 +176,14 @@ export function DashboardShell({ children, user, usage }: DashboardShellProps) {
           <NavLinks pathname={pathname} />
         </nav>
 
-        <div className="space-y-3 border-t border-slate-200 p-4">
+        <div className="space-y-3 border-t border-border p-4">
           <UsageIndicator usage={usage} />
-          <div className="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2.5">
+          <div className="flex items-center gap-3 rounded-xl bg-secondary px-3 py-2.5">
             <UserAvatar user={user} />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-slate-900">{user.name}</p>
+              <p className="truncate text-sm font-medium text-foreground">{user.name}</p>
               {user.email ? (
-                <p className="truncate text-xs text-slate-500">{user.email}</p>
+                <p className="truncate text-xs text-muted-foreground">{user.email}</p>
               ) : null}
             </div>
           </div>
@@ -193,7 +193,7 @@ export function DashboardShell({ children, user, usage }: DashboardShellProps) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Top bar */}
-        <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-slate-200 bg-white px-4">
+        <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border bg-card px-4">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
@@ -206,9 +206,9 @@ export function DashboardShell({ children, user, usage }: DashboardShellProps) {
             </Button>
             <Link
               href="/dashboard"
-              className="text-lg font-semibold tracking-tight text-slate-900 md:hidden"
+              className="text-lg font-semibold tracking-tight text-foreground md:hidden"
             >
-              Repurpose<span className="text-teal-600">One</span>
+              Repurpose<span className="text-primary">One</span>
             </Link>
           </div>
 
@@ -219,7 +219,7 @@ export function DashboardShell({ children, user, usage }: DashboardShellProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="text-slate-500 hover:text-slate-700"
+              className="text-muted-foreground hover:text-foreground"
               aria-label="Notifications"
               onClick={() => {
                 // TODO: connect notifications panel
@@ -229,7 +229,7 @@ export function DashboardShell({ children, user, usage }: DashboardShellProps) {
             </Button>
             <div className="hidden items-center gap-2 sm:flex">
               <UserAvatar user={user} size="sm" />
-              <span className="max-w-[140px] truncate text-sm font-medium text-slate-700">
+              <span className="max-w-[140px] truncate text-sm font-medium text-foreground">
                 {user.name}
               </span>
             </div>
@@ -248,10 +248,10 @@ export function DashboardShell({ children, user, usage }: DashboardShellProps) {
             aria-label="Close navigation"
             onClick={() => setMobileNavOpen(false)}
           />
-          <aside className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-white shadow-xl">
-            <div className="flex h-14 items-center justify-between border-b border-slate-200 px-4">
-              <span className="text-lg font-semibold tracking-tight text-slate-900">
-                Repurpose<span className="text-teal-600">One</span>
+          <aside className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-card shadow-xl">
+            <div className="flex h-14 items-center justify-between border-b border-border px-4">
+              <span className="text-lg font-semibold tracking-tight text-foreground">
+                Repurpose<span className="text-primary">One</span>
               </span>
               <Button
                 variant="ghost"
@@ -267,14 +267,14 @@ export function DashboardShell({ children, user, usage }: DashboardShellProps) {
               <NavLinks pathname={pathname} onNavigate={() => setMobileNavOpen(false)} />
             </nav>
 
-            <div className="space-y-3 border-t border-slate-200 p-4">
+            <div className="space-y-3 border-t border-border p-4">
               <UsageIndicator usage={usage} />
-              <div className="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2.5">
+              <div className="flex items-center gap-3 rounded-xl bg-secondary px-3 py-2.5">
                 <UserAvatar user={user} />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-slate-900">{user.name}</p>
+                  <p className="truncate text-sm font-medium text-foreground">{user.name}</p>
                   {user.email ? (
-                    <p className="truncate text-xs text-slate-500">{user.email}</p>
+                    <p className="truncate text-xs text-muted-foreground">{user.email}</p>
                   ) : null}
                 </div>
               </div>
