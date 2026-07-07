@@ -90,7 +90,7 @@ export default async function DashboardPage() {
       {atLimit && (
         <Card className="border-amber-500/30 bg-amber-500/10">
           <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-6">
-            <p className="text-sm text-amber-300">
+            <p className="text-sm text-amber-800">
               You&apos;ve used all your repurposes this month. Upgrade to keep
               creating.
             </p>

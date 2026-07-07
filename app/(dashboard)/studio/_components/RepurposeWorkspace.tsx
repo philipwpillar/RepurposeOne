@@ -440,10 +440,10 @@ export default function RepurposeWorkspace({
         </div>
 
         <div className="bg-teal-500/10 border border-teal-500/30 rounded-2xl px-4 py-2 flex items-center gap-x-2">
-          <i className="fas fa-clock text-teal-400"></i>
+          <i className="fas fa-clock text-teal-600"></i>
           <div className="text-sm">
-            <span className="font-medium text-teal-300">~40 min saved</span>
-            <span className="text-teal-400 text-xs ml-1">(~10 min × 4 formats)</span>
+            <span className="font-medium text-teal-700">~40 min saved</span>
+            <span className="text-teal-600 text-xs ml-1">(~10 min × 4 formats)</span>
           </div>
         </div>
       </div>

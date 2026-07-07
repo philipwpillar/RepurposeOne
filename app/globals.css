@@ -1,33 +1,56 @@
 @import "tailwindcss";
 
 :root {
-  /* --- Aurora brand primitives (from the design kit, literal) --- */
-  --ink: #0A0F2E;                     /* page base */
-  --panel: #141A3E;                   /* raised surface */
-  --paper: #F1F2F7;                   /* primary text */
+  /* --- Aurora brand primitives (kept; used by .dark + .aurora utilities) --- */
+  --ink: #0A0F2E;
+  --panel: #141A3E;
+  --paper: #F1F2F7;
   --teal: #2DD4BF;
   --indigo: #6366F1;
   --magenta: #E24BC4;
-  --hair: rgba(255, 255, 255, 0.08);  /* hairline border */
+  --hair: rgba(255, 255, 255, 0.08);
   --aurora: linear-gradient(100deg, #2DD4BF 0%, #6366F1 52%, #E24BC4 100%);
 
-  /* --- shadcn semantic tokens, mapped to Aurora --- */
+  /* --- LIGHT content zone (default) --- */
+  --background: #F5F6FA;
+  --foreground: #0E1230;
+  --card: #FFFFFF;
+  --card-foreground: #0E1230;
+
+  --primary: var(--indigo);
+  --primary-foreground: #FFFFFF;
+
+  --secondary: #EDEFF5;
+  --secondary-foreground: #0E1230;
+  --muted: #EDEFF5;
+  --muted-foreground: #5B6178;         /* readable muted on light */
+  --accent: #EDEFF5;
+  --accent-foreground: #0E1230;
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+
+  --border: #E6E8F0;
+  --input: #E6E8F0;
+  --ring: var(--indigo);
+
+  --radius: 0.625rem;
+}
+
+/* DARK navigation chrome -- applied via className="dark" on the sidebar,
+   top bar, and mobile drawer only. */
+.dark {
   --background: var(--ink);
   --foreground: var(--paper);
   --card: var(--panel);
   --card-foreground: var(--paper);
 
-  /* PRIMARY = flat indigo (gradient can't be a solid token).
-     Change this one line to --teal or a custom value if desired.
-     If using --teal, also set --primary-foreground: var(--ink) for contrast. */
   --primary: var(--indigo);
   --primary-foreground: var(--paper);
 
-  /* Derived dark values (NOT literal kit tokens — tune to taste) */
   --secondary: #1B2350;
   --secondary-foreground: var(--paper);
   --muted: #141A3E;
-  --muted-foreground: rgba(241, 242, 247, 0.62);
+  --muted-foreground: rgba(241, 242, 247, 0.72);   /* contrast bump */
   --accent: #202A5C;
   --accent-foreground: var(--paper);
   --destructive: #F0506E;
@@ -36,8 +59,6 @@
   --border: var(--hair);
   --input: rgba(255, 255, 255, 0.12);
   --ring: var(--indigo);
-
-  --radius: 0.625rem; /* controls ~8px, cards land larger via rounded-xl/2xl */
 }
 
 @theme inline {

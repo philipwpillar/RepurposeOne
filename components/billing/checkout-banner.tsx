@@ -8,11 +8,11 @@ import { Button } from "@/components/ui/button";
 const MESSAGES: Record<string, { text: string; className: string }> = {
   success: {
     text: "Subscription active — your new plan limits are now in effect.",
-    className: "border-teal-500/30 bg-teal-500/10 text-teal-300",
+    className: "border-teal-500/30 bg-teal-500/10 text-teal-800",
   },
   cancelled: {
     text: "Checkout was cancelled. No charges were made.",
-    className: "border-amber-500/30 bg-amber-500/10 text-amber-300",
+    className: "border-amber-500/30 bg-amber-500/10 text-amber-800",
   },
 };
 

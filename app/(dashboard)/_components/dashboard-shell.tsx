@@ -165,10 +165,10 @@ export function DashboardShell({ children, user, usage }: DashboardShellProps) {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Desktop sidebar */}
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-card md:flex">
+      <aside className="dark hidden w-64 shrink-0 flex-col border-r border-border bg-card md:flex">
         <div className="flex h-14 items-center border-b border-border px-5">
           <Link href="/dashboard" className="text-lg font-semibold tracking-tight text-foreground">
-            Repurpose<span className="text-primary">One</span>
+            Voice<span className="text-primary">ora</span>
           </Link>
         </div>
 
@@ -193,7 +193,7 @@ export function DashboardShell({ children, user, usage }: DashboardShellProps) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Top bar */}
-        <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border bg-card px-4">
+        <header className="dark sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border bg-card px-4">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
@@ -208,7 +208,7 @@ export function DashboardShell({ children, user, usage }: DashboardShellProps) {
               href="/dashboard"
               className="text-lg font-semibold tracking-tight text-foreground md:hidden"
             >
-              Repurpose<span className="text-primary">One</span>
+              Voice<span className="text-primary">ora</span>
             </Link>
           </div>
 
@@ -248,10 +248,10 @@ export function DashboardShell({ children, user, usage }: DashboardShellProps) {
             aria-label="Close navigation"
             onClick={() => setMobileNavOpen(false)}
           />
-          <aside className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-card shadow-xl">
+          <aside className="dark absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-card shadow-xl">
             <div className="flex h-14 items-center justify-between border-b border-border px-4">
               <span className="text-lg font-semibold tracking-tight text-foreground">
-                Repurpose<span className="text-primary">One</span>
+                Voice<span className="text-primary">ora</span>
               </span>
               <Button
                 variant="ghost"
