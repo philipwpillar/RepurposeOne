@@ -20,16 +20,16 @@ export function UpgradePrompt({ usage, upgradeMessage }: UpgradePromptProps) {
   const message = upgradeMessage ?? getUpgradeMessage(usage.plan);
 
   return (
-    <Card className="border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50">
+    <Card className="border-primary/30 bg-gradient-to-br from-teal-500/10 via-indigo-500/10 to-fuchsia-500/10">
       <CardHeader>
         <CardTitle className="text-xl">You&apos;ve hit your monthly limit</CardTitle>
-        <CardDescription className="text-amber-900/80">
+        <CardDescription className="text-muted-foreground">
           {usage.used} of {usage.limit} repurposes used on your{" "}
           {usage.plan} plan this month.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-amber-950/90">{message}</p>
+        <p className="text-sm text-foreground">{message}</p>
       </CardContent>
       <CardFooter className="flex flex-wrap gap-3">
         <Button asChild>

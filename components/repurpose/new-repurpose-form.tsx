@@ -314,7 +314,7 @@ export function NewRepurposeForm({ initialUsage }: NewRepurposeFormProps) {
                     ))}
                   </ul>
                 </div>
-                <p className="text-sm text-teal-700">
+                <p className="text-sm text-primary">
                   {result.output.hashtags.map((t) => (t.startsWith("#") ? t : `#${t}`)).join(" ")}
                 </p>
               </CardContent>

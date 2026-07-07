@@ -319,7 +319,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
           <Button
             type="button"
             onClick={openCreateForm}
-            className="bg-teal-600 hover:bg-teal-700"
+            className="bg-primary hover:bg-primary/90"
           >
             <Plus className="h-4 w-4" />
             New voice
@@ -328,13 +328,13 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
       </div>
 
       {actionError && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {actionError}
         </div>
       )}
 
       {formMode !== null && (
-        <Card className="border-slate-200">
+        <Card className="border-border">
           <CardHeader>
             <CardTitle className="text-lg">
               {formMode === "create" ? "Create brand voice" : "Edit brand voice"}
@@ -396,7 +396,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
                 checked={setAsDefault}
                 onChange={(e) => setSetAsDefault(e.target.checked)}
                 disabled={isSaving}
-                className="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                className="h-4 w-4 rounded border-border text-primary focus:ring-ring"
               />
               <Label htmlFor="set-as-default" className="font-normal">
                 Set as default (used in Studio)
@@ -404,7 +404,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
             </div>
 
             {formError && (
-              <p className="text-sm text-red-600">{formError}</p>
+              <p className="text-sm text-destructive">{formError}</p>
             )}
 
             <div className="flex gap-2">
@@ -412,7 +412,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
                 type="button"
                 onClick={handleSave}
                 disabled={isSaving}
-                className="bg-teal-600 hover:bg-teal-700"
+                className="bg-primary hover:bg-primary/90"
               >
                 {isSaving ? "Saving…" : "Save voice"}
               </Button>
@@ -430,9 +430,9 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
       )}
 
       {voices.length === 0 && formMode === null ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-teal-50">
-            <Mic className="h-6 w-6 text-teal-600" />
+        <div className="rounded-2xl border border-border bg-card p-8 text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+            <Mic className="h-6 w-6 text-primary" />
           </div>
           <p className="mb-4 text-sm text-muted-foreground">
             Your default voice is applied automatically in Studio when you generate
@@ -441,7 +441,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
           <Button
             type="button"
             onClick={openCreateForm}
-            className="bg-teal-600 hover:bg-teal-700"
+            className="bg-primary hover:bg-primary/90"
           >
             <Plus className="h-4 w-4" />
             Create your first voice
@@ -458,13 +458,13 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
                 : "No description");
 
             return (
-              <Card key={voice.id} className="border-slate-200">
+              <Card key={voice.id} className="border-border">
                 <CardContent className="py-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0 flex-1 space-y-2">
                       <div className="flex flex-wrap items-center gap-2">
                         {voice.is_default && (
-                          <Badge className="border border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-50">
+                          <Badge className="border border-primary/30 bg-primary/10 text-primary hover:bg-primary/10">
                             Default
                           </Badge>
                         )}
@@ -472,7 +472,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
                           {sampleCount} sample{sampleCount === 1 ? "" : "s"}
                         </span>
                       </div>
-                      <p className="text-sm font-medium text-slate-800">
+                      <p className="text-sm font-medium text-foreground">
                         {preview}
                       </p>
                     </div>
@@ -504,7 +504,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
                         size="sm"
                         onClick={() => handleDelete(voice.id)}
                         disabled={loadingId === voice.id}
-                        className="text-red-600 hover:text-red-700"
+                        className="text-destructive hover:text-destructive/80"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                         Delete
