@@ -115,7 +115,7 @@ export default async function HistoryDetailPage({
                 ))}
               </ul>
             </div>
-            <p className="text-sm text-teal-700">
+            <p className="text-sm text-primary">
               {output.hashtags.map((t) => (t.startsWith("#") ? t : `#${t}`)).join(" ")}
             </p>
           </CardContent>
