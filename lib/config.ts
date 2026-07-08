@@ -56,9 +56,10 @@ export type ModelTier = "fast" | "strong";
  * Provider-specific defaults when AI_MODEL_FAST / AI_MODEL_STRONG are unset.
  *
  * OpenRouter:
- *   fast   — google/gemini-3.1-flash-lite: very low cost, low latency; fine for short outputs.
- *   strong — anthropic/claude-sonnet-4.6: strong instruction-following and JSON
- *            structure at a similar or better price than gpt-4o on OpenRouter.
+ *   fast   — qwen/qwen3.6-flash: cheap, fast, natively multimodal; good for short outputs.
+ *   strong — qwen/qwen3.7-plus: cost-effective Qwen vision-language model; strong
+ *            instruction-following and coherence for multi-part outputs. Same model
+ *            serves the vision path, keeping voice consistent across text and photo.
  *
  * OpenAI (direct):
  *   fast   — gpt-4o-mini: native fast/cheap tier on the OpenAI API.
@@ -70,8 +71,8 @@ const PROVIDER_DEFAULT_MODELS: Record<AiProvider, Record<ModelTier, string>> = {
     strong: "gpt-4o",
   },
   openrouter: {
-    fast: "google/gemini-3.1-flash-lite",
-    strong: "anthropic/claude-sonnet-4.6",
+    fast: "qwen/qwen3.6-flash",
+    strong: "qwen/qwen3.7-plus",
   },
 };
 
@@ -83,9 +84,13 @@ export const FAST_MODEL =
 export const STRONG_MODEL =
   process.env.AI_MODEL_STRONG ?? PROVIDER_DEFAULT_MODELS[AI_PROVIDER].strong;
 
-/** Vision model for photo repurpose — pin a version slug, no -latest alias. */
+/**
+ * Vision model for photo repurpose — pin a version slug, no -latest alias.
+ * Defaults to the same Qwen model as the strong text tier: it is natively
+ * multimodal, so text and photo outputs share one model (consistent voice).
+ */
 export const VISION_MODEL =
-  process.env.AI_MODEL_VISION ?? "x-ai/grok-2-vision-1212";
+  process.env.AI_MODEL_VISION ?? "qwen/qwen3.7-plus";
 
 /** Plans allowed to use photo / vision repurpose. */
 export const VISION_ALLOWED_PLANS: Plan[] = ["creator", "pro"];
