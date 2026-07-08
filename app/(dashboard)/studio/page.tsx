@@ -28,6 +28,7 @@ export default async function StudioPage() {
     <RepurposeWorkspace
       repurposesUsed={usage.used}
       repurposesLimit={usage.limit}
+      userPlan={usage.plan}
       brandVoice={defaultVoice}
     />
   );

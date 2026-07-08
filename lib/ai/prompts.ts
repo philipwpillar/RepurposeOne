@@ -7,6 +7,14 @@ export interface PromptContext {
   targetTweets?: number;
 }
 
+export interface PhotoPromptContext {
+  brandVoiceText: string;
+  context: string;
+  cta?: string;
+  targetFormat: TargetFormat;
+  targetTweets?: number;
+}
+
 /**
  * Build the distilled brand voice block from samples and/or description.
  * In a future slice this profile can be cached on brand_voices after extraction.
@@ -162,6 +170,77 @@ Return JSON matching the required schema.`,
 Task: Write a newsletter email repurposing the source.
 - Include a compelling subject line and preview text.
 - Structure the body for easy scanning.
+Return JSON matching the required schema.`,
+      };
+  }
+}
+
+const PHOTO_TASK_PREAMBLE = `You are writing social copy to accompany a photo the user will post — not describing the image for accessibility, and not narrating what is visible in the photo.
+
+The user's context field is the authoritative signal for intent, angle, and purpose. The image informs specificity and detail only. Lean heavily on the brand voice block — voice grounding is thinner than a long-form text repurpose, so the brand voice and context must carry tone and intent.
+
+Do NOT produce copy that merely describes the photo ("In this image we see…"). Write platform-native copy the user can post alongside the image.`;
+
+export function buildPhotoGenerationPrompt(ctx: PhotoPromptContext): {
+  system: string;
+  user: string;
+} {
+  const tweetTarget = ctx.targetTweets ?? 7;
+  const ctaBlock = ctx.cta
+    ? `\nCall to action (use or adapt): ${ctx.cta}`
+    : "\nCall to action: infer a soft CTA from context, or omit if not appropriate.";
+
+  const baseUser = `Brand voice (follow strictly — this is your primary tone anchor):
+${ctx.brandVoiceText}
+
+User context (authoritative intent — what this post is about and why):
+${ctx.context}${ctaBlock}
+
+The attached image is the visual the copy will accompany. Use it for specificity, not as the main subject of the copy.`;
+
+  switch (ctx.targetFormat) {
+    case "x_thread":
+      return {
+        system: `${PHOTO_TASK_PREAMBLE}\n\n${X_THREAD_SYSTEM}`,
+        user: `${baseUser}
+
+Task: Write an X thread to accompany this photo.
+- Target approximately ${tweetTarget} tweets.
+- End with one takeaway or soft CTA.
+Return JSON matching the required schema.`,
+      };
+
+    case "linkedin":
+      return {
+        system: `${PHOTO_TASK_PREAMBLE}\n\n${LINKEDIN_SYSTEM}`,
+        user: `${baseUser}
+
+Task: Write a LinkedIn post to accompany this photo, plus carousel slide ideas.
+- Aim for 5–10 carousel slides.
+- Make the post standalone-readable even without the carousel.
+Return JSON matching the required schema.`,
+      };
+
+    case "instagram":
+      return {
+        system: `${PHOTO_TASK_PREAMBLE}\n\n${INSTAGRAM_SYSTEM}`,
+        user: `${baseUser}
+
+Task: Write an Instagram caption to accompany this photo.
+- Include 3–5 hook variations for A/B testing, all staying in the brand voice.
+- Suggest 3–8 relevant hashtags — fewer if the brand voice is minimal or direct.
+Return JSON matching the required schema.`,
+      };
+
+    case "email":
+      return {
+        system: `${PHOTO_TASK_PREAMBLE}\n\n${EMAIL_SYSTEM}`,
+        user: `${baseUser}
+
+Task: Write a newsletter email inspired by this photo and context.
+- Include a compelling subject line and preview text.
+- Structure the body for easy scanning.
+- Reference the photo naturally where relevant; do not describe it literally.
 Return JSON matching the required schema.`,
       };
   }
