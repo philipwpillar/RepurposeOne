@@ -3,6 +3,12 @@ import {
   INPUT_CONTENT_MAX_LENGTH,
   INPUT_CONTENT_MIN_LENGTH,
 } from "@/lib/config";
+import {
+  PHOTO_CONTEXT_MAX_LENGTH,
+  PHOTO_CONTEXT_MIN_LENGTH,
+  PHOTO_CTA_MAX_LENGTH,
+  PHOTO_ACCEPTED_MIMES,
+} from "@/lib/image/constants";
 
 // ---------------------------------------------------------------------------
 // Plan & usage
@@ -47,7 +53,13 @@ export type BrandVoiceInput = z.infer<typeof BrandVoiceInputSchema>;
 // Repurpose input / output
 // ---------------------------------------------------------------------------
 
-export const InputTypeSchema = z.enum(["paste", "txt", "pdf", "audio"]);
+export const InputTypeSchema = z.enum([
+  "paste",
+  "txt",
+  "pdf",
+  "audio",
+  "image",
+]);
 export type InputType = z.infer<typeof InputTypeSchema>;
 
 export const TargetFormatSchema = z.enum([
@@ -58,11 +70,18 @@ export const TargetFormatSchema = z.enum([
 ]);
 export type TargetFormat = z.infer<typeof TargetFormatSchema>;
 
-export const RepurposeStatusSchema = z.enum(["pending", "complete", "failed"]);
-export type RepurposeStatus = z.infer<typeof RepurposeStatusSchema>;
+const PhotoMimeSchema = z.enum(PHOTO_ACCEPTED_MIMES);
 
-export const GenerateRequestSchema = z.object({
-  input_type: InputTypeSchema.default("paste"),
+const GenerateRequestSharedSchema = z.object({
+  brand_voice_id: z.string().uuid().optional(),
+  brand_voice: BrandVoiceInputSchema.optional(),
+  target_format: TargetFormatSchema.default("x_thread"),
+  target_tweets: z.number().int().min(3).max(15).optional(),
+  generation_id: z.string().uuid().optional(),
+});
+
+export const TextGenerateRequestSchema = GenerateRequestSharedSchema.extend({
+  input_type: z.enum(["paste", "txt", "pdf", "audio"]).default("paste"),
   input_content: z
     .string()
     .min(
@@ -73,13 +92,32 @@ export const GenerateRequestSchema = z.object({
       INPUT_CONTENT_MAX_LENGTH,
       `Source content must be at most ${INPUT_CONTENT_MAX_LENGTH.toLocaleString()} characters`
     ),
-  brand_voice_id: z.string().uuid().optional(),
-  brand_voice: BrandVoiceInputSchema.optional(),
-  target_format: TargetFormatSchema.default("x_thread"),
-  target_tweets: z.number().int().min(3).max(15).optional(),
-  generation_id: z.string().uuid().optional(), // shared across a multi-format run (e.g. Regenerate All)
 });
+
+export const ImageGenerateRequestSchema = GenerateRequestSharedSchema.extend({
+  input_type: z.literal("image"),
+  image_base64: z.string().min(1, "Image data is required"),
+  image_mime: PhotoMimeSchema,
+  photo_context: z
+    .string()
+    .min(
+      PHOTO_CONTEXT_MIN_LENGTH,
+      `Context must be at least ${PHOTO_CONTEXT_MIN_LENGTH} characters`
+    )
+    .max(PHOTO_CONTEXT_MAX_LENGTH),
+  photo_cta: z.string().max(PHOTO_CTA_MAX_LENGTH).optional(),
+});
+
+export const RepurposeStatusSchema = z.enum(["pending", "complete", "failed"]);
+export type RepurposeStatus = z.infer<typeof RepurposeStatusSchema>;
+
+export const GenerateRequestSchema = z.union([
+  TextGenerateRequestSchema,
+  ImageGenerateRequestSchema,
+]);
 export type GenerateRequest = z.infer<typeof GenerateRequestSchema>;
+export type TextGenerateRequest = z.infer<typeof TextGenerateRequestSchema>;
+export type ImageGenerateRequest = z.infer<typeof ImageGenerateRequestSchema>;
 
 // ---------------------------------------------------------------------------
 // X/Twitter thread output (structured)
@@ -196,6 +234,7 @@ export const GenerateErrorResponseSchema = z.object({
     "rate_limited",
     "generation_failed",
     "internal_error",
+    "plan_required",
   ]),
   usage: UsageInfoSchema.optional(),
   upgrade_message: z.string().optional(),

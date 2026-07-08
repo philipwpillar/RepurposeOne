@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import type { PhotoMimeType } from "@/lib/image/constants";
 import {
   AI_CONFIG,
   getModelForFormat,
@@ -8,6 +9,7 @@ import {
 import {
   buildBrandVoiceBlock,
   buildGenerationPrompt,
+  buildPhotoGenerationPrompt,
   type PromptContext,
 } from "@/lib/ai/prompts";
 import {
@@ -120,6 +122,80 @@ export async function generateRepurpose(
     output: validated.data,
     model,
     modelTier,
+    tokensUsed: response.usage?.total_tokens,
+    promptTokens: response.usage?.prompt_tokens,
+    completionTokens: response.usage?.completion_tokens,
+  };
+}
+
+export interface GenerateImageInput {
+  imageBase64: string;
+  imageMime: PhotoMimeType;
+  context: string;
+  cta?: string;
+  brandVoice: BrandVoiceInput;
+  targetFormat: TargetFormat;
+  targetTweets?: number;
+}
+
+/**
+ * Vision-model generation for photo + guided context input.
+ */
+export async function generateRepurposeFromImage(
+  input: GenerateImageInput
+): Promise<GenerateResult> {
+  const brandVoiceText = buildBrandVoiceBlock(input.brandVoice);
+  const { system, user } = buildPhotoGenerationPrompt({
+    brandVoiceText,
+    context: input.context,
+    cta: input.cta,
+    targetFormat: input.targetFormat,
+    targetTweets: input.targetTweets,
+  });
+
+  const model = AI_CONFIG.visionModel;
+  const client = getAiClient();
+  const imageUrl = `data:${input.imageMime};base64,${input.imageBase64}`;
+
+  const response = await client.chat.completions.create({
+    model,
+    temperature: AI_CONFIG.temperature,
+    response_format: { type: "json_object" },
+    messages: [
+      { role: "system", content: system },
+      {
+        role: "user",
+        content: [
+          { type: "text", text: user },
+          { type: "image_url", image_url: { url: imageUrl } },
+        ],
+      },
+    ],
+  });
+
+  const rawContent = response.choices[0]?.message?.content;
+  if (!rawContent) {
+    throw new Error("AI returned an empty response");
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = parseJsonResponse(rawContent);
+  } catch {
+    throw new Error("AI response was not valid JSON");
+  }
+
+  const validated = RepurposeOutputSchema.safeParse(parsed);
+  if (!validated.success) {
+    throw new Error(
+      `AI output failed validation: ${validated.error.issues.map((i) => i.message).join("; ")}`
+    );
+  }
+
+  return {
+    output: validated.data,
+    model,
+    modelTier: "strong",
     tokensUsed: response.usage?.total_tokens,
     promptTokens: response.usage?.prompt_tokens,
     completionTokens: response.usage?.completion_tokens,

@@ -4,6 +4,15 @@ import React, { useCallback, useState } from 'react';
 import Link from 'next/link';
 import { INPUT_CONTENT_MIN_LENGTH } from '@/lib/config';
 import {
+  callPhotoGenerateApi,
+  PhotoGenerateApiError,
+} from '@/lib/repurpose/photo-generate-client';
+import type { InputMode, PhotoInputReady } from '@/types/photo-input';
+import type { Plan } from '@/types';
+import InputModeTabs from './InputModeTabs';
+import PhotoInputSection from './PhotoInputSection';
+import TextSourceCard from './TextSourceCard';
+import {
   formatEmailForCopy,
   formatInstagramForCopy,
   formatLinkedInForCopy,
@@ -77,6 +86,7 @@ interface RepurposeWorkspaceProps {
   initialTwitterLength?: number;
   repurposesUsed: number;
   repurposesLimit: number;
+  userPlan: Plan;
   brandVoice?: BrandVoiceProp | null;
   onTwitterGenerate?: (output: string) => void;
 }
@@ -87,13 +97,13 @@ export default function RepurposeWorkspace({
   initialTwitterLength,
   repurposesUsed,
   repurposesLimit,
+  userPlan,
   brandVoice = null,
   onTwitterGenerate,
 }: RepurposeWorkspaceProps) {
   const [inputSummary, setInputSummary] = useState(initialInput);
-  const [draftInputContent, setDraftInputContent] = useState(initialInput);
-  const [inputModalError, setInputModalError] = useState<string | null>(null);
-  const [isInputModalOpen, setIsInputModalOpen] = useState(false);
+  const [inputMode, setInputMode] = useState<InputMode>('paste');
+  const [photoInput, setPhotoInput] = useState<PhotoInputReady | null>(null);
 
   const [twitterLength, setTwitterLength] = useState(
     clampTargetTweets(initialTwitterLength ?? 6)
@@ -227,6 +237,82 @@ export default function RepurposeWorkspace({
     [onTwitterGenerate]
   );
 
+  const isPhotoMode = inputMode === 'photo';
+  const canGeneratePhoto =
+    isPhotoMode && photoInput !== null && userPlan !== 'free';
+
+  const handleModeChange = (mode: InputMode) => {
+    if (mode === inputMode) return;
+
+    if (mode === 'paste' && photoInput) {
+      const confirmed = window.confirm(
+        'Switching to paste text will clear your photo and context.'
+      );
+      if (!confirmed) return;
+      setPhotoInput(null);
+    }
+
+    setInputMode(mode);
+  };
+
+  const generatePhotoFormat = useCallback(
+    async (
+      format: TargetFormat,
+      options?: { targetTweets?: number; generationId?: string }
+    ) => {
+      if (!photoInput || userPlan === 'free') {
+        setFormatErrors((prev) => ({
+          ...prev,
+          [format]:
+            userPlan === 'free'
+              ? 'Photo repurpose requires a Creator or Pro plan.'
+              : 'Add a photo and context before generating.',
+        }));
+        return;
+      }
+
+      setFormatErrors((prev) => ({ ...prev, [format]: null }));
+      setFormatLoading((prev) => ({ ...prev, [format]: true }));
+
+      try {
+        const { output, usage } = await callPhotoGenerateApi({
+          photo: photoInput,
+          targetFormat: format,
+          brandVoice,
+          targetTweets: options?.targetTweets,
+          generationId: options?.generationId,
+        });
+        applyOutput(format, output);
+        setUsedCount(usage.used);
+
+        if (format === 'x_thread' && options?.targetTweets !== undefined) {
+          const length = clampTargetTweets(options.targetTweets);
+          setTwitterLength(length);
+          setPendingTwitterLength(length);
+        }
+      } catch (err) {
+        console.error(err);
+        if (err instanceof PhotoGenerateApiError && err.usage) {
+          setUsedCount(err.usage.used);
+        }
+        const fallbackMessages: Record<TargetFormat, string> = {
+          x_thread: 'Something went wrong while generating the Twitter thread. Please try again.',
+          linkedin: 'Something went wrong while generating the LinkedIn content. Please try again.',
+          instagram: 'Something went wrong while generating the Instagram caption. Please try again.',
+          email: 'Something went wrong while generating the email newsletter. Please try again.',
+        };
+        setFormatErrors((prev) => ({
+          ...prev,
+          [format]:
+            err instanceof Error ? err.message : fallbackMessages[format],
+        }));
+      } finally {
+        setFormatLoading((prev) => ({ ...prev, [format]: false }));
+      }
+    },
+    [applyOutput, brandVoice, photoInput, userPlan]
+  );
+
   const generateFormat = useCallback(
     async (
       format: TargetFormat,
@@ -286,6 +372,13 @@ export default function RepurposeWorkspace({
     lengthOverride?: number,
     inputContentOverride?: string
   ) => {
+    if (isPhotoMode) {
+      void generatePhotoFormat('x_thread', {
+        targetTweets: lengthOverride ?? pendingTwitterLength,
+      });
+      return;
+    }
+
     void generateFormat('x_thread', {
       inputContent: inputContentOverride,
       targetTweets: lengthOverride ?? pendingTwitterLength,
@@ -297,32 +390,40 @@ export default function RepurposeWorkspace({
   };
 
   const regenerateFormat = (format: TargetFormat) => {
+    if (isPhotoMode) {
+      void generatePhotoFormat(format);
+      return;
+    }
     void generateFormat(format);
   };
 
   const regenerateAll = async () => {
     setIsRegeneratingAll(true);
-    // One id shared across all four formats → billed as a single generation.
     const generationId = crypto.randomUUID();
-    await Promise.allSettled(
-      ALL_FORMATS.map((format) => generateFormat(format, { generationId }))
-    );
+
+    if (isPhotoMode) {
+      await Promise.allSettled(
+        ALL_FORMATS.map((format) => generatePhotoFormat(format, { generationId }))
+      );
+    } else {
+      await Promise.allSettled(
+        ALL_FORMATS.map((format) => generateFormat(format, { generationId }))
+      );
+    }
+
     setIsRegeneratingAll(false);
   };
 
-  const handleInputUpdate = () => {
-    const trimmed = draftInputContent.trim();
-    if (trimmed.length < INPUT_CONTENT_MIN_LENGTH) {
-      setInputModalError(
-        `Source content must be at least ${INPUT_CONTENT_MIN_LENGTH} characters.`
-      );
-      return;
-    }
-
-    setInputSummary(trimmed);
-    setIsInputModalOpen(false);
-    setInputModalError(null);
-    void regenerateAll();
+  const handleTextInputUpdate = async (content: string) => {
+    setInputSummary(content);
+    setIsRegeneratingAll(true);
+    const generationId = crypto.randomUUID();
+    await Promise.allSettled(
+      ALL_FORMATS.map((format) =>
+        generateFormat(format, { generationId, inputContent: content })
+      )
+    );
+    setIsRegeneratingAll(false);
   };
 
   const copyToClipboard = (format: TargetFormat) => {
@@ -402,31 +503,26 @@ export default function RepurposeWorkspace({
         <p className="text-sm text-muted-foreground mt-1">One input → Multiple high-quality outputs</p>
       </div>
 
-      <div
-        onClick={() => setIsInputModalOpen(true)}
-        className="bg-card border border-border rounded-2xl p-4 mb-5 cursor-pointer active:bg-accent transition-colors"
-      >
-        <div className="flex items-start justify-between">
-          <div className="flex-1 min-w-0">
-            <div className="text-xs font-medium text-muted-foreground mb-1">SOURCE CONTENT</div>
-            <div className="font-medium text-foreground line-clamp-2 pr-4">{inputSummary}</div>
-            <div className="text-xs text-muted-foreground mt-1">
-              {inputSummary.length.toLocaleString()} characters • Blog post
-            </div>
-          </div>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setDraftInputContent(inputSummary);
-              setInputModalError(null);
-              setIsInputModalOpen(true);
-            }}
-            className="text-xs px-3 py-1.5 rounded-xl border border-border text-muted-foreground hover:bg-accent"
-          >
-            Change
-          </button>
-        </div>
-      </div>
+      <InputModeTabs
+        value={inputMode}
+        onChange={handleModeChange}
+        disabled={isAnyLoading}
+      />
+
+      {isPhotoMode ? (
+        <PhotoInputSection
+          key="photo-input"
+          userPlan={userPlan}
+          disabled={isAnyLoading}
+          onReadyChange={setPhotoInput}
+        />
+      ) : (
+        <TextSourceCard
+          inputSummary={inputSummary}
+          isLoading={isAnyLoading}
+          onUpdate={handleTextInputUpdate}
+        />
+      )}
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div
@@ -748,10 +844,19 @@ export default function RepurposeWorkspace({
         <div className="max-w-screen-md mx-auto flex gap-3">
           <button
             onClick={() => void regenerateAll()}
-            disabled={isAnyLoading}
+            disabled={
+              isAnyLoading ||
+              (isPhotoMode
+                ? !canGeneratePhoto
+                : inputSummary.trim().length < INPUT_CONTENT_MIN_LENGTH)
+            }
             className="flex-1 py-3 text-sm font-medium rounded-2xl border border-border disabled:opacity-50"
           >
-            {isRegeneratingAll ? 'Regenerating all formats…' : 'Regenerate All'}
+            {isRegeneratingAll
+              ? isPhotoMode
+                ? 'Analysing your photo…'
+                : 'Regenerating all formats…'
+              : 'Regenerate All'}
           </button>
 
           <button
@@ -764,37 +869,20 @@ export default function RepurposeWorkspace({
         </div>
       </div>
 
-      {isInputModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-[60]">
-          <div className="bg-card w-full sm:w-[480px] sm:rounded-3xl rounded-t-3xl p-5">
-            <div className="font-semibold mb-3">Source Content</div>
-            <textarea
-              className="w-full h-40 border rounded-2xl p-4 text-sm"
-              value={draftInputContent}
-              onChange={(e) => setDraftInputContent(e.target.value)}
-            />
-            {inputModalError ? (
-              <p className="mt-2 text-xs text-destructive">{inputModalError}</p>
-            ) : null}
-            <div className="flex gap-3 mt-4">
-              <button onClick={() => setIsInputModalOpen(false)} className="flex-1 py-2.5 rounded-2xl border">Cancel</button>
-              <button
-                onClick={handleInputUpdate}
-                disabled={isAnyLoading}
-                className="flex-1 py-2.5 rounded-2xl bg-primary text-primary-foreground font-medium disabled:opacity-50"
-              >
-                {isAnyLoading ? 'Generating…' : 'Update & Regenerate All'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {isRegeneratingAll && (
         <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-[70]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-3"></div>
-            <p className="text-sm text-muted-foreground">Generating all formats…</p>
+            <p className="text-sm text-muted-foreground">
+              {isPhotoMode
+                ? 'Analysing your photo and generating all formats…'
+                : 'Generating all formats…'}
+            </p>
+            {isPhotoMode ? (
+              <p className="mt-1 text-xs text-muted-foreground">
+                This may take a little longer than text.
+              </p>
+            ) : null}
           </div>
         </div>
       )}

@@ -83,6 +83,17 @@ export const FAST_MODEL =
 export const STRONG_MODEL =
   process.env.AI_MODEL_STRONG ?? PROVIDER_DEFAULT_MODELS[AI_PROVIDER].strong;
 
+/** Vision model for photo repurpose — pin a version slug, no -latest alias. */
+export const VISION_MODEL =
+  process.env.AI_MODEL_VISION ?? "x-ai/grok-2-vision-1212";
+
+/** Plans allowed to use photo / vision repurpose. */
+export const VISION_ALLOWED_PLANS: Plan[] = ["creator", "pro"];
+
+export function planAllowsVision(plan: Plan): boolean {
+  return VISION_ALLOWED_PLANS.includes(plan);
+}
+
 /**
  * Maps each output format to a model tier.
  *
@@ -119,6 +130,8 @@ export const AI_CONFIG = {
   provider: AI_PROVIDER,
   fastModel: FAST_MODEL,
   strongModel: STRONG_MODEL,
+  visionModel: VISION_MODEL,
   maxInputChars: Number(process.env.AI_MAX_INPUT_CHARS ?? 30_000),
+  maxImageBase64Chars: Number(process.env.AI_MAX_IMAGE_BASE64_CHARS ?? 2_000_000),
   temperature: Number(process.env.AI_TEMPERATURE ?? 0.7),
 } as const;

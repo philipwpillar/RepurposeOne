@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
-import { generateRepurpose } from "@/lib/ai/generate";
+import { generateRepurpose, generateRepurposeFromImage } from "@/lib/ai/generate";
+import { AI_CONFIG, planAllowsVision } from "@/lib/config";
 import { createClient } from "@/lib/supabase/server";
-import { checkRateLimit, checkUsageLimit, getUpgradeMessage } from "@/lib/usage";
+import {
+  checkRateLimit,
+  checkUsageLimit,
+  getUpgradeMessage,
+  getUserPlan,
+} from "@/lib/usage";
 import {
   GenerateRequestSchema,
   type BrandVoiceInput,
@@ -113,15 +119,42 @@ export async function POST(request: Request) {
     });
   }
 
+  const requestData = parsed.data;
   const {
     input_type,
-    input_content,
     brand_voice_id,
     brand_voice,
     target_format,
     target_tweets,
     generation_id,
-  } = parsed.data;
+  } = requestData;
+
+  const isImageRequest = input_type === "image";
+
+  if (isImageRequest) {
+    const plan = await getUserPlan(supabase, user.id);
+    if (!planAllowsVision(plan)) {
+      return errorResponse(403, {
+        error:
+          "Photo repurpose is available on Creator and Pro plans. Upgrade to continue.",
+        code: "plan_required",
+        upgrade_message: getUpgradeMessage(plan),
+      });
+    }
+
+    if (requestData.image_base64.length > AI_CONFIG.maxImageBase64Chars) {
+      return errorResponse(400, {
+        error: "Image is too large after processing. Try a smaller photo.",
+        code: "validation_error",
+      });
+    }
+  }
+
+  const input_content = isImageRequest
+    ? requestData.photo_cta
+      ? `${requestData.photo_context}\n\nCTA: ${requestData.photo_cta}`
+      : requestData.photo_context
+    : requestData.input_content;
 
   // --- Burst rate limit before any DB write or AI spend ---
   let rateCheck;
@@ -203,12 +236,22 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await generateRepurpose({
-      inputContent: input_content,
-      brandVoice: resolvedVoice,
-      targetFormat: target_format,
-      targetTweets: target_tweets,
-    });
+    const result = isImageRequest
+      ? await generateRepurposeFromImage({
+          imageBase64: requestData.image_base64,
+          imageMime: requestData.image_mime,
+          context: requestData.photo_context,
+          cta: requestData.photo_cta,
+          brandVoice: resolvedVoice,
+          targetFormat: target_format,
+          targetTweets: target_tweets,
+        })
+      : await generateRepurpose({
+          inputContent: input_content,
+          brandVoice: resolvedVoice,
+          targetFormat: target_format,
+          targetTweets: target_tweets,
+        });
 
     const { error: updateError } = await supabase
       .from("repurposes")
