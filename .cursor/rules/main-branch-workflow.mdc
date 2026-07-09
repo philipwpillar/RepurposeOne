@@ -1,11 +1,14 @@
 ---
-description: Work directly on main; commit and push to main by default
+description: Every task ships as a fresh branch + PR into main. Never push to main directly, and never merge without explicit approval.
 alwaysApply: true
 ---
 
-# Main Branch Workflow
+# Branch Workflow
 
-- Always work on the `main` branch for this repo unless the user explicitly asks for a feature branch.
-- Before starting work, ensure you are on `main` and up to date (`git checkout main && git pull origin main`).
-- Commit and push directly to `origin/main` — do not create or use feature branches unless explicitly requested.
-- Do not open pull requests unless the user asks for one.
+- Never commit or push directly to `main`.
+- Before starting any task, run `git checkout main && git pull origin main` so you're branching from a clean, current base.
+- Create a new branch for every task, named for what it does (e.g. `fix/mobile-drawer-logo`, `feat/route-scaffolding`). Never reuse an old branch name — even one that sounds related to the current task — and never commit new, unrelated work onto a branch that was already merged once.
+- Commit and push all work to that new branch only.
+- Once pushed, open a pull request from the branch into `main`. Report the branch name and PR link back to the user.
+- Stop there. Do not merge the PR and do not push anything to `main` yourself, even if the branch builds cleanly and looks done.
+- Only merge into `main` when the user explicitly says to (e.g. "merge it," "merge PR #N," "ship it to main"). This is normally after independent verification has happened outside of Cursor.
