@@ -250,9 +250,13 @@ export function DashboardShell({ children, user, usage }: DashboardShellProps) {
           />
           <aside className="dark absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-card shadow-xl">
             <div className="flex h-14 items-center justify-between border-b border-border px-4">
-              <span className="text-lg font-semibold tracking-tight text-foreground">
+              <Link
+                href="/dashboard"
+                onClick={() => setMobileNavOpen(false)}
+                className="text-lg font-semibold tracking-tight text-foreground"
+              >
                 Voice<span className="text-primary">ora</span>
-              </span>
+              </Link>
               <Button
                 variant="ghost"
                 size="icon"
