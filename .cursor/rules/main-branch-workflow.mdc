@@ -1,0 +1,11 @@
+---
+description: Work directly on main; commit and push to main by default
+alwaysApply: true
+---
+
+# Main Branch Workflow
+
+- Always work on the `main` branch for this repo unless the user explicitly asks for a feature branch.
+- Before starting work, ensure you are on `main` and up to date (`git checkout main && git pull origin main`).
+- Commit and push directly to `origin/main` — do not create or use feature branches unless explicitly requested.
+- Do not open pull requests unless the user asks for one.
