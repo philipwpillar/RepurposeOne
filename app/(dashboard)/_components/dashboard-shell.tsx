@@ -198,7 +198,7 @@ export function DashboardShell({ children, user, usage }: DashboardShellProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden"
+              className="md:hidden text-muted-foreground hover:text-foreground"
               onClick={() => setMobileNavOpen(true)}
               aria-label="Open navigation"
             >
@@ -260,6 +260,7 @@ export function DashboardShell({ children, user, usage }: DashboardShellProps) {
               <Button
                 variant="ghost"
                 size="icon"
+                className="text-muted-foreground hover:text-foreground"
                 onClick={() => setMobileNavOpen(false)}
                 aria-label="Close navigation"
               >
