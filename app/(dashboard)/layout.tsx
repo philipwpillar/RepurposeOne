@@ -34,6 +34,16 @@ export default async function DashboardLayout({
     redirect("/sign-in");
   }
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("onboarding_completed_at")
+    .eq("id", user.id)
+    .single();
+
+  if (profile && !profile.onboarding_completed_at) {
+    redirect("/onboarding");
+  }
+
   const { usage } = await checkUsageLimit(supabase, user.id);
 
   const dashboardUser: DashboardUser = {
