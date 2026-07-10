@@ -103,7 +103,7 @@ export function planAllowsVision(plan: Plan): boolean {
  * Maps each output format to a model tier.
  *
  *   x_thread → strong — threads need coherent multi-tweet arcs, hooks, and pacing;
- *                       routed to STRONG_MODEL (Claude Sonnet 4.6 on OpenRouter by default).
+ *                       routed to STRONG_MODEL (qwen/qwen3.7-plus on OpenRouter by default).
  *
  * Add new formats here when they ship (e.g. linkedin_post → "fast").
  */
