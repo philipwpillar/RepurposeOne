@@ -222,6 +222,7 @@ export const GenerateSuccessResponseSchema = z.object({
   usage: UsageInfoSchema,
   model: z.string(),
   tokens_used: z.number().int().optional(),
+  source_hash: z.string(),
 });
 export type GenerateSuccessResponse = z.infer<typeof GenerateSuccessResponseSchema>;
 

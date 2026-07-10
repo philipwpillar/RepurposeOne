@@ -224,7 +224,7 @@ export async function POST(request: Request) {
       status: "pending",
       generation_id: generation_id ?? undefined, // undefined → DB default (own uuid); shared id groups a multi-format run for billing
     })
-    .select("id")
+    .select("id, source_hash")
     .single();
 
   if (insertError || !repurpose) {
@@ -280,6 +280,7 @@ export async function POST(request: Request) {
       },
       model: result.model,
       tokens_used: result.tokensUsed,
+      source_hash: repurpose.source_hash,
     });
   } catch (err) {
     const message = toUserFacingGenerationError(err);

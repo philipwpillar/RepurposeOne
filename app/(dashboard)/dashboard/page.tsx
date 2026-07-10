@@ -35,7 +35,7 @@ export default async function DashboardPage() {
 
   const { data: recent } = await supabase
     .from("repurposes")
-    .select("id, target_format, output, created_at")
+    .select("id, target_format, output, created_at, source_hash")
     .eq("user_id", user.id)
     .eq("status", "complete")
     .order("created_at", { ascending: false })
@@ -126,7 +126,7 @@ export default async function DashboardPage() {
         ) : (
           <div className="space-y-3">
             {recent.map((item) => (
-              <Link key={item.id} href={`/history/${item.id}`}>
+              <Link key={item.id} href={`/history/${item.source_hash}/${item.id}`}>
                 <Card className="transition-colors hover:bg-muted/30">
                   <CardContent className="flex items-start justify-between gap-4 py-4">
                     <div className="min-w-0 flex-1">

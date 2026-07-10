@@ -17,13 +17,13 @@ import { formatLabel } from "@/lib/format-output";
 import type { RepurposeOutput } from "@/types";
 
 interface HistoryDetailPageProps {
-  params: Promise<{ id: string }>;
+  params: Promise<{ hash: string; id: string }>;
 }
 
 export default async function HistoryDetailPage({
   params,
 }: HistoryDetailPageProps) {
-  const { id } = await params;
+  const { hash, id } = await params;
   const supabase = await createClient();
 
   const {
@@ -50,9 +50,9 @@ export default async function HistoryDetailPage({
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center gap-4">
         <Button asChild variant="ghost" size="sm">
-          <Link href="/history">
+          <Link href={`/history/${hash}`}>
             <ArrowLeft className="h-4 w-4" />
-            Back to history
+            Back to source
           </Link>
         </Button>
       </div>
