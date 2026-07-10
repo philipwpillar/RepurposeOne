@@ -134,6 +134,8 @@ export default function RepurposeWorkspace({
   );
   const [isRegeneratingAll, setIsRegeneratingAll] = useState(false);
   const [usedCount, setUsedCount] = useState(repurposesUsed);
+  const [copiedFormat, setCopiedFormat] = useState<TargetFormat | 'all' | null>(null);
+  const [copyError, setCopyError] = useState<TargetFormat | 'all' | null>(null);
 
   const isAnyLoading =
     isRegeneratingAll || ALL_FORMATS.some((format) => formatLoading[format]);
@@ -426,7 +428,7 @@ export default function RepurposeWorkspace({
     setIsRegeneratingAll(false);
   };
 
-  const copyToClipboard = (format: TargetFormat) => {
+  const copyToClipboard = async (format: TargetFormat) => {
     let text = '';
 
     switch (format) {
@@ -444,12 +446,26 @@ export default function RepurposeWorkspace({
         break;
     }
 
-    if (text) {
-      void navigator.clipboard.writeText(text);
+    if (!text) return;
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedFormat(format);
+      setTimeout(
+        () => setCopiedFormat((current) => (current === format ? null : current)),
+        2000
+      );
+    } catch (err) {
+      console.error('Clipboard write failed', err);
+      setCopyError(format);
+      setTimeout(
+        () => setCopyError((current) => (current === format ? null : current)),
+        2000
+      );
     }
   };
 
-  const copyAllToClipboard = () => {
+  const copyAllToClipboard = async () => {
     const parts: string[] = [];
 
     if (xThreadOutput) {
@@ -465,14 +481,21 @@ export default function RepurposeWorkspace({
       parts.push(`=== Email ===\n\n${formatEmailForCopy(emailOutput)}`);
     }
 
-    if (parts.length > 0) {
-      void navigator.clipboard.writeText(parts.join('\n\n'));
+    if (parts.length === 0) {
+      throw new Error('No generated content to copy');
     }
+
+    await navigator.clipboard.writeText(parts.join('\n\n'));
   };
 
-  const exportBundle = () => {
-    copyAllToClipboard();
-    alert('Copied all generated formats to clipboard as plain text.');
+  const exportBundle = async () => {
+    try {
+      await copyAllToClipboard();
+      alert('Copied all generated formats to clipboard as plain text.');
+    } catch (err) {
+      console.error('Clipboard write failed', err);
+      alert('Could not copy to clipboard. Your browser may be blocking clipboard access.');
+    }
   };
 
   const renderFormatError = (format: TargetFormat, message: string) => (
@@ -576,11 +599,23 @@ export default function RepurposeWorkspace({
               </div>
             </div>
             <button
-              onClick={() => copyToClipboard('x_thread')}
+              onClick={() => void copyToClipboard('x_thread')}
               disabled={formatLoading.x_thread || !xThreadOutput}
               className="text-xs px-3 py-1.5 rounded-2xl border border-border disabled:opacity-50"
             >
-              Copy
+              {copyError === 'x_thread' ? (
+                <>
+                  <i className="fas fa-times mr-1"></i>
+                  Failed
+                </>
+              ) : copiedFormat === 'x_thread' ? (
+                <>
+                  <i className="fas fa-check mr-1"></i>
+                  Copied!
+                </>
+              ) : (
+                'Copy'
+              )}
             </button>
           </div>
 
@@ -643,11 +678,23 @@ export default function RepurposeWorkspace({
               </div>
             </div>
             <button
-              onClick={() => copyToClipboard('linkedin')}
+              onClick={() => void copyToClipboard('linkedin')}
               disabled={formatLoading.linkedin || !linkedinOutput}
               className="text-xs px-3 py-1.5 rounded-2xl border border-border disabled:opacity-50"
             >
-              Copy
+              {copyError === 'linkedin' ? (
+                <>
+                  <i className="fas fa-times mr-1"></i>
+                  Failed
+                </>
+              ) : copiedFormat === 'linkedin' ? (
+                <>
+                  <i className="fas fa-check mr-1"></i>
+                  Copied!
+                </>
+              ) : (
+                'Copy'
+              )}
             </button>
           </div>
 
@@ -716,11 +763,23 @@ export default function RepurposeWorkspace({
               </div>
             </div>
             <button
-              onClick={() => copyToClipboard('instagram')}
+              onClick={() => void copyToClipboard('instagram')}
               disabled={formatLoading.instagram || !instagramOutput}
               className="text-xs px-3 py-1.5 rounded-2xl border border-border disabled:opacity-50"
             >
-              Copy
+              {copyError === 'instagram' ? (
+                <>
+                  <i className="fas fa-times mr-1"></i>
+                  Failed
+                </>
+              ) : copiedFormat === 'instagram' ? (
+                <>
+                  <i className="fas fa-check mr-1"></i>
+                  Copied!
+                </>
+              ) : (
+                'Copy'
+              )}
             </button>
           </div>
 
@@ -788,11 +847,23 @@ export default function RepurposeWorkspace({
               </div>
             </div>
             <button
-              onClick={() => copyToClipboard('email')}
+              onClick={() => void copyToClipboard('email')}
               disabled={formatLoading.email || !emailOutput}
               className="text-xs px-3 py-1.5 rounded-2xl border border-border disabled:opacity-50"
             >
-              Copy
+              {copyError === 'email' ? (
+                <>
+                  <i className="fas fa-times mr-1"></i>
+                  Failed
+                </>
+              ) : copiedFormat === 'email' ? (
+                <>
+                  <i className="fas fa-check mr-1"></i>
+                  Copied!
+                </>
+              ) : (
+                'Copy'
+              )}
             </button>
           </div>
 
@@ -860,7 +931,7 @@ export default function RepurposeWorkspace({
           </button>
 
           <button
-            onClick={exportBundle}
+            onClick={() => void exportBundle()}
             disabled={!xThreadOutput && !linkedinOutput && !instagramOutput && !emailOutput}
             className="flex-1 py-3 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold rounded-2xl disabled:opacity-50"
           >
