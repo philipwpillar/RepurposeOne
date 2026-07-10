@@ -5,7 +5,7 @@ import "./landing.css";
 function VoLogoMark() {
   return (
     <svg
-      viewBox="0 0 32 32"
+      viewBox="0 4.4 32 32"
       fill="none"
       aria-hidden="true"
       width="30"
