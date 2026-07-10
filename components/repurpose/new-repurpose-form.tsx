@@ -338,7 +338,7 @@ export function NewRepurposeForm({ initialUsage }: NewRepurposeFormProps) {
           )}
           <div className="flex gap-3">
             <Button asChild variant="outline">
-              <Link href={`/history/${result.repurpose_id}`}>View in history</Link>
+              <Link href={`/history/${result.source_hash}/${result.repurpose_id}`}>View in history</Link>
             </Button>
             <Button
               variant="ghost"
