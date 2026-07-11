@@ -49,8 +49,14 @@ export default function TextSourceCard({
             <div className="mb-1 text-xs font-medium text-muted-foreground">
               SOURCE CONTENT
             </div>
-            <div className="line-clamp-2 pr-4 font-medium text-foreground">
-              {inputSummary}
+            <div
+              className={`line-clamp-2 pr-4 ${
+                inputSummary
+                  ? "font-medium text-foreground"
+                  : "italic text-muted-foreground"
+              }`}
+            >
+              {inputSummary || "Add your source content to get started"}
             </div>
             <div className="mt-1 text-xs text-muted-foreground">
               {inputSummary.length.toLocaleString()} characters • Blog post

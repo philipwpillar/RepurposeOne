@@ -102,7 +102,7 @@ export default async function HomePage() {
               </p>
               <div className="cta-row">
                 {user ? (
-                  <Link href="/new" className="btn-primary">
+                  <Link href="/studio" className="btn-primary">
                     Create a repurpose
                   </Link>
                 ) : (

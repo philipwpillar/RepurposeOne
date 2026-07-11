@@ -92,7 +92,7 @@ interface RepurposeWorkspaceProps {
 }
 
 export default function RepurposeWorkspace({
-  initialInput = "How I built and launched my first SaaS in 30 days while working full-time",
+  initialInput = "",
   initialTwitterOutput,
   initialTwitterLength,
   repurposesUsed,

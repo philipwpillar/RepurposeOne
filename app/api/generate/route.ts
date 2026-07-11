@@ -259,6 +259,10 @@ export async function POST(request: Request) {
         output: result.output,
         status: "complete",
         error_message: null,
+        tokens_used: result.tokensUsed ?? null,
+        prompt_tokens: result.promptTokens ?? null,
+        completion_tokens: result.completionTokens ?? null,
+        model: result.model,
       })
       .eq("id", repurpose.id)
       .eq("user_id", user.id);
