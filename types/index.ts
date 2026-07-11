@@ -126,14 +126,14 @@ export type ImageGenerateRequest = z.infer<typeof ImageGenerateRequestSchema>;
 export const TweetSchema = z.object({
   number: z.number().int().min(1),
   text: z.string().min(1).max(280),
-  media_suggestion: z.string().max(200).optional(),
+  media_suggestion: z.string().max(200).nullish(),
 });
 export type Tweet = z.infer<typeof TweetSchema>;
 
 export const XThreadOutputSchema = z.object({
   format: z.literal("x_thread"),
   tweets: z.array(TweetSchema).min(3).max(15),
-  thread_summary: z.string().max(500).optional(),
+  thread_summary: z.string().max(500).nullish(),
 });
 export type XThreadOutput = z.infer<typeof XThreadOutputSchema>;
 

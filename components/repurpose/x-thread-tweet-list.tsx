@@ -7,7 +7,7 @@ import { useCopyToClipboard } from "./use-copy-to-clipboard";
 
 interface XThreadTweetListProps {
   tweets: Tweet[];
-  threadSummary?: string;
+  threadSummary?: string | null;
   variant?: "studio" | "library";
   showCopyAll?: boolean;
 }
