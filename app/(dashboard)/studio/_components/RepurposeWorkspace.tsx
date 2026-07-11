@@ -12,6 +12,10 @@ import type { Plan } from '@/types';
 import InputModeTabs from './InputModeTabs';
 import PhotoInputSection from './PhotoInputSection';
 import TextSourceCard from './TextSourceCard';
+import { EmailOutputPanel } from '@/components/repurpose/email-output-panel';
+import { InstagramOutputPanel } from '@/components/repurpose/instagram-output-panel';
+import { LinkedInOutputPanel } from '@/components/repurpose/linkedin-output-panel';
+import { XThreadTweetList } from '@/components/repurpose/x-thread-tweet-list';
 import {
   formatEmailForCopy,
   formatInstagramForCopy,
@@ -134,8 +138,6 @@ export default function RepurposeWorkspace({
   );
   const [isRegeneratingAll, setIsRegeneratingAll] = useState(false);
   const [usedCount, setUsedCount] = useState(repurposesUsed);
-  const [copiedFormat, setCopiedFormat] = useState<TargetFormat | 'all' | null>(null);
-  const [copyError, setCopyError] = useState<TargetFormat | 'all' | null>(null);
 
   const isAnyLoading =
     isRegeneratingAll || ALL_FORMATS.some((format) => formatLoading[format]);
@@ -428,43 +430,6 @@ export default function RepurposeWorkspace({
     setIsRegeneratingAll(false);
   };
 
-  const copyToClipboard = async (format: TargetFormat) => {
-    let text = '';
-
-    switch (format) {
-      case 'x_thread':
-        if (xThreadOutput) text = formatXThreadForCopy(xThreadOutput);
-        break;
-      case 'linkedin':
-        if (linkedinOutput) text = formatLinkedInForCopy(linkedinOutput);
-        break;
-      case 'instagram':
-        if (instagramOutput) text = formatInstagramForCopy(instagramOutput);
-        break;
-      case 'email':
-        if (emailOutput) text = formatEmailForCopy(emailOutput);
-        break;
-    }
-
-    if (!text) return;
-
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedFormat(format);
-      setTimeout(
-        () => setCopiedFormat((current) => (current === format ? null : current)),
-        2000
-      );
-    } catch (err) {
-      console.error('Clipboard write failed', err);
-      setCopyError(format);
-      setTimeout(
-        () => setCopyError((current) => (current === format ? null : current)),
-        2000
-      );
-    }
-  };
-
   const copyAllToClipboard = async () => {
     const parts: string[] = [];
 
@@ -514,10 +479,6 @@ export default function RepurposeWorkspace({
     </div>
   );
 
-  const twitterDisplayText = xThreadOutput
-    ? formatXThreadForCopy(xThreadOutput)
-    : 'Click Regenerate to generate your X thread from the source content.';
-
   return (
     <div className="max-w-screen-md mx-auto px-4 pt-6 pb-24 bg-background min-h-screen">
 
@@ -548,15 +509,12 @@ export default function RepurposeWorkspace({
       )}
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-        <div
-          onClick={() => alert("Brand Voice settings modal (to be connected)")}
-          className="flex items-center gap-x-2 cursor-pointer"
-        >
+        <Link href="/brand-voice" className="flex items-center gap-x-2 cursor-pointer">
           <div className="bg-card border border-border rounded-2xl px-3 py-2 flex items-center gap-x-2">
             <i className="fas fa-magic text-primary"></i>
             <span className="text-sm">Brand Voice: <span className="font-medium">{brandVoice?.description?.trim() || (brandVoice ? 'Custom voice' : 'No voice set — using default')}</span></span>
           </div>
-        </div>
+        </Link>
 
         <div className="bg-teal-500/10 border border-teal-500/30 rounded-2xl px-4 py-2 flex items-center gap-x-2">
           <i className="fas fa-clock text-teal-600"></i>
@@ -598,31 +556,16 @@ export default function RepurposeWorkspace({
                 </div>
               </div>
             </div>
-            <button
-              onClick={() => void copyToClipboard('x_thread')}
-              disabled={formatLoading.x_thread || !xThreadOutput}
-              className="text-xs px-3 py-1.5 rounded-2xl border border-border disabled:opacity-50"
-            >
-              {copyError === 'x_thread' ? (
-                <>
-                  <i className="fas fa-times mr-1"></i>
-                  Failed
-                </>
-              ) : copiedFormat === 'x_thread' ? (
-                <>
-                  <i className="fas fa-check mr-1"></i>
-                  Copied!
-                </>
-              ) : (
-                'Copy'
-              )}
-            </button>
           </div>
 
           <div className="p-5">
-            <div className={`text-sm mb-4 leading-relaxed whitespace-pre-line ${xThreadOutput ? 'text-foreground' : 'text-muted-foreground italic'}`}>
-              {twitterDisplayText}
-            </div>
+            {xThreadOutput ? (
+              <XThreadTweetList tweets={xThreadOutput.tweets} variant="studio" />
+            ) : (
+              <div className="text-sm mb-4 leading-relaxed text-muted-foreground italic">
+                Click Regenerate to generate your X thread from the source content.
+              </div>
+            )}
 
             {formatErrors.x_thread && renderFormatError('x_thread', formatErrors.x_thread)}
 
@@ -677,58 +620,13 @@ export default function RepurposeWorkspace({
                 </div>
               </div>
             </div>
-            <button
-              onClick={() => void copyToClipboard('linkedin')}
-              disabled={formatLoading.linkedin || !linkedinOutput}
-              className="text-xs px-3 py-1.5 rounded-2xl border border-border disabled:opacity-50"
-            >
-              {copyError === 'linkedin' ? (
-                <>
-                  <i className="fas fa-times mr-1"></i>
-                  Failed
-                </>
-              ) : copiedFormat === 'linkedin' ? (
-                <>
-                  <i className="fas fa-check mr-1"></i>
-                  Copied!
-                </>
-              ) : (
-                'Copy'
-              )}
-            </button>
           </div>
 
           <div className="p-5 space-y-4">
             {formatErrors.linkedin && renderFormatError('linkedin', formatErrors.linkedin)}
 
             {linkedinOutput ? (
-              <>
-                <div>
-                  <div className="text-xs font-medium text-muted-foreground mb-2">POST</div>
-                  <div className="text-sm text-foreground leading-relaxed whitespace-pre-line bg-secondary p-4 rounded-2xl">
-                    {linkedinOutput.post}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-xs font-medium text-muted-foreground mb-2">CAROUSEL SLIDES</div>
-                  <div className="space-y-2">
-                    {linkedinOutput.carousel_slides.map((slide) => (
-                      <div key={slide.number} className="flex items-start gap-3 bg-secondary p-3 rounded-2xl text-sm">
-                        <div className="w-5 h-5 rounded-full bg-secondary flex items-center justify-center text-xs font-medium flex-shrink-0 mt-0.5">
-                          {slide.number}
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-medium text-foreground">{slide.title}</div>
-                          {slide.body && (
-                            <div className="text-muted-foreground mt-1">{slide.body}</div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
+              <LinkedInOutputPanel output={linkedinOutput} variant="studio" />
             ) : (
               <p className="text-sm text-muted-foreground italic">
                 Click Regenerate to generate your LinkedIn post and carousel slide ideas.
@@ -762,59 +660,13 @@ export default function RepurposeWorkspace({
                 </div>
               </div>
             </div>
-            <button
-              onClick={() => void copyToClipboard('instagram')}
-              disabled={formatLoading.instagram || !instagramOutput}
-              className="text-xs px-3 py-1.5 rounded-2xl border border-border disabled:opacity-50"
-            >
-              {copyError === 'instagram' ? (
-                <>
-                  <i className="fas fa-times mr-1"></i>
-                  Failed
-                </>
-              ) : copiedFormat === 'instagram' ? (
-                <>
-                  <i className="fas fa-check mr-1"></i>
-                  Copied!
-                </>
-              ) : (
-                'Copy'
-              )}
-            </button>
           </div>
 
           <div className="p-5 space-y-4">
             {formatErrors.instagram && renderFormatError('instagram', formatErrors.instagram)}
 
             {instagramOutput ? (
-              <>
-                <div>
-                  <div className="text-xs font-medium text-muted-foreground mb-2">CAPTION</div>
-                  <div className="text-sm text-foreground leading-relaxed whitespace-pre-line">
-                    {instagramOutput.caption}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-xs font-medium text-muted-foreground mb-2">HOOK VARIATIONS</div>
-                  <ul className="space-y-2">
-                    {instagramOutput.hook_variations.map((hook, index) => (
-                      <li key={index} className="text-sm text-foreground bg-secondary p-3 rounded-2xl">
-                        {hook}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div>
-                  <div className="text-xs font-medium text-muted-foreground mb-2">HASHTAGS</div>
-                  <div className="text-sm text-primary">
-                    {instagramOutput.hashtags
-                      .map((tag) => (tag.startsWith('#') ? tag : `#${tag}`))
-                      .join(' ')}
-                  </div>
-                </div>
-              </>
+              <InstagramOutputPanel output={instagramOutput} variant="studio" />
             ) : (
               <p className="text-sm text-muted-foreground italic">
                 Click Regenerate to generate your Instagram caption, hooks, and hashtags.
@@ -846,51 +698,13 @@ export default function RepurposeWorkspace({
                 </div>
               </div>
             </div>
-            <button
-              onClick={() => void copyToClipboard('email')}
-              disabled={formatLoading.email || !emailOutput}
-              className="text-xs px-3 py-1.5 rounded-2xl border border-border disabled:opacity-50"
-            >
-              {copyError === 'email' ? (
-                <>
-                  <i className="fas fa-times mr-1"></i>
-                  Failed
-                </>
-              ) : copiedFormat === 'email' ? (
-                <>
-                  <i className="fas fa-check mr-1"></i>
-                  Copied!
-                </>
-              ) : (
-                'Copy'
-              )}
-            </button>
           </div>
 
           <div className="p-5 space-y-4">
             {formatErrors.email && renderFormatError('email', formatErrors.email)}
 
             {emailOutput ? (
-              <>
-                <div>
-                  <div className="text-xs font-medium text-muted-foreground mb-1">SUBJECT LINE</div>
-                  <div className="text-sm font-medium text-foreground">{emailOutput.subject_line}</div>
-                </div>
-
-                {emailOutput.preview_text && (
-                  <div>
-                    <div className="text-xs font-medium text-muted-foreground mb-1">PREVIEW TEXT</div>
-                    <div className="text-sm text-muted-foreground">{emailOutput.preview_text}</div>
-                  </div>
-                )}
-
-                <div>
-                  <div className="text-xs font-medium text-muted-foreground mb-2">BODY</div>
-                  <div className="text-sm text-foreground leading-relaxed whitespace-pre-line bg-secondary p-4 rounded-2xl">
-                    {emailOutput.body}
-                  </div>
-                </div>
-              </>
+              <EmailOutputPanel output={emailOutput} variant="studio" />
             ) : (
               <p className="text-sm text-muted-foreground italic">
                 Click Regenerate to generate your email subject line and newsletter draft.

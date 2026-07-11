@@ -10,22 +10,48 @@ export function formatXThreadForCopy(output: XThreadOutput): string {
   return output.tweets.map((tweet) => tweet.text).join("\n\n");
 }
 
-export function formatLinkedInForCopy(output: LinkedInOutput): string {
-  const slides = output.carousel_slides
+function formatHashtagsForCopy(hashtags: string[]): string {
+  return hashtags.map((t) => (t.startsWith("#") ? t : `#${t}`)).join(" ");
+}
+
+export function formatLinkedInPostForCopy(output: LinkedInOutput): string {
+  return output.post;
+}
+
+export function formatLinkedInSlidesForCopy(output: LinkedInOutput): string {
+  return output.carousel_slides
     .map((slide) => {
       const body = slide.body ? `\n${slide.body}` : "";
       return `Slide ${slide.number}: ${slide.title}${body}`;
     })
     .join("\n\n");
+}
 
-  return `${output.post}\n\n--- Carousel slides ---\n\n${slides}`;
+export function formatLinkedInForCopy(output: LinkedInOutput): string {
+  return `${formatLinkedInPostForCopy(output)}\n\n--- Carousel slides ---\n\n${formatLinkedInSlidesForCopy(output)}`;
+}
+
+export function formatInstagramCaptionForCopy(output: InstagramOutput): string {
+  const tags = formatHashtagsForCopy(output.hashtags);
+  return tags ? `${output.caption}\n\n${tags}` : output.caption;
 }
 
 export function formatInstagramForCopy(output: InstagramOutput): string {
   const hooks = output.hook_variations.map((h, i) => `${i + 1}. ${h}`).join("\n");
-  const tags = output.hashtags.map((t) => (t.startsWith("#") ? t : `#${t}`)).join(" ");
+  const tags = formatHashtagsForCopy(output.hashtags);
 
   return `${output.caption}\n\n--- Hook variations ---\n${hooks}\n\n${tags}`;
+}
+
+export function formatEmailSubjectForCopy(output: EmailOutput): string {
+  const preview = output.preview_text
+    ? `\n\nPreview: ${output.preview_text}`
+    : "";
+  return `Subject: ${output.subject_line}${preview}`;
+}
+
+export function formatEmailBodyForCopy(output: EmailOutput): string {
+  return output.body;
 }
 
 export function formatEmailForCopy(output: EmailOutput): string {

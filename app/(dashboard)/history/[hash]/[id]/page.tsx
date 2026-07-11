@@ -5,14 +5,10 @@ import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { XThreadOutputDisplay } from "@/components/repurpose/x-thread-output";
+import { LinkedInOutputPanel } from "@/components/repurpose/linkedin-output-panel";
+import { InstagramOutputPanel } from "@/components/repurpose/instagram-output-panel";
+import { EmailOutputPanel } from "@/components/repurpose/email-output-panel";
 import { formatLabel } from "@/lib/format-output";
 import type { RepurposeOutput } from "@/types";
 
@@ -81,62 +77,15 @@ export default async function HistoryDetailPage({
       )}
 
       {output?.format === "linkedin" && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">LinkedIn post</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="whitespace-pre-wrap text-sm">{output.post}</p>
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground">Carousel slides</p>
-              {output.carousel_slides.map((slide) => (
-                <div key={slide.number} className="rounded-md border p-3 text-sm">
-                  <p className="font-medium">{slide.title}</p>
-                  {slide.body && <p className="mt-1 text-muted-foreground">{slide.body}</p>}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <LinkedInOutputPanel output={output} variant="library" />
       )}
 
       {output?.format === "instagram" && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Instagram caption</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="whitespace-pre-wrap text-sm">{output.caption}</p>
-            <div>
-              <p className="mb-2 text-xs font-medium text-muted-foreground">Hook variations</p>
-              <ul className="list-disc space-y-1 pl-5 text-sm">
-                {output.hook_variations.map((hook, i) => (
-                  <li key={i}>{hook}</li>
-                ))}
-              </ul>
-            </div>
-            <p className="text-sm text-primary">
-              {output.hashtags.map((t) => (t.startsWith("#") ? t : `#${t}`)).join(" ")}
-            </p>
-          </CardContent>
-        </Card>
+        <InstagramOutputPanel output={output} variant="library" />
       )}
 
       {output?.format === "email" && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Email newsletter</CardTitle>
-            <CardDescription>{output.subject_line}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {output.preview_text && (
-              <p className="mb-3 text-sm text-muted-foreground">
-                Preview: {output.preview_text}
-              </p>
-            )}
-            <p className="whitespace-pre-wrap text-sm">{output.body}</p>
-          </CardContent>
-        </Card>
+        <EmailOutputPanel output={output} variant="library" />
       )}
     </div>
   );
