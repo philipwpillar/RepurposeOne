@@ -49,11 +49,12 @@ You MUST respond with valid JSON only — no markdown fences, no commentary. Use
 }
 
 Rules:
-- Each tweet text MUST be ≤ 280 characters.
+- Each tweet text MUST be ≤ 280 characters — count before finalizing; this is a hard limit.
 - Number tweets sequentially starting at 1.
 - Open with a scroll-stopping first tweet (no "thread 🧵" cliché unless on-brand).
 - Aim for the target tweet count; use fewer only if the content is genuinely thin.
-- media_suggestion is optional; include only when a visual would strengthen the tweet.`;
+- media_suggestion is optional — omit the key entirely when not needed. Do not include it as null.
+- thread_summary is optional — omit the key entirely when not needed. Do not include it as null.`;
 
 const LINKEDIN_SYSTEM = `You are an expert LinkedIn ghostwriter. You write professional posts that drive engagement and pair them with carousel slide ideas.
 Stay strictly in the user's brand voice. Use line breaks for readability. Avoid excessive hashtags (0–3 max in the post).
