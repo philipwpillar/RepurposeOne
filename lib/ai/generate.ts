@@ -19,6 +19,11 @@ import {
   type TargetFormat,
 } from "@/types";
 
+type OpenRouterChatCompletionParams =
+  OpenAI.Chat.Completions.ChatCompletionCreateParams & {
+    reasoning?: { enabled: boolean };
+  };
+
 export interface GenerateInput {
   inputContent: string;
   brandVoice: BrandVoiceInput;
@@ -89,15 +94,18 @@ export async function generateRepurpose(
 
   const client = getAiClient();
 
-  const response = await client.chat.completions.create({
+  const completionParams: OpenRouterChatCompletionParams = {
     model,
     temperature: AI_CONFIG.temperature,
     response_format: { type: "json_object" },
+    reasoning: { enabled: false },
     messages: [
       { role: "system", content: system },
       { role: "user", content: user },
     ],
-  });
+  };
+
+  const response = await client.chat.completions.create(completionParams);
 
   const rawContent = response.choices[0]?.message?.content;
   if (!rawContent) {
@@ -157,10 +165,11 @@ export async function generateRepurposeFromImage(
   const client = getAiClient();
   const imageUrl = `data:${input.imageMime};base64,${input.imageBase64}`;
 
-  const response = await client.chat.completions.create({
+  const completionParams: OpenRouterChatCompletionParams = {
     model,
     temperature: AI_CONFIG.temperature,
     response_format: { type: "json_object" },
+    reasoning: { enabled: false },
     messages: [
       { role: "system", content: system },
       {
@@ -171,7 +180,9 @@ export async function generateRepurposeFromImage(
         ],
       },
     ],
-  });
+  };
+
+  const response = await client.chat.completions.create(completionParams);
 
   const rawContent = response.choices[0]?.message?.content;
   if (!rawContent) {
