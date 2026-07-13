@@ -2,7 +2,7 @@
 
 import React, { useCallback, useState } from 'react';
 import Link from 'next/link';
-import { INPUT_CONTENT_MIN_LENGTH } from '@/lib/config';
+import { INPUT_CONTENT_MIN_LENGTH, planAllowsVision } from '@/lib/config';
 import {
   callPhotoGenerateApi,
   PhotoGenerateApiError,
@@ -243,7 +243,7 @@ export default function RepurposeWorkspace({
 
   const isPhotoMode = inputMode === 'photo';
   const canGeneratePhoto =
-    isPhotoMode && photoInput !== null && userPlan !== 'free';
+    isPhotoMode && photoInput !== null && planAllowsVision(userPlan);
 
   const handleModeChange = (mode: InputMode) => {
     if (mode === inputMode) return;
@@ -264,11 +264,11 @@ export default function RepurposeWorkspace({
       format: TargetFormat,
       options?: { targetTweets?: number; generationId?: string }
     ) => {
-      if (!photoInput || userPlan === 'free') {
+      if (!photoInput || !planAllowsVision(userPlan)) {
         setFormatErrors((prev) => ({
           ...prev,
           [format]:
-            userPlan === 'free'
+            !planAllowsVision(userPlan)
               ? 'Photo repurpose requires a Creator or Pro plan.'
               : 'Add a photo and context before generating.',
         }));

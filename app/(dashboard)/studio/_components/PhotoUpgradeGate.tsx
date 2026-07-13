@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Lock } from "lucide-react";
+import { planAllowsVision } from "@/lib/config";
 import type { Plan } from "@/types";
 
 interface PhotoUpgradeGateProps {
@@ -9,7 +10,7 @@ interface PhotoUpgradeGateProps {
 }
 
 export default function PhotoUpgradeGate({ plan }: PhotoUpgradeGateProps) {
-  if (plan !== "free") {
+  if (planAllowsVision(plan)) {
     return null;
   }
 
