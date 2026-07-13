@@ -1,0 +1,36 @@
+# Moment Bundle — Decisions Register (v1, 2026-07-12)
+
+Settled decisions amending/confirming `docs/plans/moment-bundle-implementation-plan.md`. All subsequent briefs cite this register. None of these are open for relitigation in implementation sessions.
+
+## Product decisions (Phil)
+| # | Decision |
+|---|----------|
+| D1 | Bundle = add-on surface; single-input studio remains primary |
+| D2 | Photo outputs = user's own photos + generated captions; no image generation |
+| D3 | Rendered clips in-app: Voiceora cuts and finishes (trim, static styled caption burn, encode) |
+| D4 | Gating: new **Pro Plus** tier ~£59/mo (display name provisional — internal enum `pro_plus` is final regardless of display name) |
+| D5 | Rendered clip retention: **30 days** |
+| D6 | GDPR track handled separately (options per plan §9 risk 5); does not block Briefs 0a/0b/1a; gates first vision-call beta |
+
+## Numbers (Phil-approved 2026-07-12)
+| # | Value |
+|---|-------|
+| N1 | `PLAN_LIMITS.pro_plus` = **1000** generations/month (matches Pro — a higher tier never has fewer) |
+| N2 | **Bundle cap: 30 bundles/month** for Pro Plus — separate counter, `COUNT` on `bundles` by user + month (mirrors `count_monthly_generations` semantics; failed-analysis bundles not counted, consistent with existing not-billed rule) |
+| N3 | Rate limit becomes plan-aware: `maxRequests` **20 per 10 min for `pro_plus`**, all other plans unchanged at 10. Per-row counting semantics untouched. |
+| N4 | Video caps: **≤180s duration** (primary gate) + **≤500MB** size ceiling. Duration: client metadata + worker probe backstop. Size: signed-upload route. Oversize client error must instruct "export at 1080p and retry". |
+| N5 | Photos ≤8/bundle, videos ≤2/bundle, voice ≤300s/25MB (per plan §2, unchanged) |
+
+## Architecture decisions (Claude-recommended, Phil-approved)
+| # | Decision |
+|---|----------|
+| A1 | **Two-stage generation pipeline**: stage 1 = one vision call per video (own frames only → candidate moments) + one vision call for the photo set; stage 2 = text-only synthesis call (STRONG tier, no images) producing the final pack (captions, posting order, clip specs, platform posts input). Eliminates per-call image limits by construction. All calls share one `generation_id`. Frame budget: ~30–40 frames/video default; spike confirms ceiling. |
+| A2 | Bundle surface lives at top-level **`app/(dashboard)/bundles/`** — flat sibling to studio/history/brand-voice/upgrade, inheriting the dashboard shell. Not nested under studio. |
+| A3 | Worker: Railway; job dispatch: DB poll ~5s + optional authenticated wake; client observation: HTTP polling 2–3s v1 (per plan §5–6, accepted) |
+| A4 | Data model per plan §1 accepted, plus the N2 bundle counter |
+| A5 | ASR provider: **unpinned** — decision rides with the GDPR track (D6). Brief 2b does not start until pinned. |
+
+## Standing constraints (every brief)
+- Protected fence in `RepurposeWorkspace.tsx` untouched: `GenerateApiError`, `callGenerateApi`, both 402 `setUsedCount(err.usage.used)` branches, `PhotoGenerateApiError`/`callPhotoGenerateApi` usage. Brief 0a's three plan-gate expressions (lines 246/267/271 at `9a6c01c`) are the only sanctioned edits in that file until further notice.
+- Two-push gate: feature branch + PR, no merge; Claude verifies via fresh clone before Phil's go-ahead.
+- Sequencing: **Stripe live-mode activation precedes all implementation briefs.** Brief 0a may be executed by Cursor in parallel with Phil's Stripe afternoon only because it is revenue-adjacent plumbing with zero product surface.
