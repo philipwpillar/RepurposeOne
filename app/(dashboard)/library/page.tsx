@@ -94,7 +94,7 @@ export default async function HistoryPage() {
       ) : (
         <div className="space-y-3">
           {sourceGroups.map((group) => (
-            <Link key={group.sourceHash} href={`/history/${group.sourceHash}`}>
+            <Link key={group.sourceHash} href={`/library/${group.sourceHash}`}>
               <Card className="transition-colors hover:bg-muted/30">
                 <CardContent className="flex items-start justify-between gap-4 py-4">
                   <div className="min-w-0 flex-1 space-y-2">

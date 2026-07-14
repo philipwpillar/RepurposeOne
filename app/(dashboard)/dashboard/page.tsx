@@ -57,7 +57,7 @@ export default async function DashboardPage() {
           </p>
         </div>
         <Button asChild size="lg" disabled={atLimit}>
-          <Link href={atLimit ? "/upgrade" : "/studio"}>
+          <Link href={atLimit ? "/billing" : "/studio"}>
             <Plus />
             New Repurpose
           </Link>
@@ -95,7 +95,7 @@ export default async function DashboardPage() {
               creating.
             </p>
             <Button asChild>
-              <Link href="/upgrade">Upgrade plan</Link>
+              <Link href="/billing">Upgrade plan</Link>
             </Button>
           </CardContent>
         </Card>
@@ -105,7 +105,7 @@ export default async function DashboardPage() {
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Recent repurposes</h2>
           <Button asChild variant="ghost" size="sm">
-            <Link href="/history">
+            <Link href="/library">
               View all
               <ArrowRight className="h-4 w-4" />
             </Link>
@@ -126,7 +126,7 @@ export default async function DashboardPage() {
         ) : (
           <div className="space-y-3">
             {recent.map((item) => (
-              <Link key={item.id} href={`/history/${item.source_hash}/${item.id}`}>
+              <Link key={item.id} href={`/library/${item.source_hash}/${item.id}`}>
                 <Card className="transition-colors hover:bg-muted/30">
                   <CardContent className="flex items-start justify-between gap-4 py-4">
                     <div className="min-w-0 flex-1">

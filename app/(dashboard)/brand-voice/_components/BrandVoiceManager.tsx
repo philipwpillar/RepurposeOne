@@ -16,22 +16,13 @@ import {
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { BrandVoiceInputSchema } from "@/types";
+import { BrandVoiceInputSchema, type BrandVoice } from "@/types";
 
 const SAMPLE_FIELD_COUNT = 3;
 const EMPTY_SAMPLES = () => Array.from({ length: SAMPLE_FIELD_COUNT }, () => "");
 
-export type BrandVoiceRow = {
-  id: string;
-  user_id: string;
-  samples: string[];
-  description: string | null;
-  is_default: boolean;
-  created_at: string;
-};
-
 interface BrandVoiceManagerProps {
-  initialVoices: BrandVoiceRow[];
+  initialVoices: BrandVoice[];
 }
 
 async function clearUserDefault(
@@ -99,7 +90,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
     setFormError(null);
   }, [voices.length]);
 
-  const openEditForm = useCallback((voice: BrandVoiceRow) => {
+  const openEditForm = useCallback((voice: BrandVoice) => {
     setActionError(null);
     setFormMode("edit");
     setEditingId(voice.id);
@@ -156,7 +147,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
           const next = setAsDefault
             ? prev.map((v) => ({ ...v, is_default: false }))
             : [...prev];
-          return [data as BrandVoiceRow, ...next].sort((a, b) => {
+          return [data as BrandVoice, ...next].sort((a, b) => {
             if (a.is_default !== b.is_default) return a.is_default ? -1 : 1;
             return (
               new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -181,7 +172,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
 
         if (error) throw error;
 
-        const updated = data as BrandVoiceRow;
+        const updated = data as BrandVoice;
         setVoices((prev) =>
           prev
             .map((v) => {

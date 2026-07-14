@@ -46,7 +46,7 @@ export default async function HistoryDetailPage({
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center gap-4">
         <Button asChild variant="ghost" size="sm">
-          <Link href={`/history/${hash}`}>
+          <Link href={`/library/${hash}`}>
             <ArrowLeft className="h-4 w-4" />
             Back to source
           </Link>

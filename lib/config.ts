@@ -55,15 +55,14 @@ export type ModelTier = "fast" | "strong";
 /**
  * Provider-specific defaults when AI_MODEL_FAST / AI_MODEL_STRONG are unset.
  *
- * OpenRouter:
+ * Production uses OpenRouter only (`AI_PROVIDER=openrouter`). Defaults:
  *   fast   — qwen/qwen3.6-flash: cheap, fast, natively multimodal; good for short outputs.
  *   strong — qwen/qwen3.7-plus: cost-effective Qwen vision-language model; strong
  *            instruction-following and coherence for multi-part outputs. Same model
  *            serves the vision path, keeping voice consistent across text and photo.
  *
- * OpenAI (direct):
- *   fast   — gpt-4o-mini: native fast/cheap tier on the OpenAI API.
- *   strong — gpt-4o: best available quality when not routing through OpenRouter.
+ * The openai map entries exist only so a mis-set AI_PROVIDER still resolves model
+ * IDs for typing; generate.ts will throw rather than call OpenAI directly.
  */
 const PROVIDER_DEFAULT_MODELS: Record<AiProvider, Record<ModelTier, string>> = {
   openai: {
@@ -136,7 +135,7 @@ export const AI_CONFIG = {
   fastModel: FAST_MODEL,
   strongModel: STRONG_MODEL,
   visionModel: VISION_MODEL,
-  maxInputChars: Number(process.env.AI_MAX_INPUT_CHARS ?? 30_000),
+  maxInputChars: Number(process.env.AI_MAX_INPUT_CHARS ?? INPUT_CONTENT_MAX_LENGTH),
   maxImageBase64Chars: Number(process.env.AI_MAX_IMAGE_BASE64_CHARS ?? 2_000_000),
   temperature: Number(process.env.AI_TEMPERATURE ?? 0.7),
 } as const;

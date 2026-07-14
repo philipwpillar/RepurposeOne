@@ -2,13 +2,13 @@
 
 > **Living document.** This is the shared source of truth for product decisions, scope, and roadmap.
 > Grok owns strategic direction; Claude (Cursor) owns implementation. Update this file whenever a decision is made.
-> Last updated: 2026-06-16
+> Last updated: 2026-07-14
 
 ---
 
 ## 1. One-liner
 
-Voiceora turns a single piece of content (paste, .txt/.pdf, or basic audio) into high-quality, **brand-consistent** outputs for X/Twitter threads, LinkedIn posts + carousel ideas, Instagram captions + hooks, and email newsletters — in seconds.
+Voiceora turns a single piece of content (paste text today; photo with guided context; `.txt`/`.pdf`/audio deferred) into high-quality, **brand-consistent** outputs for X/Twitter threads, LinkedIn posts + carousel ideas, Instagram captions + hooks, and email newsletters — in seconds.
 
 **Differentiators (in priority order):**
 1. Brand voice quality (learns from the user's samples and applies it consistently)
@@ -41,20 +41,22 @@ Primary objective: **speed to first revenue.** Every decision is weighed against
 ### In scope
 - **Auth:** Email + Google (Supabase Auth)
 - **Inputs:**
-  - Paste text
-  - Upload `.txt` / `.pdf` (basic parsing)
-  - Basic audio upload + transcription (via API)
-- **Core outputs (ship 3–4 first):**
-  - [ ] X/Twitter thread (with tweet-count guidance)
-  - [ ] LinkedIn post + carousel slide ideas
-  - [ ] Instagram caption + hook ideas
-  - [ ] Email newsletter draft
+  - Paste text — **shipped**
+  - Photo upload with guided context (Creator/Pro) — **shipped**
+  - Upload `.txt` / `.pdf` (basic parsing) — **deferred (post-launch)**
+  - Basic audio upload + transcription (via API) — **deferred (post-launch)**
+  - Video-as-input — sequenced **after** Moment Bundle work
+- **Core outputs:**
+  - [x] X/Twitter thread (with tweet-count guidance)
+  - [x] LinkedIn post + carousel slide ideas
+  - [x] Instagram caption + hook ideas
+  - [x] Email newsletter draft
   - [ ] *(Optional bonus)* short blog outline OR YouTube description
 - **Brand voice:** Simple — learn from 2–3 pasted samples OR a short written description. Applied consistently across all outputs.
-- **History / library:** List of past repurposes, re-openable.
+- **History / library:** List of past repurposes, re-openable (`/library`).
 - **Export:** One-click copy + export to Markdown / plain text. (Carousel *images* are later.)
 - **Dashboard:** Basic usage view + upgrade prompts.
-- **Monetisation:** Free tier (hard limits), Creator £19/mo, Pro £39/mo. Stripe Checkout + customer portal.
+- **Monetisation:** Free tier (hard limits), Creator £19/mo, Pro £39/mo. Stripe Checkout + customer portal (`/billing`).
 
 ### Explicitly OUT of MVP (parking lot — needs approval to pull in)
 - Full video / clip generation
@@ -63,9 +65,11 @@ Primary objective: **speed to first revenue.** Every decision is weighed against
 - Team collaboration / multiple seats
 - Advanced analytics
 - API access
-- Mobile app
+- **Direct social publishing** — out of scope for the current phase; when revisited: **X first (no approval gate), then Instagram**
 
 > **Scope rule:** if a task touches the OUT list, stop and flag it before building.
+
+Capacitor iOS shell exists (`docs/MOBILE.md`); App Store submission is pending — treat native distribution separately from this MVP list.
 
 ---
 
@@ -89,14 +93,17 @@ Primary objective: **speed to first revenue.** Every decision is weighed against
 
 ### Now (pre-launch sprint)
 - [x] Shared docs (this file + ARCHITECTURE + AI_PROMPTS)
-- [ ] Repo scaffold (Next.js + TS + Tailwind + shadcn/ui)
-- [ ] Supabase project + auth (email + Google)
-- [ ] DB schema + RLS
-- [ ] Core repurpose pipeline (paste text → 3 formats)
-- [ ] Landing page + waitlist
-- [ ] Stripe Checkout + portal + usage metering
-- [ ] History/library + dashboard
-- [ ] `.txt`/`.pdf` parsing, then audio transcription
+- [x] Repo scaffold (Next.js + TS + Tailwind + shadcn/ui)
+- [x] Supabase project + auth (email + Google)
+- [x] DB schema + RLS
+- [x] Core repurpose pipeline (paste text → formats; photo path shipped)
+- [x] Landing page (+ waitlist CTA copy; waitlist as product surface may still iterate)
+- [x] Stripe Checkout + portal + usage metering
+- [x] History/library + dashboard
+- [ ] `.txt`/`.pdf` parsing, then audio transcription — **deferred (post-launch)**
+- [ ] Moment Bundle + rendered clips (see `docs/plans/`)
+- [ ] Video-as-input — after Moment Bundle
+- [ ] Direct social publishing — out of scope for current phase; when revisited, X first (no approval gate), then Instagram
 
 ### Beta / soft launch
 - [ ] Waitlist users get access, collect feedback
@@ -116,6 +123,7 @@ Append decisions here with date + who made the call. Newest at top.
 
 | Date | Decision | Owner | Notes |
 | --- | --- | --- | --- |
+| 2026-07-14 | Library/billing URL renames; docs synced to shipped reality | User | `/library`, `/billing`; paste + photo; txt/pdf/audio deferred |
 | 2026-06-16 | Billing unit = one generation, not per-format row | User | Implemented: `generation_id` + DISTINCT-count RPC. Resolves former open question #1. See ARCHITECTURE.md §4a |
 | 2026-06-15 | Start with shared docs before any code | User | Repo was empty; docs are highest-leverage first step |
 | 2026-06-15 | *(proposed)* Default Cursor coding model = Claude Sonnet 4.6; test Haiku 4.5 for generation calls as a cost lever | Claude | Needs Grok sign-off; "3.5 Sonnet / Claude 4" in brief is outdated |

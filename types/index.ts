@@ -35,6 +35,7 @@ export const BrandVoiceSchema = z.object({
   user_id: z.string().uuid(),
   samples: z.array(z.string()),
   description: z.string().nullable(),
+  is_default: z.boolean(),
   created_at: z.string(),
 });
 export type BrandVoice = z.infer<typeof BrandVoiceSchema>;
@@ -81,7 +82,7 @@ const GenerateRequestSharedSchema = z.object({
 });
 
 export const TextGenerateRequestSchema = GenerateRequestSharedSchema.extend({
-  input_type: z.enum(["paste", "txt", "pdf", "audio"]).default("paste"),
+  input_type: z.literal("paste").default("paste"),
   input_content: z
     .string()
     .min(
