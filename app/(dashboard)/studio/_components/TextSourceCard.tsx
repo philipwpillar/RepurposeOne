@@ -59,7 +59,7 @@ export default function TextSourceCard({
               {inputSummary || "Add your source content to get started"}
             </div>
             <div className="mt-1 text-xs text-muted-foreground">
-              {inputSummary.length.toLocaleString()} characters • Blog post
+              {inputSummary.length.toLocaleString()} characters
             </div>
           </div>
           <button

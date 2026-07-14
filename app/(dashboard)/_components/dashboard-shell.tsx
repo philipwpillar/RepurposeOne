@@ -27,9 +27,9 @@ export interface DashboardUser {
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/studio", label: "Studio", icon: Sparkles },
-  { href: "/history", label: "Library", icon: Library },
+  { href: "/library", label: "Library", icon: Library },
   { href: "/brand-voice", label: "Brand Voice", icon: Mic },
-  { href: "/upgrade", label: "Billing", icon: CreditCard },
+  { href: "/billing", label: "Billing", icon: CreditCard },
 ] as const;
 
 function isActivePath(pathname: string, href: string) {
@@ -119,7 +119,7 @@ function UsageIndicator({ usage, compact = false }: { usage: UsageInfo; compact?
           {usage.used} / {usage.limit}
         </span>
         <Link
-          href="/upgrade"
+          href="/billing"
           className="text-xs font-medium text-primary hover:text-primary/80"
         >
           Upgrade
@@ -148,7 +148,7 @@ function UsageIndicator({ usage, compact = false }: { usage: UsageInfo; compact?
       <div className="flex items-center justify-between">
         <span className="text-[11px] text-muted-foreground">repurposes this month</span>
         <Link
-          href="/upgrade"
+          href="/billing"
           className="text-[11px] font-medium text-primary hover:text-primary/80"
         >
           Upgrade →

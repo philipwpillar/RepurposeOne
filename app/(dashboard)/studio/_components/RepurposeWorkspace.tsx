@@ -530,7 +530,7 @@ export default function RepurposeWorkspace({
           <span className="font-medium">{usedCount} / {repurposesLimit}</span> repurposes used this month
         </div>
         <Link
-          href="/upgrade"
+          href="/billing"
           className="text-primary hover:text-primary text-xs font-medium"
         >
           Upgrade →

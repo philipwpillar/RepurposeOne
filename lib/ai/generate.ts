@@ -43,22 +43,20 @@ export interface GenerateResult {
 }
 
 function getAiClient(): OpenAI {
-  if (AI_CONFIG.provider === "openrouter") {
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) {
-      throw new Error("OPENROUTER_API_KEY is not configured");
-    }
-    return new OpenAI({
-      apiKey,
-      baseURL: "https://openrouter.ai/api/v1",
-    });
+  if (AI_CONFIG.provider !== "openrouter") {
+    throw new Error(
+      `Unsupported AI_PROVIDER "${AI_CONFIG.provider}" — only "openrouter" is configured for production.`
+    );
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
-    throw new Error("OPENAI_API_KEY is not configured");
+    throw new Error("OPENROUTER_API_KEY is not configured");
   }
-  return new OpenAI({ apiKey });
+  return new OpenAI({
+    apiKey,
+    baseURL: "https://openrouter.ai/api/v1",
+  });
 }
 
 function parseJsonResponse(raw: string): unknown {

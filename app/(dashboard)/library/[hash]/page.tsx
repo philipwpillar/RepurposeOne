@@ -48,7 +48,7 @@ export default async function SourceGroupPage({
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <Button asChild variant="ghost" size="sm">
-        <Link href="/history">
+        <Link href="/library">
           <ArrowLeft className="h-4 w-4" />
           Back to all sources
         </Link>
@@ -72,7 +72,7 @@ export default async function SourceGroupPage({
 
       <div className="space-y-3">
         {repurposes.map((item) => (
-          <Link key={item.id} href={`/history/${hash}/${item.id}`}>
+          <Link key={item.id} href={`/library/${hash}/${item.id}`}>
             <Card className="transition-colors hover:bg-muted/30">
               <CardContent className="flex items-start justify-between gap-4 py-4">
                 <div className="min-w-0 flex-1 space-y-2">

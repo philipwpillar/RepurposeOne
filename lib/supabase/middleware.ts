@@ -4,10 +4,9 @@ import { NextResponse, type NextRequest } from "next/server";
 const PROTECTED_PREFIXES = [
   "/dashboard",
   "/studio",
-  "/new",
-  "/history",
+  "/library",
   "/brand-voice",
-  "/upgrade",
+  "/billing",
 ];
 const AUTH_ROUTES = ["/sign-in", "/sign-up"];
 
