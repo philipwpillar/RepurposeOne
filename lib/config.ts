@@ -1,19 +1,25 @@
 import type { Plan, TargetFormat } from "@/types";
 
+function envNumber(value: string | undefined, fallback: number): number {
+  if (value === undefined || value.trim() === "") return fallback;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 /**
  * Plan limits — monthly repurpose count from complete repurposes rows only.
  * Adjust via env or here; no mutable counter table.
  */
 export const PLAN_LIMITS: Record<Plan, number> = {
-  free: Number(process.env.PLAN_LIMIT_FREE ?? 10),
-  creator: Number(process.env.PLAN_LIMIT_CREATOR ?? 100),
-  pro: Number(process.env.PLAN_LIMIT_PRO ?? 1000),
+  free: envNumber(process.env.PLAN_LIMIT_FREE, 10),
+  creator: envNumber(process.env.PLAN_LIMIT_CREATOR, 100),
+  pro: envNumber(process.env.PLAN_LIMIT_PRO, 1000),
 };
 
 /** Burst rate limit for POST /api/generate (per user, rolling window). */
 export const RATE_LIMIT = {
-  maxRequests: Number(process.env.RATE_LIMIT_MAX_REQUESTS ?? 10),
-  windowMinutes: Number(process.env.RATE_LIMIT_WINDOW_MINUTES ?? 10),
+  maxRequests: envNumber(process.env.RATE_LIMIT_MAX_REQUESTS, 10),
+  windowMinutes: envNumber(process.env.RATE_LIMIT_WINDOW_MINUTES, 10),
 } as const;
 
 /** Client + server max length for pasted source content. */
@@ -135,7 +141,7 @@ export const AI_CONFIG = {
   fastModel: FAST_MODEL,
   strongModel: STRONG_MODEL,
   visionModel: VISION_MODEL,
-  maxInputChars: Number(process.env.AI_MAX_INPUT_CHARS ?? INPUT_CONTENT_MAX_LENGTH),
-  maxImageBase64Chars: Number(process.env.AI_MAX_IMAGE_BASE64_CHARS ?? 2_000_000),
-  temperature: Number(process.env.AI_TEMPERATURE ?? 0.7),
+  maxInputChars: envNumber(process.env.AI_MAX_INPUT_CHARS, INPUT_CONTENT_MAX_LENGTH),
+  maxImageBase64Chars: envNumber(process.env.AI_MAX_IMAGE_BASE64_CHARS, 2_000_000),
+  temperature: envNumber(process.env.AI_TEMPERATURE, 0.7),
 } as const;
