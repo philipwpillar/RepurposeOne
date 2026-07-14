@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import type { PhotoMimeType } from "@/lib/image/constants";
 import {
   AI_CONFIG,
+  OPENROUTER_ALLOWED_PROVIDERS,
   getModelForFormat,
   getTierForFormat,
   type ModelTier,
@@ -22,6 +23,7 @@ import {
 type OpenRouterChatCompletionParams =
   OpenAI.Chat.Completions.ChatCompletionCreateParams & {
     reasoning?: { enabled: boolean };
+    provider?: { only: string[] };
   };
 
 export interface GenerateInput {
@@ -97,6 +99,7 @@ export async function generateRepurpose(
     temperature: AI_CONFIG.temperature,
     response_format: { type: "json_object" },
     reasoning: { enabled: false },
+    provider: { only: [...OPENROUTER_ALLOWED_PROVIDERS] },
     messages: [
       { role: "system", content: system },
       { role: "user", content: user },
@@ -168,6 +171,7 @@ export async function generateRepurposeFromImage(
     temperature: AI_CONFIG.temperature,
     response_format: { type: "json_object" },
     reasoning: { enabled: false },
+    provider: { only: [...OPENROUTER_ALLOWED_PROVIDERS] },
     messages: [
       { role: "system", content: system },
       {
