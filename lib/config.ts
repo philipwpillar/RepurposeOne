@@ -59,13 +59,27 @@ const AI_PROVIDER = parseAiProvider(process.env.AI_PROVIDER);
 export type ModelTier = "fast" | "strong";
 
 /**
+ * OpenRouter provider allowlist — GDPR posture (Option A).
+ * Requests may ONLY route to these providers. Deliberately a code constant,
+ * NOT env-configurable: Vercel env vars override code silently, and this is
+ * the one pinning layer that must survive a stale dashboard. Changing it
+ * requires a PR and re-triggers the transfer check (host, region, data
+ * policy on the OpenRouter endpoint page) before merge.
+ * "deepinfra/fp8" verified live 2026-07-14: US host, ZDR-flagged, no-train.
+ */
+export const OPENROUTER_ALLOWED_PROVIDERS = ["deepinfra/fp8"] as const;
+
+/**
  * Provider-specific defaults when AI_MODEL_FAST / AI_MODEL_STRONG are unset.
  *
- * Production uses OpenRouter only (`AI_PROVIDER=openrouter`). Defaults:
- *   fast   — qwen/qwen3.6-flash: cheap, fast, natively multimodal; good for short outputs.
- *   strong — qwen/qwen3.7-plus: cost-effective Qwen vision-language model; strong
- *            instruction-following and coherence for multi-part outputs. Same model
- *            serves the vision path, keeping voice consistent across text and photo.
+ * Production uses OpenRouter only (`AI_PROVIDER=openrouter`). Defaults are
+ * open-weight Qwen 3.5 models (Apache 2.0), multi-host and US-pinnable via
+ * OPENROUTER_ALLOWED_PROVIDERS. Closed Alibaba-hosted-only Qwen SKUs are
+ * excluded by the provider allowlist by design.
+ *
+ *   fast   — qwen/qwen3.5-35b-a3b: cheap + quick; good for short outputs.
+ *   strong — qwen/qwen3.5-397b-a17b: coherence for multi-part outputs; same
+ *            native VLM also serves the vision path (consistent voice).
  *
  * The openai map entries exist only so a mis-set AI_PROVIDER still resolves model
  * IDs for typing; generate.ts will throw rather than call OpenAI directly.
@@ -76,8 +90,8 @@ const PROVIDER_DEFAULT_MODELS: Record<AiProvider, Record<ModelTier, string>> = {
     strong: "gpt-4o",
   },
   openrouter: {
-    fast: "qwen/qwen3.6-flash",
-    strong: "qwen/qwen3.7-plus",
+    fast: "qwen/qwen3.5-35b-a3b",
+    strong: "qwen/qwen3.5-397b-a17b",
   },
 };
 
@@ -91,11 +105,11 @@ export const STRONG_MODEL =
 
 /**
  * Vision model for photo repurpose — pin a version slug, no -latest alias.
- * Defaults to the same Qwen model as the strong text tier: it is natively
- * multimodal, so text and photo outputs share one model (consistent voice).
+ * Defaults to the same open-weight Qwen 3.5 VLM as the strong text tier so
+ * text and photo outputs share one model (consistent voice).
  */
 export const VISION_MODEL =
-  process.env.AI_MODEL_VISION ?? "qwen/qwen3.7-plus";
+  process.env.AI_MODEL_VISION ?? "qwen/qwen3.5-397b-a17b";
 
 /** Plans allowed to use photo / vision repurpose. */
 export const VISION_ALLOWED_PLANS: Plan[] = ["creator", "pro"];
@@ -108,7 +122,7 @@ export function planAllowsVision(plan: Plan): boolean {
  * Maps each output format to a model tier.
  *
  *   x_thread → strong — threads need coherent multi-tweet arcs, hooks, and pacing;
- *                       routed to STRONG_MODEL (qwen/qwen3.7-plus on OpenRouter by default).
+ *                       routed to STRONG_MODEL (qwen/qwen3.5-397b-a17b by default).
  *
  * Add new formats here when they ship (e.g. linkedin_post → "fast").
  */
