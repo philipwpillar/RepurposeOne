@@ -1,33 +1,28 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { FormatPreviews } from "@/components/landing/format-previews";
+import {
+  FormatsGlyph,
+  InputGlyph,
+  VoiceGlyph,
+} from "@/components/landing/how-step-glyphs";
+import {
+  EmailGlyph,
+  InstagramMark,
+  LinkedInMark,
+  XMark,
+} from "@/components/landing/platform-marks";
+import { ScrollReveal } from "@/components/landing/scroll-reveal";
+import { VoiceLab } from "@/components/landing/voice-lab";
+import { VoLogoMark, VoMarkDefs } from "@/components/landing/vo-logo-mark";
 import "./landing.css";
 
-function VoLogoMark() {
-  return (
-    <svg
-      viewBox="0 4.4 32 32"
-      fill="none"
-      aria-hidden="true"
-      width="30"
-      height="30"
-    >
-      <path
-        d="M6 20.5c3.2-9 16.6-9 19.8 0"
-        stroke="url(#voMark)"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-      />
-      <path
-        d="M10 22.5c2-5.4 10-5.4 12 0"
-        stroke="url(#voMark)"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        opacity="0.7"
-      />
-      <circle cx="16" cy="24.5" r="2.6" fill="url(#voMark)" />
-    </svg>
-  );
-}
+export const metadata: Metadata = {
+  title: "Voiceora — one piece of content, every platform, your voice",
+  description:
+    "Turn a blog post, transcript, or photo into an X thread, a LinkedIn post with carousel ideas, an Instagram caption, and an email draft — written in your brand voice. Free plan, no card required.",
+};
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -37,22 +32,7 @@ export default async function HomePage() {
 
   return (
     <main className="vo-landing">
-      <svg width="0" height="0" aria-hidden="true" style={{ position: "absolute" }}>
-        <defs>
-          <linearGradient
-            id="voMark"
-            x1="0"
-            y1="0"
-            x2="32"
-            y2="32"
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop stopColor="#2DD4BF" />
-            <stop offset="0.55" stopColor="#6366F1" />
-            <stop offset="1" stopColor="#E24BC4" />
-          </linearGradient>
-        </defs>
-      </svg>
+      <VoMarkDefs />
 
       <section className="hero">
         <div className="aurora-glow" aria-hidden="true" />
@@ -74,7 +54,7 @@ export default async function HomePage() {
                       Sign in
                     </Link>
                     <Link href="/sign-up" className="navbtn solid">
-                      Get started
+                      Start free
                     </Link>
                   </>
                 )}
@@ -96,9 +76,9 @@ export default async function HomePage() {
                 <span className="grad">Your voice.</span>
               </h1>
               <p className="sub">
-                Paste a blog post, transcript, or article. Voiceora turns it
-                into platform-native outputs for X, LinkedIn, Instagram, and
-                email — written in your voice.
+                Paste a post, a transcript, or a photo. Voiceora turns it into an
+                X thread, a LinkedIn post with carousel ideas, an Instagram
+                caption, and an email draft — each one written the way you write.
               </p>
               <div className="cta-row">
                 {user ? (
@@ -110,13 +90,17 @@ export default async function HomePage() {
                     Start free
                   </Link>
                 )}
-                <Link href="#how" className="btn-secondary">
-                  See how it works
+                <Link href="#voice-lab" className="btn-secondary">
+                  Hear the difference
                   <span className="arrow" aria-hidden="true">
                     →
                   </span>
                 </Link>
               </div>
+              <p className="trust-line">
+                Free plan, no card · Four formats per run · Voice learned from
+                2–3 samples
+              </p>
             </div>
 
             <div className="fan">
@@ -132,10 +116,12 @@ export default async function HomePage() {
                   style={{ ["--pl" as string]: "#E7E7EC" }}
                 >
                   <div className="row">
-                    <span className="pdot" aria-hidden="true" />
+                    <span className="glyph">
+                      <XMark />
+                    </span>
                     <span className="pname">X / Twitter</span>
                   </div>
-                  <div className="pmeta">12-tweet thread</div>
+                  <div className="pmeta">Thread with a hook</div>
                   <span className="voice">your voice</span>
                 </div>
                 <div
@@ -143,10 +129,12 @@ export default async function HomePage() {
                   style={{ ["--pl" as string]: "#3B82F6" }}
                 >
                   <div className="row">
-                    <span className="pdot" aria-hidden="true" />
+                    <span className="glyph">
+                      <LinkedInMark />
+                    </span>
                     <span className="pname">LinkedIn</span>
                   </div>
-                  <div className="pmeta">Post + 6 slides</div>
+                  <div className="pmeta">Post + carousel ideas</div>
                   <span className="voice">your voice</span>
                 </div>
                 <div
@@ -154,10 +142,12 @@ export default async function HomePage() {
                   style={{ ["--pl" as string]: "#E24BC4" }}
                 >
                   <div className="row">
-                    <span className="pdot" aria-hidden="true" />
+                    <span className="glyph">
+                      <InstagramMark />
+                    </span>
                     <span className="pname">Instagram</span>
                   </div>
-                  <div className="pmeta">Caption + 5 hooks</div>
+                  <div className="pmeta">Caption + hooks</div>
                   <span className="voice">your voice</span>
                 </div>
                 <div
@@ -165,7 +155,9 @@ export default async function HomePage() {
                   style={{ ["--pl" as string]: "#2DD4BF" }}
                 >
                   <div className="row">
-                    <span className="pdot" aria-hidden="true" />
+                    <span className="glyph glyph-teal">
+                      <EmailGlyph />
+                    </span>
                     <span className="pname">Email</span>
                   </div>
                   <div className="pmeta">Newsletter draft</div>
@@ -180,39 +172,132 @@ export default async function HomePage() {
       <section className="how" id="how">
         <div className="wrap">
           <h2>How it works</h2>
-          <div className="steps">
-            <div className="step">
+          <ScrollReveal className="steps" staggerChildren staggerMs={80}>
+            <div className="step" data-reveal>
               <div className="n">01</div>
-              <div className="st">Add your content</div>
-              <p className="sd">
-                Paste a blog post, article, or transcript — that&apos;s your
-                single source.
-              </p>
-            </div>
-            <div className="step">
-              <div className="n">02</div>
+              <span className="glyph">
+                <VoiceGlyph />
+              </span>
               <div className="st">Teach your voice</div>
               <p className="sd">
-                Add 2–3 writing samples or a short description. Voiceora learns
-                how you sound.
+                Add 2–3 writing samples or a short description. Your voice is
+                the first thing Voiceora asks for — everything is written from
+                it.
               </p>
             </div>
-            <div className="step">
-              <div className="n">03</div>
+            <div className="step" data-reveal>
+              <div className="n">02</div>
+              <span className="glyph">
+                <InputGlyph />
+              </span>
+              <div className="st">Add your content</div>
+              <p className="sd">
+                Paste a blog post, article, or transcript — or upload a photo
+                with a line of context.
+              </p>
+              <span className="tiertag">Photo input · Creator plan</span>
+            </div>
+            <div className="step" data-reveal>
+              <div className="n grad">03</div>
+              <span className="glyph">
+                <FormatsGlyph />
+              </span>
               <div className="st">Generate everywhere</div>
               <p className="sd">
-                One click produces X threads, LinkedIn posts, Instagram captions,
-                and email drafts.
+                One click produces all four formats, ready to copy or export.
               </p>
             </div>
+          </ScrollReveal>
+        </div>
+      </section>
+
+      <section className="formats">
+        <div className="wrap">
+          <ScrollReveal>
+            <h2 className="zone-title">What one input becomes</h2>
+          </ScrollReveal>
+          <ScrollReveal>
+            <p className="formats-sub">
+              Four platform-native drafts from a single source. The coloured bar
+              in each preview is the part Voiceora sweats hardest: the hook.
+            </p>
+          </ScrollReveal>
+          <ScrollReveal>
+            <FormatPreviews />
+          </ScrollReveal>
+        </div>
+      </section>
+
+      <ScrollReveal>
+        <VoiceLab />
+      </ScrollReveal>
+
+      <section className="proof">
+        <div className="wrap">
+          <ScrollReveal>
+            <h2 className="zone-title">Proof over promises</h2>
+          </ScrollReveal>
+          <ScrollReveal>
+            <p className="proof-sub">
+              Voiceora is new, so you won&apos;t find invented user counts or
+              stock-photo testimonials here. What you will find: real outputs
+              from the live product — every post about Voiceora is written with
+              Voiceora, and we publish the results as they happen.
+            </p>
+          </ScrollReveal>
+          <div className="proof-grid">
+            <ScrollReveal>
+              <div className="proof-card slot">
+                <p>
+                  REAL OUTPUT SLOT
+                  <br />— populated with a genuine generation from the live app
+                  after the launch smoke test —
+                </p>
+              </div>
+            </ScrollReveal>
+            <ScrollReveal>
+              <div className="proof-card slot">
+                <p>
+                  REAL OUTPUT SLOT
+                  <br />— second genuine output, different format, with a link
+                  to the published post —
+                </p>
+              </div>
+            </ScrollReveal>
           </div>
+        </div>
+      </section>
+
+      <section className="final-cta">
+        <div className="aurora-glow" aria-hidden="true" />
+        <div className="wrap">
+          <ScrollReveal>
+            <h2>Try it on your own content.</h2>
+          </ScrollReveal>
+          <ScrollReveal>
+            <p>
+              The free plan takes about a minute to set up. No card, cancel
+              anytime.
+            </p>
+          </ScrollReveal>
+          <ScrollReveal>
+            {user ? (
+              <Link href="/studio" className="btn-primary">
+                Go to studio
+              </Link>
+            ) : (
+              <Link href="/sign-up" className="btn-primary">
+                Start free
+              </Link>
+            )}
+          </ScrollReveal>
         </div>
       </section>
 
       <footer className="foot">
         <div className="wrap foot-inner">
           <div className="brand">
-            <VoLogoMark />
+            <VoLogoMark size={26} />
             <span className="name">Voiceora</span>
           </div>
           <div>
