@@ -78,8 +78,11 @@ Capacitor iOS shell exists (`docs/MOBILE.md`); App Store submission is pending �
 | Tier | Price | Limits & highlights | Role |
 | --- | --- | --- | --- |
 | Free | £0 | 5–10 repurposes/month, basic features | Acquisition funnel |
-| Creator | £19/mo | 50–100 repurposes, core formats, brand voice | Main conversion tier |
-| Pro | £39/mo | High/unlimited limits, advanced voice, priority, more formats | Power users |
+| Creator | £19/month (GBP, settlement) · $30/month (USD) · €25/month (EUR) · Adaptive Pricing for all other currencies | 50–100 repurposes, core formats, brand voice | Main conversion tier |
+| Pro | £45/month (GBP, settlement) · $65/month (USD) · €55/month (EUR) · Adaptive Pricing for all other currencies | High/unlimited limits, advanced voice, priority, more formats | Power users |
+| Pro Plus | £59/month (GBP, settlement) · $80/month (USD) · €70/month (EUR) · Adaptive Pricing for all other currencies | Matches Pro gens, Moment Bundle (30/mo), higher burst | Top tier / Moment Bundle |
+
+> **Multi-currency note:** USD and EUR are manually-set additional currency price points on each existing Stripe Price object, not new Price IDs — this overrides Adaptive Pricing only for these two currencies; all other 150+ currencies fall through to Adaptive Pricing automatically. `STRIPE_PRICE_ID_CREATOR` and `STRIPE_PRICE_ID_PRO` env vars are unchanged.
 
 - Annual plans at ~17–20% discount (improves cash flow). *Decision: enable from launch vs Month 2 — TBD with Grok.*
 - Credit packs (£9–15 for 20–30 extra repurposes) — add after first 2–3 weeks based on demand.
