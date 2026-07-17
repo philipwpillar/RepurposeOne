@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { CopyActionButton } from "./copy-action-button";
+import { ShareActionButton } from "./share-action-button";
 import { useCopyToClipboard } from "./use-copy-to-clipboard";
 
 interface LinkedInOutputPanelProps {
@@ -27,6 +28,11 @@ export function LinkedInOutputPanel({
 
   const copyActions = (
     <div className="flex flex-wrap gap-2">
+      <ShareActionButton
+        target="linkedin"
+        getText={() => formatLinkedInPostForCopy(output)}
+        variant={variant}
+      />
       <CopyActionButton
         copyKey="linkedin:post"
         label="Copy post"
