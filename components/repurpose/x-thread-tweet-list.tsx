@@ -3,6 +3,7 @@
 import type { Tweet, XThreadOutput } from "@/types";
 import { formatXThreadForCopy } from "@/lib/format-output";
 import { CopyActionButton } from "./copy-action-button";
+import { ShareActionButton } from "./share-action-button";
 import { useCopyToClipboard } from "./use-copy-to-clipboard";
 
 interface XThreadTweetListProps {
@@ -59,6 +60,17 @@ export function XThreadTweetList({
               <span className="text-xs text-muted-foreground">
                 {tweet.text.length}/280
               </span>
+              <ShareActionButton
+                target="x"
+                getText={() => tweet.text}
+                variant={variant}
+                size="icon"
+                className={
+                  variant === "studio"
+                    ? "rounded-lg border border-border bg-card px-2 py-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                    : "rounded-md border border-border bg-background px-2 py-1 opacity-100"
+                }
+              />
               <CopyActionButton
                 copyKey={`x_thread:tweet:${tweet.number}`}
                 label="Copy"
