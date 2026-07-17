@@ -13,7 +13,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Plan } from "@/types";
 
-type PaidPlan = "creator" | "pro";
+type PaidPlan = "creator" | "pro" | "pro_plus";
+
+const PLAN_RANK: Record<Plan, number> = {
+  free: 0,
+  creator: 1,
+  pro: 2,
+  pro_plus: 3,
+};
 
 type UpgradePlansProps = {
   currentPlan: Plan;
@@ -56,7 +63,7 @@ function PlanAction({
     return <Badge className="w-full justify-center py-2">Current plan</Badge>;
   }
 
-  const isDowngrade = currentPlan === "pro" && plan === "creator";
+  const isDowngrade = PLAN_RANK[currentPlan] > PLAN_RANK[plan];
 
   if (isDowngrade) {
     return (
@@ -83,7 +90,10 @@ export function UpgradePlans({ currentPlan }: UpgradePlansProps) {
   );
   const [error, setError] = useState<string | null>(null);
 
-  const hasPaidPlan = currentPlan === "creator" || currentPlan === "pro";
+  const hasPaidPlan =
+    currentPlan === "creator" ||
+    currentPlan === "pro" ||
+    currentPlan === "pro_plus";
 
   async function handleUpgrade(plan: PaidPlan) {
     setError(null);
@@ -137,13 +147,32 @@ export function UpgradePlans({ currentPlan }: UpgradePlansProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Pro — £39/mo</CardTitle>
+          <CardTitle>Pro — £45/mo</CardTitle>
           <CardDescription>1,000 repurposes per month</CardDescription>
         </CardHeader>
         <CardContent>
           <PlanAction
             plan="pro"
             label="Upgrade to Pro"
+            currentPlan={currentPlan}
+            loadingPlan={loadingPlan}
+            onUpgrade={handleUpgrade}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Pro Plus — £59/mo</CardTitle>
+          <CardDescription>
+            Everything in Pro, plus Moment Bundles &amp; rendered clips (30/mo,
+            coming soon) and a higher burst limit
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PlanAction
+            plan="pro_plus"
+            label="Upgrade to Pro Plus"
             currentPlan={currentPlan}
             loadingPlan={loadingPlan}
             onUpgrade={handleUpgrade}

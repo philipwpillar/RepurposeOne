@@ -14,7 +14,7 @@ import {
 // Plan & usage
 // ---------------------------------------------------------------------------
 
-export const PlanSchema = z.enum(["free", "creator", "pro"]);
+export const PlanSchema = z.enum(["free", "creator", "pro", "pro_plus"]);
 export type Plan = z.infer<typeof PlanSchema>;
 
 export const ProfileSchema = z.object({

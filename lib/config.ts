@@ -14,6 +14,7 @@ export const PLAN_LIMITS: Record<Plan, number> = {
   free: envNumber(process.env.PLAN_LIMIT_FREE, 10),
   creator: envNumber(process.env.PLAN_LIMIT_CREATOR, 100),
   pro: envNumber(process.env.PLAN_LIMIT_PRO, 1000),
+  pro_plus: envNumber(process.env.PLAN_LIMIT_PRO_PLUS, 1000),
 };
 
 /** Burst rate limit for POST /api/generate (per user, rolling window). */
@@ -22,14 +23,24 @@ export const RATE_LIMIT = {
   windowMinutes: envNumber(process.env.RATE_LIMIT_WINDOW_MINUTES, 10),
 } as const;
 
+/** Plan-aware burst max — pro_plus gets a higher ceiling (N3); others use RATE_LIMIT. */
+export function rateLimitMaxForPlan(plan: Plan): number {
+  if (plan === "pro_plus") {
+    return envNumber(process.env.RATE_LIMIT_MAX_REQUESTS_PRO_PLUS, 20);
+  }
+  return RATE_LIMIT.maxRequests;
+}
+
 /** Client + server max length for pasted source content. */
 export const INPUT_CONTENT_MAX_LENGTH = 20_000;
 export const INPUT_CONTENT_MIN_LENGTH = 50;
 
 export const UPGRADE_MESSAGES: Record<Plan, string> = {
   free: "You've used all your free repurposes this month. Upgrade to Creator (£19/mo) for 100 repurposes/month.",
-  creator: "You've reached your Creator plan limit. Upgrade to Pro (£39/mo) for higher limits.",
-  pro: "You've reached your plan limit. Contact support if you need more capacity.",
+  creator: "You've reached your Creator plan limit. Upgrade to Pro (£45/mo) for higher limits.",
+  pro: "You've reached your Pro plan limit. Upgrade to Pro Plus (£59/mo) for Moment Bundles and a higher burst limit.",
+  pro_plus:
+    "You've reached your Pro Plus plan limit for this month. Contact support if you need more capacity.",
 };
 
 export type AiProvider = "openai" | "openrouter";
@@ -112,11 +123,21 @@ export const VISION_MODEL =
   process.env.AI_MODEL_VISION ?? "qwen/qwen3.5-397b-a17b";
 
 /** Plans allowed to use photo / vision repurpose. */
-export const VISION_ALLOWED_PLANS: Plan[] = ["creator", "pro"];
+export const VISION_ALLOWED_PLANS: Plan[] = ["creator", "pro", "pro_plus"];
 
 export function planAllowsVision(plan: Plan): boolean {
   return VISION_ALLOWED_PLANS.includes(plan);
 }
+
+/** Plans allowed to use Moment Bundles (enforcement lands with Brief 1a/1b). */
+export const BUNDLE_ALLOWED_PLANS: Plan[] = ["pro_plus"];
+
+export function planAllowsBundles(plan: Plan): boolean {
+  return BUNDLE_ALLOWED_PLANS.includes(plan);
+}
+
+/** Monthly Moment Bundle cap (N2) — constant only until bundle routes ship. */
+export const BUNDLE_MONTHLY_LIMIT = 30;
 
 /**
  * Maps each output format to a model tier.

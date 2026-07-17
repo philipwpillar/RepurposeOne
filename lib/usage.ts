@@ -1,6 +1,6 @@
 import { startOfMonth, endOfMonth, formatISO, subMinutes } from "date-fns";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { PLAN_LIMITS, RATE_LIMIT, UPGRADE_MESSAGES } from "@/lib/config";
+import { PLAN_LIMITS, RATE_LIMIT, UPGRADE_MESSAGES, rateLimitMaxForPlan } from "@/lib/config";
 import type { Plan, UsageInfo } from "@/types";
 
 export function getCurrentBillingPeriod(now = new Date()) {
@@ -92,7 +92,8 @@ export function getUpgradeMessage(plan: Plan): string {
  */
 export async function checkRateLimit(
   supabase: SupabaseClient,
-  userId: string
+  userId: string,
+  plan: Plan
 ): Promise<{ allowed: boolean; retryAfterSeconds: number }> {
   const windowStart = subMinutes(new Date(), RATE_LIMIT.windowMinutes);
 
@@ -109,7 +110,7 @@ export async function checkRateLimit(
 
   const used = count ?? 0;
   return {
-    allowed: used < RATE_LIMIT.maxRequests,
+    allowed: used < rateLimitMaxForPlan(plan),
     retryAfterSeconds: RATE_LIMIT.windowMinutes * 60,
   };
 }
