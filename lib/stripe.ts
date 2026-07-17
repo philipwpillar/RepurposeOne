@@ -22,11 +22,13 @@ export const stripe = new Proxy({} as Stripe, {
   },
 });
 
-export function getStripePriceId(plan: "creator" | "pro"): string {
+export function getStripePriceId(plan: "creator" | "pro" | "pro_plus"): string {
   const priceId =
     plan === "creator"
       ? process.env.STRIPE_PRICE_ID_CREATOR
-      : process.env.STRIPE_PRICE_ID_PRO;
+      : plan === "pro"
+        ? process.env.STRIPE_PRICE_ID_PRO
+        : process.env.STRIPE_PRICE_ID_PRO_PLUS;
 
   if (!priceId) {
     throw new Error(`Stripe price ID for ${plan} is not configured`);
@@ -38,6 +40,7 @@ export function getStripePriceId(plan: "creator" | "pro"): string {
 export function planFromPriceId(priceId: string): Plan | null {
   if (priceId === process.env.STRIPE_PRICE_ID_CREATOR) return "creator";
   if (priceId === process.env.STRIPE_PRICE_ID_PRO) return "pro";
+  if (priceId === process.env.STRIPE_PRICE_ID_PRO_PLUS) return "pro_plus";
   return null;
 }
 

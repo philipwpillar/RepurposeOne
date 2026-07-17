@@ -4,7 +4,7 @@ import { getStripePriceId, stripe } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 
 const CheckoutRequestSchema = z.object({
-  plan: z.enum(["creator", "pro"]),
+  plan: z.enum(["creator", "pro", "pro_plus"]),
 });
 
 export async function POST(request: Request) {

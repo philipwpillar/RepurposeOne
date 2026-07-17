@@ -131,12 +131,22 @@ export async function POST(request: Request) {
 
   const isImageRequest = input_type === "image";
 
+  let plan;
+  try {
+    plan = await getUserPlan(supabase, user.id);
+  } catch (err) {
+    console.error("Failed to load user plan:", err);
+    return errorResponse(500, {
+      error: "Failed to load plan",
+      code: "internal_error",
+    });
+  }
+
   if (isImageRequest) {
-    const plan = await getUserPlan(supabase, user.id);
     if (!planAllowsVision(plan)) {
       return errorResponse(403, {
         error:
-          "Photo repurpose is available on Creator and Pro plans. Upgrade to continue.",
+          "Photo repurpose is available on Creator, Pro, or Pro Plus plans. Upgrade to continue.",
         code: "plan_required",
         upgrade_message: getUpgradeMessage(plan),
       });
@@ -159,7 +169,7 @@ export async function POST(request: Request) {
   // --- Burst rate limit before any DB write or AI spend ---
   let rateCheck;
   try {
-    rateCheck = await checkRateLimit(supabase, user.id);
+    rateCheck = await checkRateLimit(supabase, user.id, plan);
   } catch (err) {
     console.error("Rate limit check failed:", err);
     return errorResponse(500, {

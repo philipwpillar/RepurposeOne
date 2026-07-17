@@ -6,6 +6,7 @@ import {
   stripe,
 } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { Plan } from "@/types";
 
 function getSupabaseUserId(session: Stripe.Checkout.Session): string | null {
   return session.client_reference_id ?? session.metadata?.supabase_user_id ?? null;
@@ -23,7 +24,7 @@ async function updateProfileByUserId(
   updates: {
     stripe_customer_id?: string;
     stripe_subscription_id?: string | null;
-    plan?: "free" | "creator" | "pro";
+    plan?: Plan;
   }
 ) {
   const admin = createAdminClient();
@@ -39,7 +40,7 @@ async function updateProfileByCustomerId(
   customerId: string,
   updates: {
     stripe_subscription_id?: string | null;
-    plan?: "free" | "creator" | "pro";
+    plan?: Plan;
   }
 ) {
   const admin = createAdminClient();
