@@ -7,6 +7,7 @@ import {
   Bell,
   CreditCard,
   LayoutDashboard,
+  Layers,
   Library,
   Menu,
   Mic,
@@ -27,6 +28,7 @@ export interface DashboardUser {
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/studio", label: "Studio", icon: Sparkles },
+  { href: "/bundles", label: "Bundles", icon: Layers },
   { href: "/library", label: "Library", icon: Library },
   { href: "/brand-voice", label: "Brand Voice", icon: Mic },
   { href: "/billing", label: "Billing", icon: CreditCard },

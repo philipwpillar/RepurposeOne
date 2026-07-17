@@ -1,5 +1,8 @@
 import {
+  BUNDLE_MAX_PHOTOS,
+  HEIC_DECODE_ERROR,
   PHOTO_ACCEPTED_MIMES,
+  PHOTO_HEIC_INPUT_MIMES,
   PHOTO_MAX_EDGE_PX,
   PHOTO_MAX_FILE_BYTES,
   type PhotoMimeType,
@@ -14,17 +17,33 @@ export interface DownscaleResult {
   previewUrl: string;
 }
 
-function isAcceptedMime(mime: string): mime is PhotoMimeType {
+function isOutputMime(mime: string): mime is PhotoMimeType {
   return (PHOTO_ACCEPTED_MIMES as readonly string[]).includes(mime);
+}
+
+function isHeicInputMime(mime: string): boolean {
+  return (PHOTO_HEIC_INPUT_MIMES as readonly string[]).includes(mime);
+}
+
+function looksLikeHeicFilename(name: string): boolean {
+  const lower = name.toLowerCase();
+  return lower.endsWith(".heic") || lower.endsWith(".heif");
+}
+
+function isAcceptedInputMime(mime: string, fileName: string): boolean {
+  if (isOutputMime(mime) || isHeicInputMime(mime)) return true;
+  // iOS sometimes omits a usable MIME; allow by extension for HEIC only.
+  if (!mime && looksLikeHeicFilename(fileName)) return true;
+  return false;
 }
 
 export function validateImageFile(
   file: File
 ): { ok: true } | { ok: false; error: string } {
-  if (!isAcceptedMime(file.type)) {
+  if (!isAcceptedInputMime(file.type, file.name)) {
     return {
       ok: false,
-      error: "Please upload a JPEG, PNG, or WebP image.",
+      error: "Please upload a JPEG, PNG, WebP, or HEIC image.",
     };
   }
 
@@ -111,14 +130,32 @@ async function blobToBase64(blob: Blob): Promise<string> {
   });
 }
 
+function isHeicFile(file: File): boolean {
+  return isHeicInputMime(file.type) || looksLikeHeicFilename(file.name);
+}
+
+/**
+ * Downscale + normalize for upload.
+ * HEIC/HEIF: native Image()/canvas decode only (Safari / iOS). No WASM decoder.
+ * On decode failure for HEIC, throws HEIC_DECODE_ERROR so callers can skip that file.
+ */
 export async function downscaleImage(file: File): Promise<DownscaleResult> {
   const validation = validateImageFile(file);
   if (!validation.ok) {
     throw new Error(validation.error);
   }
 
-  const mimeType = file.type as PhotoMimeType;
-  const img = await loadImageFromFile(file);
+  const heic = isHeicFile(file);
+  let img: HTMLImageElement;
+  try {
+    img = await loadImageFromFile(file);
+  } catch {
+    if (heic) {
+      throw new Error(HEIC_DECODE_ERROR);
+    }
+    throw new Error("Could not read this image file.");
+  }
+
   const { width, height } = scaleDimensions(
     img.naturalWidth,
     img.naturalHeight,
@@ -136,8 +173,24 @@ export async function downscaleImage(file: File): Promise<DownscaleResult> {
 
   ctx.drawImage(img, 0, 0, width, height);
 
+  // HEIC always re-encoded as JPEG; other types keep their mime when possible.
+  const mimeType: PhotoMimeType = heic
+    ? "image/jpeg"
+    : isOutputMime(file.type)
+      ? file.type
+      : "image/jpeg";
+
   const quality = mimeType === "image/png" ? undefined : 0.85;
-  const blob = await canvasToBlob(canvas, mimeType, quality ?? 0.92);
+  let blob: Blob;
+  try {
+    blob = await canvasToBlob(canvas, mimeType, quality ?? 0.92);
+  } catch {
+    if (heic) {
+      throw new Error(HEIC_DECODE_ERROR);
+    }
+    throw new Error("Failed to process image.");
+  }
+
   const base64 = await blobToBase64(blob);
   const previewUrl = URL.createObjectURL(blob);
 
@@ -156,3 +209,5 @@ export function formatByteSize(bytes: number): string {
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
+
+export { BUNDLE_MAX_PHOTOS, HEIC_DECODE_ERROR };
