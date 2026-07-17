@@ -1,16 +1,20 @@
 "use client";
 
-import type { Tweet, XThreadOutput } from "@/types";
+import type { Tweet, XThreadOutput, UserRating } from "@/types";
 import { formatXThreadForCopy } from "@/lib/format-output";
 import { CopyActionButton } from "./copy-action-button";
+import { OutputFeedbackControls } from "./output-feedback-controls";
 import { ShareActionButton } from "./share-action-button";
 import { useCopyToClipboard } from "./use-copy-to-clipboard";
+import { useOutputFeedback, type FeedbackProps } from "./use-output-feedback";
 
-interface XThreadTweetListProps {
+interface XThreadTweetListProps extends FeedbackProps {
   tweets: Tweet[];
   threadSummary?: string | null;
   variant?: "studio" | "library";
   showCopyAll?: boolean;
+  /** Full thread output — required when feedback props are present so edits can be saved. */
+  output?: XThreadOutput;
 }
 
 export function XThreadTweetList({
@@ -18,8 +22,39 @@ export function XThreadTweetList({
   threadSummary,
   variant = "studio",
   showCopyAll = true,
+  output,
+  repurposeId,
+  initialRating,
+  initialUserOutput,
+  onFeedback,
 }: XThreadTweetListProps) {
   const { copy, copiedKey, errorKey } = useCopyToClipboard();
+
+  const baseOutput: XThreadOutput =
+    output ??
+    ({
+      format: "x_thread",
+      tweets,
+      thread_summary: threadSummary ?? null,
+    } as XThreadOutput);
+
+  const feedback = useOutputFeedback({
+    output: baseOutput,
+    repurposeId,
+    initialRating,
+    initialUserOutput: initialUserOutput as XThreadOutput | null | undefined,
+    onFeedback,
+  });
+
+  const displayTweets = feedback.feedbackEnabled
+    ? feedback.displayOutput.tweets
+    : tweets;
+  const displaySummary = feedback.feedbackEnabled
+    ? feedback.displayOutput.thread_summary
+    : threadSummary;
+  const activeTweets = feedback.editing
+    ? feedback.draft.tweets
+    : displayTweets;
 
   const tweetCardClass =
     variant === "studio"
@@ -28,29 +63,47 @@ export function XThreadTweetList({
 
   return (
     <div className="space-y-3">
-      {showCopyAll && tweets.length > 0 && (
-        <div className="flex justify-end">
-          <CopyActionButton
-            copyKey="x_thread:all"
-            label="Copy all"
-            copiedKey={copiedKey}
-            errorKey={errorKey}
-            variant={variant}
-            onCopy={() =>
-              copy(
-                formatXThreadForCopy({ format: "x_thread", tweets }),
-                "x_thread:all"
-              )
-            }
-          />
+      {(showCopyAll || feedback.feedbackEnabled) && displayTweets.length > 0 && (
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {feedback.feedbackEnabled && (
+            <OutputFeedbackControls
+              rating={feedback.rating}
+              editing={feedback.editing}
+              saving={feedback.saving}
+              error={feedback.error}
+              onRate={(r: UserRating) => void feedback.toggleRating(r)}
+              onEdit={feedback.startEdit}
+              onSave={() => void feedback.saveEdit()}
+              onCancel={feedback.cancelEdit}
+              variant={variant}
+            />
+          )}
+          {showCopyAll && (
+            <CopyActionButton
+              copyKey="x_thread:all"
+              label="Copy all"
+              copiedKey={copiedKey}
+              errorKey={errorKey}
+              variant={variant}
+              onCopy={() =>
+                copy(
+                  formatXThreadForCopy({
+                    format: "x_thread",
+                    tweets: displayTweets,
+                  }),
+                  "x_thread:all"
+                )
+              }
+            />
+          )}
         </div>
       )}
 
-      {threadSummary && (
-        <p className="text-sm text-muted-foreground">{threadSummary}</p>
+      {displaySummary && !feedback.editing && (
+        <p className="text-sm text-muted-foreground">{displaySummary}</p>
       )}
 
-      {tweets.map((tweet) => (
+      {activeTweets.map((tweet, index) => (
         <div key={tweet.number} className={tweetCardClass}>
           <div className="mb-2 flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground">
@@ -60,39 +113,73 @@ export function XThreadTweetList({
               <span className="text-xs text-muted-foreground">
                 {tweet.text.length}/280
               </span>
-              <ShareActionButton
-                target="x"
-                getText={() => tweet.text}
-                variant={variant}
-                size="icon"
-                className={
-                  variant === "studio"
-                    ? "rounded-lg border border-border bg-card px-2 py-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
-                    : "rounded-md border border-border bg-background px-2 py-1 opacity-100"
-                }
-              />
-              <CopyActionButton
-                copyKey={`x_thread:tweet:${tweet.number}`}
-                label="Copy"
-                copiedKey={copiedKey}
-                errorKey={errorKey}
-                variant={variant}
-                size="icon"
-                className={
-                  variant === "studio"
-                    ? "rounded-lg border border-border bg-card px-2 py-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
-                    : "rounded-md border border-border bg-background px-2 py-1"
-                }
-                onCopy={() =>
-                  copy(tweet.text, `x_thread:tweet:${tweet.number}`)
-                }
-              />
+              {!feedback.editing && (
+                <>
+                  <ShareActionButton
+                    target="x"
+                    getText={() =>
+                      (feedback.feedbackEnabled
+                        ? feedback.displayOutput.tweets
+                        : tweets
+                      ).find((t) => t.number === tweet.number)?.text ??
+                      tweet.text
+                    }
+                    variant={variant}
+                    size="icon"
+                    className={
+                      variant === "studio"
+                        ? "rounded-lg border border-border bg-card px-2 py-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                        : "rounded-md border border-border bg-background px-2 py-1 opacity-100"
+                    }
+                  />
+                  <CopyActionButton
+                    copyKey={`x_thread:tweet:${tweet.number}`}
+                    label="Copy"
+                    copiedKey={copiedKey}
+                    errorKey={errorKey}
+                    variant={variant}
+                    size="icon"
+                    className={
+                      variant === "studio"
+                        ? "rounded-lg border border-border bg-card px-2 py-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                        : "rounded-md border border-border bg-background px-2 py-1"
+                    }
+                    onCopy={() => {
+                      const text =
+                        (feedback.feedbackEnabled
+                          ? feedback.displayOutput.tweets
+                          : tweets
+                        ).find((t) => t.number === tweet.number)?.text ??
+                        tweet.text;
+                      copy(text, `x_thread:tweet:${tweet.number}`);
+                    }}
+                  />
+                </>
+              )}
             </div>
           </div>
-          <p className="whitespace-pre-wrap text-sm leading-relaxed">
-            {tweet.text}
-          </p>
-          {tweet.media_suggestion && (
+          {feedback.editing ? (
+            <textarea
+              className="w-full rounded-md border border-border bg-background p-2 text-sm leading-relaxed"
+              rows={3}
+              maxLength={280}
+              value={tweet.text}
+              onChange={(e) => {
+                const nextTweets = feedback.draft.tweets.map((t, i) =>
+                  i === index ? { ...t, text: e.target.value } : t
+                );
+                feedback.setDraft({
+                  ...feedback.draft,
+                  tweets: nextTweets,
+                });
+              }}
+            />
+          ) : (
+            <p className="whitespace-pre-wrap text-sm leading-relaxed">
+              {tweet.text}
+            </p>
+          )}
+          {tweet.media_suggestion && !feedback.editing && (
             <p className="mt-2 text-xs text-muted-foreground">
               Media idea: {tweet.media_suggestion}
             </p>
@@ -103,7 +190,7 @@ export function XThreadTweetList({
   );
 }
 
-interface XThreadOutputPanelProps {
+interface XThreadOutputPanelProps extends FeedbackProps {
   output: XThreadOutput;
   variant?: "studio" | "library";
 }
@@ -111,12 +198,21 @@ interface XThreadOutputPanelProps {
 export function XThreadOutputPanel({
   output,
   variant = "studio",
+  repurposeId,
+  initialRating,
+  initialUserOutput,
+  onFeedback,
 }: XThreadOutputPanelProps) {
   return (
     <XThreadTweetList
       tweets={output.tweets}
       threadSummary={output.thread_summary}
       variant={variant}
+      output={output}
+      repurposeId={repurposeId}
+      initialRating={initialRating}
+      initialUserOutput={initialUserOutput as XThreadOutput | null | undefined}
+      onFeedback={onFeedback}
     />
   );
 }

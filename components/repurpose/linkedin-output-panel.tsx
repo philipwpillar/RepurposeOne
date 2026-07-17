@@ -1,6 +1,6 @@
 "use client";
 
-import type { LinkedInOutput } from "@/types";
+import type { LinkedInOutput, UserRating } from "@/types";
 import {
   formatLinkedInPostForCopy,
   formatLinkedInSlidesForCopy,
@@ -12,10 +12,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { CopyActionButton } from "./copy-action-button";
+import { OutputFeedbackControls } from "./output-feedback-controls";
 import { ShareActionButton } from "./share-action-button";
 import { useCopyToClipboard } from "./use-copy-to-clipboard";
+import { useOutputFeedback, type FeedbackProps } from "./use-output-feedback";
 
-interface LinkedInOutputPanelProps {
+interface LinkedInOutputPanelProps extends FeedbackProps {
   output: LinkedInOutput;
   variant?: "studio" | "library";
 }
@@ -23,36 +25,67 @@ interface LinkedInOutputPanelProps {
 export function LinkedInOutputPanel({
   output,
   variant = "studio",
+  repurposeId,
+  initialRating,
+  initialUserOutput,
+  onFeedback,
 }: LinkedInOutputPanelProps) {
   const { copy, copiedKey, errorKey } = useCopyToClipboard();
+  const feedback = useOutputFeedback({
+    output,
+    repurposeId,
+    initialRating,
+    initialUserOutput: initialUserOutput as LinkedInOutput | null | undefined,
+    onFeedback,
+  });
+
+  const display = feedback.feedbackEnabled ? feedback.displayOutput : output;
+  const active = feedback.editing ? feedback.draft : display;
 
   const copyActions = (
     <div className="flex flex-wrap gap-2">
-      <ShareActionButton
-        target="linkedin"
-        getText={() => formatLinkedInPostForCopy(output)}
-        variant={variant}
-      />
-      <CopyActionButton
-        copyKey="linkedin:post"
-        label="Copy post"
-        copiedKey={copiedKey}
-        errorKey={errorKey}
-        variant={variant}
-        onCopy={() =>
-          copy(formatLinkedInPostForCopy(output), "linkedin:post")
-        }
-      />
-      <CopyActionButton
-        copyKey="linkedin:slides"
-        label="Copy carousel slides"
-        copiedKey={copiedKey}
-        errorKey={errorKey}
-        variant={variant}
-        onCopy={() =>
-          copy(formatLinkedInSlidesForCopy(output), "linkedin:slides")
-        }
-      />
+      {feedback.feedbackEnabled && (
+        <OutputFeedbackControls
+          rating={feedback.rating}
+          editing={feedback.editing}
+          saving={feedback.saving}
+          error={feedback.error}
+          onRate={(r: UserRating) => void feedback.toggleRating(r)}
+          onEdit={feedback.startEdit}
+          onSave={() => void feedback.saveEdit()}
+          onCancel={feedback.cancelEdit}
+          variant={variant}
+        />
+      )}
+      {!feedback.editing && (
+        <>
+          <ShareActionButton
+            target="linkedin"
+            getText={() => formatLinkedInPostForCopy(display)}
+            variant={variant}
+          />
+          <CopyActionButton
+            copyKey="linkedin:post"
+            label="Copy post"
+            copiedKey={copiedKey}
+            errorKey={errorKey}
+            variant={variant}
+            onCopy={() =>
+              copy(formatLinkedInPostForCopy(display), "linkedin:post")
+            }
+          />
+          <CopyActionButton
+            copyKey="linkedin:slides"
+            label="Copy carousel slides"
+            copiedKey={copiedKey}
+            errorKey={errorKey}
+            variant={variant}
+            onCopy={() =>
+              copy(formatLinkedInSlidesForCopy(display), "linkedin:slides")
+            }
+          />
+        </>
+      )}
     </div>
   );
 
@@ -62,15 +95,26 @@ export function LinkedInOutputPanel({
         <div className="mb-2 text-xs font-medium text-muted-foreground">
           POST
         </div>
-        <div
-          className={
-            variant === "studio"
-              ? "rounded-2xl bg-secondary p-4 text-sm leading-relaxed whitespace-pre-line text-foreground"
-              : "whitespace-pre-wrap text-sm"
-          }
-        >
-          {output.post}
-        </div>
+        {feedback.editing ? (
+          <textarea
+            className="w-full rounded-md border border-border bg-background p-3 text-sm leading-relaxed"
+            rows={8}
+            value={active.post}
+            onChange={(e) =>
+              feedback.setDraft({ ...feedback.draft, post: e.target.value })
+            }
+          />
+        ) : (
+          <div
+            className={
+              variant === "studio"
+                ? "rounded-2xl bg-secondary p-4 text-sm leading-relaxed whitespace-pre-line text-foreground"
+                : "whitespace-pre-wrap text-sm"
+            }
+          >
+            {display.post}
+          </div>
+        )}
       </div>
 
       <div>
@@ -78,7 +122,7 @@ export function LinkedInOutputPanel({
           CAROUSEL SLIDES
         </div>
         <div className="space-y-2">
-          {output.carousel_slides.map((slide) => (
+          {display.carousel_slides.map((slide) => (
             <div
               key={slide.number}
               className={

@@ -1,6 +1,6 @@
 "use client";
 
-import type { XThreadOutput } from "@/types";
+import type { XThreadOutput, UserRating } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -10,16 +10,23 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { XThreadTweetList } from "./x-thread-tweet-list";
+import type { FeedbackProps } from "./use-output-feedback";
 
-interface XThreadOutputDisplayProps {
+interface XThreadOutputDisplayProps extends FeedbackProps {
   output: XThreadOutput;
-  repurposeId?: string;
 }
 
 export function XThreadOutputDisplay({
   output,
   repurposeId,
+  initialRating,
+  initialUserOutput,
+  onFeedback,
 }: XThreadOutputDisplayProps) {
+  const tweetCount =
+    (initialUserOutput as XThreadOutput | null | undefined)?.tweets.length ??
+    output.tweets.length;
+
   return (
     <Card>
       <CardHeader>
@@ -27,7 +34,7 @@ export function XThreadOutputDisplay({
           <div>
             <CardTitle className="text-xl">Your X thread</CardTitle>
             <CardDescription>
-              {output.tweets.length} tweets — copy individually or all at once
+              {tweetCount} tweets — copy individually or all at once
             </CardDescription>
           </div>
           {repurposeId && (
@@ -42,6 +49,13 @@ export function XThreadOutputDisplay({
           tweets={output.tweets}
           threadSummary={output.thread_summary}
           variant="library"
+          output={output}
+          repurposeId={repurposeId}
+          initialRating={initialRating as UserRating | null | undefined}
+          initialUserOutput={
+            initialUserOutput as XThreadOutput | null | undefined
+          }
+          onFeedback={onFeedback}
         />
       </CardContent>
     </Card>

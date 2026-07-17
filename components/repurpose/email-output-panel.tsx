@@ -1,6 +1,6 @@
 "use client";
 
-import type { EmailOutput } from "@/types";
+import type { EmailOutput, UserRating } from "@/types";
 import {
   formatEmailBodyForCopy,
   formatEmailSubjectForCopy,
@@ -13,9 +13,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { CopyActionButton } from "./copy-action-button";
+import { OutputFeedbackControls } from "./output-feedback-controls";
 import { useCopyToClipboard } from "./use-copy-to-clipboard";
+import { useOutputFeedback, type FeedbackProps } from "./use-output-feedback";
 
-interface EmailOutputPanelProps {
+interface EmailOutputPanelProps extends FeedbackProps {
   output: EmailOutput;
   variant?: "studio" | "library";
 }
@@ -23,29 +25,60 @@ interface EmailOutputPanelProps {
 export function EmailOutputPanel({
   output,
   variant = "studio",
+  repurposeId,
+  initialRating,
+  initialUserOutput,
+  onFeedback,
 }: EmailOutputPanelProps) {
   const { copy, copiedKey, errorKey } = useCopyToClipboard();
+  const feedback = useOutputFeedback({
+    output,
+    repurposeId,
+    initialRating,
+    initialUserOutput: initialUserOutput as EmailOutput | null | undefined,
+    onFeedback,
+  });
+
+  const display = feedback.feedbackEnabled ? feedback.displayOutput : output;
+  const active = feedback.editing ? feedback.draft : display;
 
   const copyActions = (
     <div className="flex flex-wrap gap-2">
-      <CopyActionButton
-        copyKey="email:subject"
-        label="Copy subject"
-        copiedKey={copiedKey}
-        errorKey={errorKey}
-        variant={variant}
-        onCopy={() =>
-          copy(formatEmailSubjectForCopy(output), "email:subject")
-        }
-      />
-      <CopyActionButton
-        copyKey="email:body"
-        label="Copy body"
-        copiedKey={copiedKey}
-        errorKey={errorKey}
-        variant={variant}
-        onCopy={() => copy(formatEmailBodyForCopy(output), "email:body")}
-      />
+      {feedback.feedbackEnabled && (
+        <OutputFeedbackControls
+          rating={feedback.rating}
+          editing={feedback.editing}
+          saving={feedback.saving}
+          error={feedback.error}
+          onRate={(r: UserRating) => void feedback.toggleRating(r)}
+          onEdit={feedback.startEdit}
+          onSave={() => void feedback.saveEdit()}
+          onCancel={feedback.cancelEdit}
+          variant={variant}
+        />
+      )}
+      {!feedback.editing && (
+        <>
+          <CopyActionButton
+            copyKey="email:subject"
+            label="Copy subject"
+            copiedKey={copiedKey}
+            errorKey={errorKey}
+            variant={variant}
+            onCopy={() =>
+              copy(formatEmailSubjectForCopy(display), "email:subject")
+            }
+          />
+          <CopyActionButton
+            copyKey="email:body"
+            label="Copy body"
+            copiedKey={copiedKey}
+            errorKey={errorKey}
+            variant={variant}
+            onCopy={() => copy(formatEmailBodyForCopy(display), "email:body")}
+          />
+        </>
+      )}
     </div>
   );
 
@@ -55,18 +88,32 @@ export function EmailOutputPanel({
         <div className="mb-1 text-xs font-medium text-muted-foreground">
           SUBJECT LINE
         </div>
-        <div className="text-sm font-medium text-foreground">
-          {output.subject_line}
-        </div>
+        {feedback.editing ? (
+          <input
+            type="text"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm font-medium"
+            value={active.subject_line}
+            onChange={(e) =>
+              feedback.setDraft({
+                ...feedback.draft,
+                subject_line: e.target.value,
+              })
+            }
+          />
+        ) : (
+          <div className="text-sm font-medium text-foreground">
+            {display.subject_line}
+          </div>
+        )}
       </div>
 
-      {output.preview_text && (
+      {display.preview_text && !feedback.editing && (
         <div>
           <div className="mb-1 text-xs font-medium text-muted-foreground">
             PREVIEW TEXT
           </div>
           <div className="text-sm text-muted-foreground">
-            {output.preview_text}
+            {display.preview_text}
           </div>
         </div>
       )}
@@ -75,15 +122,26 @@ export function EmailOutputPanel({
         <div className="mb-2 text-xs font-medium text-muted-foreground">
           BODY
         </div>
-        <div
-          className={
-            variant === "studio"
-              ? "rounded-2xl bg-secondary p-4 text-sm leading-relaxed whitespace-pre-line text-foreground"
-              : "whitespace-pre-wrap text-sm"
-          }
-        >
-          {output.body}
-        </div>
+        {feedback.editing ? (
+          <textarea
+            className="w-full rounded-md border border-border bg-background p-3 text-sm leading-relaxed"
+            rows={12}
+            value={active.body}
+            onChange={(e) =>
+              feedback.setDraft({ ...feedback.draft, body: e.target.value })
+            }
+          />
+        ) : (
+          <div
+            className={
+              variant === "studio"
+                ? "rounded-2xl bg-secondary p-4 text-sm leading-relaxed whitespace-pre-line text-foreground"
+                : "whitespace-pre-wrap text-sm"
+            }
+          >
+            {display.body}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -95,7 +153,7 @@ export function EmailOutputPanel({
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <CardTitle className="text-lg">Email newsletter</CardTitle>
-              <CardDescription>{output.subject_line}</CardDescription>
+              <CardDescription>{display.subject_line}</CardDescription>
             </div>
             {copyActions}
           </div>

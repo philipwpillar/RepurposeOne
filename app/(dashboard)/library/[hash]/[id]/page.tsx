@@ -10,7 +10,7 @@ import { LinkedInOutputPanel } from "@/components/repurpose/linkedin-output-pane
 import { InstagramOutputPanel } from "@/components/repurpose/instagram-output-panel";
 import { EmailOutputPanel } from "@/components/repurpose/email-output-panel";
 import { formatLabel } from "@/lib/format-output";
-import type { RepurposeOutput } from "@/types";
+import type { RepurposeOutput, UserRating } from "@/types";
 
 interface HistoryDetailPageProps {
   params: Promise<{ hash: string; id: string }>;
@@ -41,6 +41,15 @@ export default async function HistoryDetailPage({
   }
 
   const output = repurpose.output as RepurposeOutput | null;
+  const initialUserOutput = (repurpose.user_output ??
+    null) as RepurposeOutput | null;
+  const initialRating = (repurpose.user_rating ?? null) as UserRating | null;
+
+  const feedbackProps = {
+    repurposeId: repurpose.id as string,
+    initialRating,
+    initialUserOutput,
+  };
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -73,19 +82,31 @@ export default async function HistoryDetailPage({
       </div>
 
       {output?.format === "x_thread" && (
-        <XThreadOutputDisplay output={output} repurposeId={repurpose.id} />
+        <XThreadOutputDisplay output={output} {...feedbackProps} />
       )}
 
       {output?.format === "linkedin" && (
-        <LinkedInOutputPanel output={output} variant="library" />
+        <LinkedInOutputPanel
+          output={output}
+          variant="library"
+          {...feedbackProps}
+        />
       )}
 
       {output?.format === "instagram" && (
-        <InstagramOutputPanel output={output} variant="library" />
+        <InstagramOutputPanel
+          output={output}
+          variant="library"
+          {...feedbackProps}
+        />
       )}
 
       {output?.format === "email" && (
-        <EmailOutputPanel output={output} variant="library" />
+        <EmailOutputPanel
+          output={output}
+          variant="library"
+          {...feedbackProps}
+        />
       )}
     </div>
   );
