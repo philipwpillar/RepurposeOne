@@ -1,6 +1,6 @@
 "use client";
 
-import type { InstagramOutput } from "@/types";
+import type { InstagramOutput, UserRating } from "@/types";
 import { formatInstagramCaptionForCopy } from "@/lib/format-output";
 import {
   Card,
@@ -9,9 +9,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { CopyActionButton } from "./copy-action-button";
+import { OutputFeedbackControls } from "./output-feedback-controls";
 import { useCopyToClipboard } from "./use-copy-to-clipboard";
+import { useOutputFeedback, type FeedbackProps } from "./use-output-feedback";
 
-interface InstagramOutputPanelProps {
+interface InstagramOutputPanelProps extends FeedbackProps {
   output: InstagramOutput;
   variant?: "studio" | "library";
 }
@@ -23,20 +25,51 @@ function formatHashtags(hashtags: string[]): string {
 export function InstagramOutputPanel({
   output,
   variant = "studio",
+  repurposeId,
+  initialRating,
+  initialUserOutput,
+  onFeedback,
 }: InstagramOutputPanelProps) {
   const { copy, copiedKey, errorKey } = useCopyToClipboard();
+  const feedback = useOutputFeedback({
+    output,
+    repurposeId,
+    initialRating,
+    initialUserOutput: initialUserOutput as InstagramOutput | null | undefined,
+    onFeedback,
+  });
+
+  const display = feedback.feedbackEnabled ? feedback.displayOutput : output;
+  const active = feedback.editing ? feedback.draft : display;
 
   const copyActions = (
-    <CopyActionButton
-      copyKey="instagram:caption"
-      label="Copy caption + hashtags"
-      copiedKey={copiedKey}
-      errorKey={errorKey}
-      variant={variant}
-      onCopy={() =>
-        copy(formatInstagramCaptionForCopy(output), "instagram:caption")
-      }
-    />
+    <div className="flex flex-wrap gap-2">
+      {feedback.feedbackEnabled && (
+        <OutputFeedbackControls
+          rating={feedback.rating}
+          editing={feedback.editing}
+          saving={feedback.saving}
+          error={feedback.error}
+          onRate={(r: UserRating) => void feedback.toggleRating(r)}
+          onEdit={feedback.startEdit}
+          onSave={() => void feedback.saveEdit()}
+          onCancel={feedback.cancelEdit}
+          variant={variant}
+        />
+      )}
+      {!feedback.editing && (
+        <CopyActionButton
+          copyKey="instagram:caption"
+          label="Copy caption + hashtags"
+          copiedKey={copiedKey}
+          errorKey={errorKey}
+          variant={variant}
+          onCopy={() =>
+            copy(formatInstagramCaptionForCopy(display), "instagram:caption")
+          }
+        />
+      )}
+    </div>
   );
 
   const content = (
@@ -45,9 +78,20 @@ export function InstagramOutputPanel({
         <div className="mb-2 text-xs font-medium text-muted-foreground">
           CAPTION
         </div>
-        <div className="whitespace-pre-line text-sm leading-relaxed text-foreground">
-          {output.caption}
-        </div>
+        {feedback.editing ? (
+          <textarea
+            className="w-full rounded-md border border-border bg-background p-3 text-sm leading-relaxed"
+            rows={6}
+            value={active.caption}
+            onChange={(e) =>
+              feedback.setDraft({ ...feedback.draft, caption: e.target.value })
+            }
+          />
+        ) : (
+          <div className="whitespace-pre-line text-sm leading-relaxed text-foreground">
+            {display.caption}
+          </div>
+        )}
       </div>
 
       <div>
@@ -55,7 +99,7 @@ export function InstagramOutputPanel({
           HOOK VARIATIONS
         </div>
         <ul className="space-y-2">
-          {output.hook_variations.map((hook, index) => (
+          {display.hook_variations.map((hook, index) => (
             <li
               key={index}
               className={
@@ -65,20 +109,22 @@ export function InstagramOutputPanel({
               }
             >
               <span className="flex-1">{hook}</span>
-              <CopyActionButton
-                copyKey={`instagram:hook:${index}`}
-                label="Copy hook"
-                copiedKey={copiedKey}
-                errorKey={errorKey}
-                variant={variant}
-                size="icon"
-                className={
-                  variant === "studio"
-                    ? "flex-shrink-0 rounded-lg border border-border bg-card px-2 py-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
-                    : "flex-shrink-0 rounded-md border border-border bg-background px-2 py-1"
-                }
-                onCopy={() => copy(hook, `instagram:hook:${index}`)}
-              />
+              {!feedback.editing && (
+                <CopyActionButton
+                  copyKey={`instagram:hook:${index}`}
+                  label="Copy hook"
+                  copiedKey={copiedKey}
+                  errorKey={errorKey}
+                  variant={variant}
+                  size="icon"
+                  className={
+                    variant === "studio"
+                      ? "flex-shrink-0 rounded-lg border border-border bg-card px-2 py-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                      : "flex-shrink-0 rounded-md border border-border bg-background px-2 py-1"
+                  }
+                  onCopy={() => copy(hook, `instagram:hook:${index}`)}
+                />
+              )}
             </li>
           ))}
         </ul>
@@ -89,7 +135,7 @@ export function InstagramOutputPanel({
           HASHTAGS
         </div>
         <div className="text-sm text-primary">
-          {formatHashtags(output.hashtags)}
+          {formatHashtags(display.hashtags)}
         </div>
       </div>
     </div>

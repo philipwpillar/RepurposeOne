@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateRepurpose, generateRepurposeFromImage } from "@/lib/ai/generate";
+import { fetchVoiceExemplarsText } from "@/lib/ai/exemplars";
 import { AI_CONFIG, planAllowsVision } from "@/lib/config";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -222,6 +223,18 @@ export async function POST(request: Request) {
     });
   }
 
+  // Brief S2: inject rated/edited exemplars when available (never fail generation)
+  const exemplarsText = await fetchVoiceExemplarsText(
+    supabase,
+    user.id,
+    target_format
+  );
+  if (exemplarsText) {
+    console.info(
+      `[exemplars] injected for user=${user.id} format=${target_format} chars=${exemplarsText.length}`
+    );
+  }
+
   // Insert pending row before AI call (audit trail + status tracking)
   const { data: repurpose, error: insertError } = await supabase
     .from("repurposes")
@@ -255,12 +268,14 @@ export async function POST(request: Request) {
           brandVoice: resolvedVoice,
           targetFormat: target_format,
           targetTweets: target_tweets,
+          exemplarsText: exemplarsText || undefined,
         })
       : await generateRepurpose({
           inputContent: input_content,
           brandVoice: resolvedVoice,
           targetFormat: target_format,
           targetTweets: target_tweets,
+          exemplarsText: exemplarsText || undefined,
         });
 
     const { error: updateError } = await supabase

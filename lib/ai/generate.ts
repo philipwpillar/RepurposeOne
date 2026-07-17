@@ -33,6 +33,8 @@ export interface GenerateInput {
   targetTweets?: number;
   /** Optional tier override; defaults to FORMAT_MODEL_TIER mapping. */
   modelTier?: ModelTier;
+  /** Optional voice exemplars prompt block (Brief S2). */
+  exemplarsText?: string;
 }
 
 export interface GenerateResult {
@@ -86,6 +88,7 @@ export async function generateRepurpose(
     sourceText: truncatedContent,
     targetFormat: input.targetFormat,
     targetTweets: input.targetTweets,
+    exemplarsText: input.exemplarsText,
   };
 
   const { system, user } = buildGenerationPrompt(ctx);
@@ -145,6 +148,8 @@ export interface GenerateImageInput {
   brandVoice: BrandVoiceInput;
   targetFormat: TargetFormat;
   targetTweets?: number;
+  /** Optional voice exemplars prompt block (Brief S2). */
+  exemplarsText?: string;
 }
 
 /**
@@ -160,6 +165,7 @@ export async function generateRepurposeFromImage(
     cta: input.cta,
     targetFormat: input.targetFormat,
     targetTweets: input.targetTweets,
+    exemplarsText: input.exemplarsText,
   });
 
   const model = AI_CONFIG.visionModel;

@@ -5,6 +5,8 @@ export interface PromptContext {
   sourceText: string;
   targetFormat: TargetFormat;
   targetTweets?: number;
+  /** Optional voice exemplars from rated/edited past outputs (Brief S2). */
+  exemplarsText?: string;
 }
 
 export interface PhotoPromptContext {
@@ -13,6 +15,8 @@ export interface PhotoPromptContext {
   cta?: string;
   targetFormat: TargetFormat;
   targetTweets?: number;
+  /** Optional voice exemplars from rated/edited past outputs (Brief S2). */
+  exemplarsText?: string;
 }
 
 /**
@@ -122,9 +126,12 @@ export function buildGenerationPrompt(ctx: PromptContext): {
   user: string;
 } {
   const tweetTarget = ctx.targetTweets ?? 7;
+  const exemplarsBlock = ctx.exemplarsText?.trim()
+    ? `\n\n${ctx.exemplarsText.trim()}`
+    : "";
 
   const baseUser = `Brand voice:
-${ctx.brandVoiceText}
+${ctx.brandVoiceText}${exemplarsBlock}
 
 Source content:
 ${ctx.sourceText}`;
@@ -190,9 +197,12 @@ export function buildPhotoGenerationPrompt(ctx: PhotoPromptContext): {
   const ctaBlock = ctx.cta
     ? `\nCall to action (use or adapt): ${ctx.cta}`
     : "\nCall to action: infer a soft CTA from context, or omit if not appropriate.";
+  const exemplarsBlock = ctx.exemplarsText?.trim()
+    ? `\n\n${ctx.exemplarsText.trim()}`
+    : "";
 
   const baseUser = `Brand voice (follow strictly — this is your primary tone anchor):
-${ctx.brandVoiceText}
+${ctx.brandVoiceText}${exemplarsBlock}
 
 User context (authoritative intent — what this post is about and why):
 ${ctx.context}${ctaBlock}

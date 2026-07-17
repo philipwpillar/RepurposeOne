@@ -200,8 +200,14 @@ export const RepurposeSchema = z.object({
   status: RepurposeStatusSchema,
   error_message: z.string().nullable(),
   created_at: z.string(),
+  // Brief S2 — .nullish() so select("*") nulls and omitted API keys both parse
+  user_rating: z.union([z.literal(-1), z.literal(1)]).nullish(),
+  user_output: RepurposeOutputSchema.nullish(),
+  edited_at: z.string().nullish(),
 });
 export type Repurpose = z.infer<typeof RepurposeSchema>;
+
+export type UserRating = -1 | 1;
 
 // ---------------------------------------------------------------------------
 // API responses
