@@ -228,3 +228,94 @@ export function validateAiOutput(data: unknown): RepurposeOutput {
 
 /** Zod schema re-export for route-level validation. */
 export { RepurposeOutputSchema };
+
+// ---------------------------------------------------------------------------
+// Brief 1b — additive helper for bundle orchestration only.
+// generateRepurpose / generateRepurposeFromImage above stay byte-identical.
+// ---------------------------------------------------------------------------
+
+export type OpenRouterMessage =
+  OpenAI.Chat.Completions.ChatCompletionMessageParam;
+
+export interface CompleteOpenRouterJsonInput<T> {
+  model: string;
+  messages: OpenRouterMessage[];
+  schema: { safeParse: (data: unknown) => { success: true; data: T } | { success: false; error: { issues: { message: string }[] } } };
+}
+
+export interface CompleteOpenRouterJsonResult<T> {
+  data: T;
+  model: string;
+  tokensUsed?: number;
+  promptTokens?: number;
+  completionTokens?: number;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function completeOpenRouterJsonOnce<T>(
+  input: CompleteOpenRouterJsonInput<T>
+): Promise<CompleteOpenRouterJsonResult<T>> {
+  const client = getAiClient();
+
+  const completionParams: OpenRouterChatCompletionParams = {
+    model: input.model,
+    temperature: AI_CONFIG.temperature,
+    response_format: { type: "json_object" },
+    reasoning: { enabled: false },
+    provider: { only: [...OPENROUTER_ALLOWED_PROVIDERS] },
+    messages: input.messages,
+  };
+
+  const response = await client.chat.completions.create(completionParams);
+
+  const rawContent = response.choices[0]?.message?.content;
+  if (!rawContent) {
+    throw new Error("AI returned an empty response");
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = parseJsonResponse(rawContent);
+  } catch {
+    throw new Error("AI response was not valid JSON");
+  }
+
+  const validated = input.schema.safeParse(parsed);
+  if (!validated.success) {
+    throw new Error(
+      `AI output failed validation: ${validated.error.issues.map((i) => i.message).join("; ")}`
+    );
+  }
+
+  return {
+    data: validated.data,
+    model: input.model,
+    tokensUsed: response.usage?.total_tokens,
+    promptTokens: response.usage?.prompt_tokens,
+    completionTokens: response.usage?.completion_tokens,
+  };
+}
+
+/**
+ * OpenRouter JSON completion with shape-validated retry (one retry, 2s backoff).
+ * Used by Moment Bundle orchestration — not wired into studio generate paths.
+ */
+export async function completeOpenRouterJson<T>(
+  input: CompleteOpenRouterJsonInput<T>
+): Promise<CompleteOpenRouterJsonResult<T>> {
+  try {
+    return await completeOpenRouterJsonOnce(input);
+  } catch (firstErr) {
+    await sleep(2000);
+    try {
+      return await completeOpenRouterJsonOnce(input);
+    } catch {
+      throw firstErr instanceof Error
+        ? firstErr
+        : new Error("AI output failed validation after retry");
+    }
+  }
+}

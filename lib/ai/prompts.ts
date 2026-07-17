@@ -256,3 +256,90 @@ Return JSON matching the required schema.`,
       };
   }
 }
+
+// ---------------------------------------------------------------------------
+// Moment Bundle prompts (Brief 1b — photo pack)
+// ---------------------------------------------------------------------------
+
+export interface BundlePhotoAnalysisPromptContext {
+  context: string;
+  /** Global photo indexes in this batch (e.g. [0,1,2,3] or [4,5,6,7]). */
+  photoIndexes: number[];
+}
+
+export function buildBundlePhotoAnalysisPrompt(
+  ctx: BundlePhotoAnalysisPromptContext
+): { system: string; user: string } {
+  const indexList = ctx.photoIndexes.join(", ");
+  return {
+    system: `You are a photo pack analyst for social content. Analyze each attached image and return JSON only — no markdown fences, no commentary.
+
+Use this exact schema:
+{
+  "photos": [
+    {
+      "index": <global photo index as provided>,
+      "description": "what is visually in the photo",
+      "caption_angle": "best storytelling / posting angle for this photo",
+      "quality_note": "optional note on composition or issues"
+    }
+  ]
+}
+
+Rules:
+- Include exactly one entry per attached photo.
+- Use the exact global index numbers given for each photo (${indexList}).
+- Stay factual and useful for writing captions later.
+- Do not invent brand voice or platform posts here.`,
+    user: `User context for this Moment Bundle:
+${ctx.context}
+
+Analyze the ${ctx.photoIndexes.length} attached photo(s) with global indexes: ${indexList}.
+Return JSON matching the required schema.`,
+  };
+}
+
+export interface BundlePackSynthesisPromptContext {
+  brandVoiceText: string;
+  context: string;
+  photoCount: number;
+  stage1bJson: string;
+}
+
+export function buildBundlePackSynthesisPrompt(
+  ctx: BundlePackSynthesisPromptContext
+): { system: string; user: string } {
+  return {
+    system: `You synthesize a Moment Bundle photo pack into captions, posting order, and a condensed brief for platform repurposing.
+Respond with valid JSON only — no markdown fences, no commentary.
+
+Use this exact schema:
+{
+  "photo_captions": [
+    {
+      "photo_index": <0-based index>,
+      "caption": "platform-ready caption (max 2200 chars)",
+      "alt_text": "accessibility alt text (max 500 chars)"
+    }
+  ],
+  "posting_order": [<photo indexes in recommended publish order>],
+  "post_brief": "condensed pack summary for platform format writers (max 2000 chars)"
+}
+
+Rules:
+- Include one caption object per photo index 0..${ctx.photoCount - 1}.
+- posting_order must be a permutation of those indexes.
+- post_brief must capture the story, angles, and key beats so a text-only writer can produce X / LinkedIn / Instagram / email without seeing the images.
+- Follow the brand voice strictly.`,
+    user: `Brand voice (follow strictly):
+${ctx.brandVoiceText}
+
+User context:
+${ctx.context}
+
+Stage-1b photo analysis (validated JSON):
+${ctx.stage1bJson}
+
+Produce the pack JSON for ${ctx.photoCount} photos.`,
+  };
+}
