@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { generateRepurpose, generateRepurposeFromImage } from "@/lib/ai/generate";
 import { fetchVoiceExemplarsText } from "@/lib/ai/exemplars";
 import { AI_CONFIG, planAllowsVision } from "@/lib/config";
+import { resolveBrandVoice } from "@/lib/repurpose/brand-voice";
 import { createClient } from "@/lib/supabase/server";
 import {
   checkRateLimit,
@@ -11,7 +12,6 @@ import {
 } from "@/lib/usage";
 import {
   GenerateRequestSchema,
-  type BrandVoiceInput,
   type GenerateErrorResponse,
 } from "@/types";
 
@@ -42,37 +42,6 @@ function toUserFacingGenerationError(err: unknown): string {
   }
 
   return "We couldn't generate your content. Please try again — this attempt won't count toward your monthly limit.";
-}
-
-async function resolveBrandVoice(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  userId: string,
-  brandVoiceId?: string,
-  inlineVoice?: BrandVoiceInput
-): Promise<BrandVoiceInput> {
-  if (inlineVoice) {
-    return inlineVoice;
-  }
-
-  if (!brandVoiceId) {
-    throw new Error("brand_voice_id or brand_voice is required");
-  }
-
-  const { data, error } = await supabase
-    .from("brand_voices")
-    .select("samples, description")
-    .eq("id", brandVoiceId)
-    .eq("user_id", userId)
-    .single();
-
-  if (error || !data) {
-    throw new Error("Brand voice not found");
-  }
-
-  return {
-    samples: data.samples ?? [],
-    description: data.description ?? undefined,
-  };
 }
 
 /**
@@ -208,7 +177,7 @@ export async function POST(request: Request) {
     });
   }
 
-  let resolvedVoice: BrandVoiceInput;
+  let resolvedVoice;
   try {
     resolvedVoice = await resolveBrandVoice(
       supabase,

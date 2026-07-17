@@ -249,3 +249,89 @@ export const GenerateErrorResponseSchema = z.object({
   retry_after_seconds: z.number().int().optional(),
 });
 export type GenerateErrorResponse = z.infer<typeof GenerateErrorResponseSchema>;
+
+// ---------------------------------------------------------------------------
+// Moment Bundle (Brief 1b — photo pack)
+// ---------------------------------------------------------------------------
+
+const BundlePhotoInputSchema = z.object({
+  data: z.string().min(1, "Image data is required"),
+  filename: z.string().max(255).optional(),
+});
+
+export const BundleGenerateRequestSchema = z.object({
+  title: z.string().max(200).optional(),
+  context: z
+    .string()
+    .min(
+      PHOTO_CONTEXT_MIN_LENGTH,
+      `Context must be at least ${PHOTO_CONTEXT_MIN_LENGTH} characters`
+    )
+    .max(PHOTO_CONTEXT_MAX_LENGTH),
+  photos: z.array(BundlePhotoInputSchema).min(1).max(8),
+  formats: z.array(TargetFormatSchema).min(1).max(4).optional(),
+});
+export type BundleGenerateRequest = z.infer<typeof BundleGenerateRequestSchema>;
+
+export const BundlePhotoAnalysisSchema = z.object({
+  photos: z.array(
+    z.object({
+      index: z.number().int().nonnegative(),
+      description: z.string().min(1),
+      caption_angle: z.string().min(1),
+      quality_note: z.string().optional(),
+    })
+  ),
+});
+export type BundlePhotoAnalysis = z.infer<typeof BundlePhotoAnalysisSchema>;
+
+export const BundlePackSchema = z.object({
+  photo_captions: z.array(
+    z.object({
+      photo_index: z.number().int().nonnegative(),
+      caption: z.string().min(1).max(2200),
+      alt_text: z.string().max(500),
+    })
+  ),
+  posting_order: z.array(z.number().int().nonnegative()),
+  post_brief: z.string().min(1).max(2000),
+});
+export type BundlePack = z.infer<typeof BundlePackSchema>;
+
+export const BundleRepurposeResultSchema = z.object({
+  id: z.string().uuid(),
+  target_format: TargetFormatSchema,
+  status: RepurposeStatusSchema,
+  output: RepurposeOutputSchema.nullable(),
+});
+export type BundleRepurposeResult = z.infer<typeof BundleRepurposeResultSchema>;
+
+export const BundleGenerateSuccessResponseSchema = z.object({
+  bundle_id: z.string().uuid(),
+  pack: BundlePackSchema,
+  repurposes: z.array(BundleRepurposeResultSchema),
+  usage: UsageInfoSchema,
+});
+export type BundleGenerateSuccessResponse = z.infer<
+  typeof BundleGenerateSuccessResponseSchema
+>;
+
+export const BundleGenerateErrorResponseSchema = z.object({
+  error: z.string(),
+  code: z.enum([
+    "unauthorized",
+    "validation_error",
+    "limit_exceeded",
+    "bundle_limit_reached",
+    "rate_limited",
+    "generation_failed",
+    "internal_error",
+    "plan_required",
+  ]),
+  usage: UsageInfoSchema.optional(),
+  upgrade_message: z.string().optional(),
+  retry_after_seconds: z.number().int().optional(),
+});
+export type BundleGenerateErrorResponse = z.infer<
+  typeof BundleGenerateErrorResponseSchema
+>;
