@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { formatISO } from "date-fns";
-import { runPhotoBundleGeneration } from "@/lib/ai/bundle-generate";
+import { runBundleGeneration } from "@/lib/ai/bundle-generate";
 import { fetchVoiceExemplarsText } from "@/lib/ai/exemplars";
 import { generateRepurpose } from "@/lib/ai/generate";
 import {
@@ -26,6 +26,9 @@ import {
 } from "@/types";
 
 export const maxDuration = 120;
+
+/** ~4MB raw body — headroom under Vercel limits for 8 photos + ≤8 sheets. */
+const MAX_BODY_BYTES = 4_000_000;
 
 const ALL_FORMATS: TargetFormat[] = [
   "x_thread",
@@ -77,8 +80,9 @@ function mimeFromFilename(filename?: string): PhotoMimeType {
 /**
  * POST /api/bundles/generate
  *
- * Photo-pack Moment Bundle (Brief 1b):
- * auth → plan → rate → generation cap → N2 bundle cap → analyze → format fan-out.
+ * Moment Bundle (Brief 1b photos + Brief 2c video sheets → clip_specs preview):
+ * auth → plan → rate → generation cap → N2 → analyze → format fan-out.
+ * Videos are request-ephemeral — no video asset / bundle_clips writes.
  */
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -95,9 +99,36 @@ export async function POST(request: Request) {
     });
   }
 
+  const contentLength = Number(request.headers.get("content-length") ?? "0");
+  if (contentLength > MAX_BODY_BYTES) {
+    return errorResponse(413, {
+      error:
+        "Request is too large. Use fewer photos/videos or shorter clips, then try again.",
+      code: "validation_error",
+    });
+  }
+
+  let rawBody: string;
+  try {
+    rawBody = await request.text();
+  } catch {
+    return errorResponse(400, {
+      error: "Invalid request body",
+      code: "validation_error",
+    });
+  }
+
+  if (rawBody.length > MAX_BODY_BYTES) {
+    return errorResponse(413, {
+      error:
+        "Request is too large. Use fewer photos/videos or shorter clips, then try again.",
+      code: "validation_error",
+    });
+  }
+
   let body: unknown;
   try {
-    body = await request.json();
+    body = JSON.parse(rawBody);
   } catch {
     return errorResponse(400, {
       error: "Invalid JSON body",
@@ -117,8 +148,10 @@ export async function POST(request: Request) {
   const formats = requestData.formats?.length
     ? requestData.formats
     : ALL_FORMATS;
+  const photos = requestData.photos ?? [];
+  const videos = requestData.videos ?? [];
 
-  for (const photo of requestData.photos) {
+  for (const photo of photos) {
     if (photo.data.length > AI_CONFIG.maxImageBase64Chars) {
       return errorResponse(400, {
         error: "Image is too large after processing. Try a smaller photo.",
@@ -236,7 +269,7 @@ export async function POST(request: Request) {
     });
   }
 
-  const assetRows = requestData.photos.map((photo, index) => ({
+  const assetRows = photos.map((photo, index) => ({
     user_id: user.id,
     bundle_id: bundle.id,
     kind: "photo" as const,
@@ -246,37 +279,47 @@ export async function POST(request: Request) {
     metadata: photo.filename ? { filename: photo.filename } : {},
   }));
 
-  const { data: assets, error: assetsInsertError } = await supabase
-    .from("bundle_assets")
-    .insert(assetRows)
-    .select("id, sort_order, metadata");
+  let assets: Array<{
+    id: string;
+    sort_order: number;
+    metadata: unknown;
+  }> = [];
 
-  if (assetsInsertError || !assets) {
-    console.error("Failed to insert bundle assets:", assetsInsertError);
-    await supabase
-      .from("bundles")
-      .update({
-        status: "failed",
-        error_message: "Failed to create bundle assets",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", bundle.id)
-      .eq("user_id", user.id);
+  if (assetRows.length > 0) {
+    const { data: insertedAssets, error: assetsInsertError } = await supabase
+      .from("bundle_assets")
+      .insert(assetRows)
+      .select("id, sort_order, metadata");
 
-    return errorResponse(500, {
-      error: "Failed to create bundle assets",
-      code: "internal_error",
-    });
+    if (assetsInsertError || !insertedAssets) {
+      console.error("Failed to insert bundle assets:", assetsInsertError);
+      await supabase
+        .from("bundles")
+        .update({
+          status: "failed",
+          error_message: "Failed to create bundle assets",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", bundle.id)
+        .eq("user_id", user.id);
+
+      return errorResponse(500, {
+        error: "Failed to create bundle assets",
+        code: "internal_error",
+      });
+    }
+    assets = insertedAssets;
   }
 
   let orchestration;
   try {
-    orchestration = await runPhotoBundleGeneration({
-      photos: requestData.photos.map((photo) => ({
+    orchestration = await runBundleGeneration({
+      photos: photos.map((photo) => ({
         data: photo.data,
         filename: photo.filename,
         mime: mimeFromFilename(photo.filename),
       })),
+      videos,
       context: requestData.context,
       brandVoice: resolvedVoice,
     });

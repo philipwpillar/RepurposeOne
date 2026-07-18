@@ -304,13 +304,46 @@ export interface BundlePackSynthesisPromptContext {
   context: string;
   photoCount: number;
   stage1bJson: string;
+  /** Validated per-video moments JSON, when videos present. */
+  videoMomentsJson?: string;
+  videoCount?: number;
 }
 
 export function buildBundlePackSynthesisPrompt(
   ctx: BundlePackSynthesisPromptContext
 ): { system: string; user: string } {
+  const hasVideos = (ctx.videoCount ?? 0) > 0;
+  const hasPhotos = ctx.photoCount > 0;
+
+  const photoRules = hasPhotos
+    ? `- Include one caption object per photo index 0..${ctx.photoCount - 1}.
+- posting_order must be a permutation of those indexes.
+- When referring to photos in any user-facing string (captions, alt_text, post_brief), number them from 1 (Photo 1, Photo 2, …); JSON indexes remain 0-based.`
+    : `- photo_captions must be [] and posting_order must be [].`;
+
+  const clipSchema = hasVideos
+    ? `,
+  "clip_specs": [
+    {
+      "video_index": <0-based video index>,
+      "start_s": <number>,
+      "end_s": <number>,
+      "overlay_text": "plain text ≤60 chars, no emoji",
+      "caption": "platform-ready caption ≤2200",
+      "tags": ["tag", "..."] 
+    }
+  ]`
+    : `,
+  "clip_specs": []`;
+
+  const clipRules = hasVideos
+    ? `- clip_specs: choose up to 6 clips. Windows must be chosen ONLY from the provided validated moments — never invent start/end times that were not in the moments JSON.
+- Each clip window must be 10–45 seconds; overlay_text ≤60 characters, plain text only — no emoji (it is burned onto video with a font that has no emoji glyphs).
+- Tags: up to 12 short tags per clip. video_index must reference a provided video (0-based).`
+    : `- clip_specs must be [].`;
+
   return {
-    system: `You synthesize a Moment Bundle photo pack into captions, posting order, and a condensed brief for platform repurposing.
+    system: `You synthesize a Moment Bundle pack into captions, posting order, a condensed brief for platform repurposing, and optional clip specs.
 Respond with valid JSON only — no markdown fences, no commentary.
 
 Use this exact schema:
@@ -323,15 +356,14 @@ Use this exact schema:
     }
   ],
   "posting_order": [<photo indexes in recommended publish order>],
-  "post_brief": "condensed pack summary for platform format writers (max 2000 chars)"
+  "post_brief": "condensed pack summary for platform format writers (max 2000 chars)"${clipSchema}
 }
 
 Rules:
-- Include one caption object per photo index 0..${ctx.photoCount - 1}.
-- posting_order must be a permutation of those indexes.
+${photoRules}
 - post_brief must capture the story, angles, and key beats so a text-only writer can produce X / LinkedIn / Instagram / email without seeing the images.
-- Write post_brief as the creator in first person — facts and feelings, not analytical or consultant language. Never use meta-language about "photos", "stages", or "documentation".
-- When referring to photos in any user-facing string (captions, alt_text, post_brief), number them from 1 (Photo 1, Photo 2, …); JSON indexes remain 0-based.
+- Write post_brief as the creator in first person — facts and feelings, not analytical or consultant language. Never use meta-language about "photos", "stages", "videos", "sheets", or "documentation".
+${clipRules}
 - Follow the brand voice strictly.`,
     user: `Brand voice (follow strictly):
 ${ctx.brandVoiceText}
@@ -341,7 +373,58 @@ ${ctx.context}
 
 Stage-1b photo analysis (validated JSON):
 ${ctx.stage1bJson}
+${
+  hasVideos
+    ? `
+Per-video moments (validated JSON — clip windows must come only from these):
+${ctx.videoMomentsJson}
+`
+    : ""
+}
+Produce the pack JSON${hasPhotos ? ` for ${ctx.photoCount} photos` : ""}${hasVideos ? ` and clip_specs for ${ctx.videoCount} video(s)` : ""}.`,
+  };
+}
 
-Produce the pack JSON for ${ctx.photoCount} photos.`,
+export interface BundleVideoMomentsPromptContext {
+  durationS: number;
+  sheets: Array<{ timestamps: number[] }>;
+  context: string;
+}
+
+/**
+ * Stage-1a prompt: contact sheets → candidate moments (spike-v6 + duration hard rule).
+ */
+export function buildBundleVideoMomentsPrompt(
+  ctx: BundleVideoMomentsPromptContext
+): { system: string; sheetUserTexts: string[] } {
+  const durationS = ctx.durationS;
+  return {
+    system: `You analyze vertical video contact sheets (3×3 grids of frames in temporal order, left-to-right then top-to-bottom within each sheet; sheets are chronological).
+Respond with valid JSON only — no markdown fences, no commentary.
+
+Use this exact schema:
+{
+  "moments": [
+    {
+      "start_s": <number>,
+      "end_s": <number>,
+      "description": "what happens in this window",
+      "why_interesting": "why this is a strong clip for social"
+    }
+  ]
+}
+
+Rules:
+- Return 3–5 moments (prefer quality over quantity).
+- Each moment window should be 10–40 seconds long.
+- Moments must not overlap.
+- The video is exactly ${durationS}s long; every moment must end at or before ${durationS}s.
+- Use only times that are consistent with the sheet timestamps provided — do not invent times outside the visible timeline.
+- Do not write captions, overlays, or platform posts here.`,
+    sheetUserTexts: ctx.sheets.map((sheet, i) => {
+      const ts = sheet.timestamps.map((t) => t.toFixed(2)).join(", ");
+      return `Contact sheet ${i + 1} of ${ctx.sheets.length}. Real frame timestamps (seconds): ${ts}.
+User context: ${ctx.context}`;
+    }),
   };
 }
