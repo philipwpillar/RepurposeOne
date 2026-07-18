@@ -50,13 +50,6 @@ export interface RunBundleGenerationResult {
   strongModel: string;
 }
 
-/** @deprecated Prefer runBundleGeneration — kept as photo-only wrapper. */
-export type RunPhotoBundleGenerationInput = Omit<
-  RunBundleGenerationInput,
-  "videos"
->;
-export type RunPhotoBundleGenerationResult = RunBundleGenerationResult;
-
 function stripDataUrlPrefix(data: string): string {
   const match = data.match(/^data:[^;]+;base64,(.+)$/i);
   return match ? match[1] : data;
@@ -358,10 +351,4 @@ export async function runBundleGeneration(
     visionModel,
     strongModel,
   };
-}
-
-export async function runPhotoBundleGeneration(
-  input: RunPhotoBundleGenerationInput
-): Promise<RunPhotoBundleGenerationResult> {
-  return runBundleGeneration({ ...input, videos: [] });
 }
