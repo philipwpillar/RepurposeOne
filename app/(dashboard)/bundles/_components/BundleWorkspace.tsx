@@ -24,9 +24,19 @@ import type { BundlePack } from "@/types";
 import BundlePhotoPicker, {
   type BundlePhotoItem,
 } from "./BundlePhotoPicker";
+import BundleVideoPicker, {
+  prepareBundleVideo,
+  videoErrorMessage,
+  type BundleVideoItem,
+} from "./BundleVideoPicker";
 import PastBundlesList, {
   type PastBundleItem,
 } from "./PastBundlesList";
+
+const VIDEO_BUNDLES_DEV =
+  process.env.NEXT_PUBLIC_VIDEO_BUNDLES_DEV === "true";
+
+const MAX_REQUEST_CHARS = 4_000_000;
 
 const PROGRESS_MESSAGES = [
   "Reading your photos…",
@@ -34,15 +44,25 @@ const PROGRESS_MESSAGES = [
   "Writing your pack…",
 ] as const;
 
+function formatMmSs(seconds: number): string {
+  const s = Math.max(0, Math.floor(seconds));
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}:${r.toString().padStart(2, "0")}`;
+}
+
 interface BundleWorkspaceProps {
   pastBundles: PastBundleItem[];
 }
 
 export default function BundleWorkspace({ pastBundles }: BundleWorkspaceProps) {
   const [photos, setPhotos] = useState<BundlePhotoItem[]>([]);
+  const [videos, setVideos] = useState<BundleVideoItem[]>([]);
   const [title, setTitle] = useState("");
   const [context, setContext] = useState("");
   const [processingFiles, setProcessingFiles] = useState(false);
+  const [processingVideos, setProcessingVideos] = useState(false);
+  const [videoProgress, setVideoProgress] = useState<string | null>(null);
   const [fileErrors, setFileErrors] = useState<string[]>([]);
   const [contextError, setContextError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
@@ -61,6 +81,8 @@ export default function BundleWorkspace({ pastBundles }: BundleWorkspaceProps) {
   const { copy, copiedKey, errorKey } = useCopyToClipboard();
   const photosRef = useRef(photos);
   photosRef.current = photos;
+  const videosRef = useRef(videos);
+  videosRef.current = videos;
 
   useEffect(() => {
     return () => {
@@ -80,6 +102,18 @@ export default function BundleWorkspace({ pastBundles }: BundleWorkspaceProps) {
     }, 4500);
     return () => window.clearInterval(id);
   }, [generating]);
+
+  const approxPayloadChars = () => {
+    const photoChars = photosRef.current.reduce(
+      (sum, p) => sum + p.base64.length,
+      0
+    );
+    const videoChars = videosRef.current.reduce(
+      (sum, v) => sum + v.approxBytes,
+      0
+    );
+    return photoChars + videoChars + context.length + 500;
+  };
 
   const handleAddFiles = useCallback(async (fileList: FileList | File[]) => {
     const incoming = Array.from(fileList);
@@ -150,12 +184,57 @@ export default function BundleWorkspace({ pastBundles }: BundleWorkspaceProps) {
     setProcessingFiles(false);
   }, []);
 
+  const handleAddVideos = useCallback(async (fileList: FileList | File[]) => {
+    if (!VIDEO_BUNDLES_DEV) return;
+    const incoming = Array.from(fileList);
+    if (!incoming.length) return;
+
+    setFileErrors([]);
+    setProcessingVideos(true);
+
+    const nextErrors: string[] = [];
+    let room = 2 - videosRef.current.length;
+
+    for (const file of incoming) {
+      if (room <= 0) {
+        nextErrors.push("Only 2 videos allowed — extra files were skipped.");
+        break;
+      }
+
+      const label = `Preparing video ${videosRef.current.length + (2 - room) + 1}…`;
+      setVideoProgress(label);
+
+      try {
+        const item = await prepareBundleVideo(file);
+        setVideos((prev) => {
+          if (prev.length >= 2) return prev;
+          return [...prev, item];
+        });
+        room -= 1;
+      } catch (err) {
+        nextErrors.push(`${file.name}: ${videoErrorMessage(err)}`);
+      }
+    }
+
+    if (nextErrors.length) {
+      setFileErrors(nextErrors);
+    }
+    setVideoProgress(null);
+    setProcessingVideos(false);
+  }, []);
+
   const handleRemove = useCallback((id: string) => {
     setPhotos((prev) => {
       const target = prev.find((p) => p.id === id);
       if (target) URL.revokeObjectURL(target.previewUrl);
       return prev.filter((p) => p.id !== id);
     });
+    setPack(null);
+    setLibraryHash(null);
+  }, []);
+
+  const handleRemoveVideo = useCallback((id: string) => {
+    setVideos((prev) => prev.filter((v) => v.id !== id));
     setPack(null);
     setLibraryHash(null);
   }, []);
@@ -180,11 +259,25 @@ export default function BundleWorkspace({ pastBundles }: BundleWorkspaceProps) {
 
   const handleGenerate = async () => {
     setError(null);
-    if (!photos.length) {
-      setError({ message: "Add at least one photo to generate a pack." });
+    const hasMedia = photos.length > 0 || (VIDEO_BUNDLES_DEV && videos.length > 0);
+    if (!hasMedia) {
+      setError({
+        message: VIDEO_BUNDLES_DEV
+          ? "Add at least one photo or video to generate a pack."
+          : "Add at least one photo to generate a pack.",
+      });
       return;
     }
     if (!validateContext()) return;
+
+    const payloadChars = approxPayloadChars();
+    if (payloadChars > MAX_REQUEST_CHARS) {
+      setError({
+        message:
+          "This pack is too large to upload. Remove a photo or video and try again.",
+      });
+      return;
+    }
 
     setGenerating(true);
     setPack(null);
@@ -196,6 +289,10 @@ export default function BundleWorkspace({ pastBundles }: BundleWorkspaceProps) {
           data: p.base64,
           filename: p.fileName,
         })),
+        videos:
+          VIDEO_BUNDLES_DEV && videos.length
+            ? videos.map((v) => v.payload)
+            : undefined,
         context: context.trim(),
         title: title.trim() || undefined,
       });
@@ -226,34 +323,14 @@ export default function BundleWorkspace({ pastBundles }: BundleWorkspaceProps) {
       }
     } catch (err) {
       if (err instanceof BundleGenerateApiError) {
-        if (err.code === "plan_required") {
-          setError({
-            message: err.message,
-            code: err.code,
-          });
-        } else if (err.code === "limit_exceeded") {
-          setError({
-            message: err.message,
-            code: err.code,
-          });
-        } else if (err.code === "bundle_limit_reached") {
-          setError({
-            message: err.message,
-            code: err.code,
-          });
-        } else if (err.code === "generation_failed") {
-          setError({
-            message: err.message,
-            code: err.code,
-            billingHint: true,
-          });
-        } else {
-          setError({
-            message: err.message,
-            code: err.code,
-            billingHint: true,
-          });
-        }
+        setError({
+          message: err.message,
+          code: err.code,
+          billingHint:
+            err.code === "generation_failed" ||
+            err.code === "internal_error" ||
+            !err.code,
+        });
       } else {
         setError({
           message:
@@ -268,18 +345,25 @@ export default function BundleWorkspace({ pastBundles }: BundleWorkspaceProps) {
     }
   };
 
-  const inputsDisabled = generating || processingFiles;
+  const inputsDisabled =
+    generating || processingFiles || processingVideos;
+  const canGenerate =
+    photos.length > 0 || (VIDEO_BUNDLES_DEV && videos.length > 0);
+  const payloadKb = Math.round(approxPayloadChars() / 1024);
 
   return (
     <div className="mx-auto max-w-3xl space-y-10">
       <div>
         <p className="eyebrow text-muted-foreground">Moment Bundles</p>
         <h1 className="mt-1 font-display text-3xl font-bold tracking-tight">
-          <span className="aurora-text">Photo pack</span>
+          <span className="aurora-text">
+            {VIDEO_BUNDLES_DEV ? "Moment pack" : "Photo pack"}
+          </span>
         </h1>
         <p className="mt-2 max-w-xl text-muted-foreground">
-          Upload up to {BUNDLE_MAX_PHOTOS} photos, add context, and get captions,
-          a posting order, and four platform posts in one run.
+          Upload up to {BUNDLE_MAX_PHOTOS} photos
+          {VIDEO_BUNDLES_DEV ? " and 2 short videos" : ""}, add context, and get
+          captions, a posting order, and four platform posts in one run.
         </p>
       </div>
 
@@ -287,10 +371,28 @@ export default function BundleWorkspace({ pastBundles }: BundleWorkspaceProps) {
         <BundlePhotoPicker
           photos={photos}
           processing={processingFiles}
-          disabled={generating}
+          disabled={generating || processingVideos}
           onAddFiles={handleAddFiles}
           onRemove={handleRemove}
         />
+
+        {VIDEO_BUNDLES_DEV && (
+          <BundleVideoPicker
+            videos={videos}
+            processing={processingVideos}
+            disabled={generating || processingFiles}
+            progressLabel={videoProgress}
+            onAddFiles={handleAddVideos}
+            onRemove={handleRemoveVideo}
+          />
+        )}
+
+        {VIDEO_BUNDLES_DEV && (photos.length > 0 || videos.length > 0) && (
+          <p className="text-xs text-muted-foreground">
+            Approx. request size: {payloadKb} KB
+            {payloadKb > 3500 ? " — getting close to the upload limit" : ""}
+          </p>
+        )}
 
         {fileErrors.length > 0 && (
           <ul className="space-y-1 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-900">
@@ -375,7 +477,7 @@ export default function BundleWorkspace({ pastBundles }: BundleWorkspaceProps) {
 
         <button
           type="button"
-          disabled={inputsDisabled || photos.length === 0}
+          disabled={inputsDisabled || !canGenerate}
           onClick={handleGenerate}
           className="aurora inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-[#0B0D14] disabled:opacity-50 sm:w-auto"
         >
@@ -410,76 +512,152 @@ export default function BundleWorkspace({ pastBundles }: BundleWorkspaceProps) {
             </Link>
           )}
 
-          <div className="space-y-4">
-            {pack.posting_order.map((photoIndex, orderPos) => {
-              const caption = pack.photo_captions.find(
-                (c) => c.photo_index === photoIndex
-              );
-              const preview = resultPreviews.find(
-                (p) => p.photoIndex === photoIndex
-              );
-              const displayNum = orderPos + 1;
+          {pack.posting_order.length > 0 && (
+            <div className="space-y-4">
+              {pack.posting_order.map((photoIndex, orderPos) => {
+                const caption = pack.photo_captions.find(
+                  (c) => c.photo_index === photoIndex
+                );
+                const preview = resultPreviews.find(
+                  (p) => p.photoIndex === photoIndex
+                );
+                const displayNum = orderPos + 1;
 
-              return (
-                <article
-                  key={`${photoIndex}-${orderPos}`}
-                  className="rounded-2xl border border-border bg-card p-4"
-                >
-                  <div className="flex gap-3">
-                    {preview && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={preview.previewUrl}
-                        alt={`Photo ${displayNum}`}
-                        className="h-20 w-20 shrink-0 rounded-xl object-cover"
-                      />
-                    )}
-                    <div className="min-w-0 flex-1 space-y-2">
-                      <p className="text-xs font-medium text-muted-foreground">
-                        Photo {displayNum}
-                      </p>
-                      {caption && (
-                        <>
-                          <p className="whitespace-pre-wrap text-sm text-foreground">
-                            {caption.caption}
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            <CopyActionButton
-                              copyKey={`caption-${photoIndex}`}
-                              label="Copy caption"
-                              copiedKey={copiedKey}
-                              errorKey={errorKey}
-                              onCopy={() =>
-                                copy(caption.caption, `caption-${photoIndex}`)
-                              }
-                              variant="studio"
-                            />
-                            {caption.alt_text && (
+                return (
+                  <article
+                    key={`${photoIndex}-${orderPos}`}
+                    className="rounded-2xl border border-border bg-card p-4"
+                  >
+                    <div className="flex gap-3">
+                      {preview && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={preview.previewUrl}
+                          alt={`Photo ${displayNum}`}
+                          className="h-20 w-20 shrink-0 rounded-xl object-cover"
+                        />
+                      )}
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          Photo {displayNum}
+                        </p>
+                        {caption && (
+                          <>
+                            <p className="whitespace-pre-wrap text-sm text-foreground">
+                              {caption.caption}
+                            </p>
+                            <div className="flex flex-wrap gap-2">
                               <CopyActionButton
-                                copyKey={`alt-${photoIndex}`}
-                                label="Copy alt text"
+                                copyKey={`caption-${photoIndex}`}
+                                label="Copy caption"
                                 copiedKey={copiedKey}
                                 errorKey={errorKey}
                                 onCopy={() =>
-                                  copy(caption.alt_text, `alt-${photoIndex}`)
+                                  copy(
+                                    caption.caption,
+                                    `caption-${photoIndex}`
+                                  )
                                 }
                                 variant="studio"
                               />
+                              {caption.alt_text && (
+                                <CopyActionButton
+                                  copyKey={`alt-${photoIndex}`}
+                                  label="Copy alt text"
+                                  copiedKey={copiedKey}
+                                  errorKey={errorKey}
+                                  onCopy={() =>
+                                    copy(
+                                      caption.alt_text,
+                                      `alt-${photoIndex}`
+                                    )
+                                  }
+                                  variant="studio"
+                                />
+                              )}
+                            </div>
+                            {caption.alt_text && (
+                              <p className="text-xs text-muted-foreground">
+                                Alt: {caption.alt_text}
+                              </p>
                             )}
-                          </div>
-                          {caption.alt_text && (
-                            <p className="text-xs text-muted-foreground">
-                              Alt: {caption.alt_text}
-                            </p>
-                          )}
-                        </>
-                      )}
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+
+          {VIDEO_BUNDLES_DEV &&
+            pack.clip_specs &&
+            pack.clip_specs.length > 0 && (
+              <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
+                <div>
+                  <h3 className="text-base font-semibold text-foreground">
+                    Suggested clips (preview)
+                  </h3>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Rendered clips are coming to Pro Plus — for now, trim at
+                    these timestamps in your camera roll.
+                  </p>
+                </div>
+                <ul className="space-y-3">
+                  {pack.clip_specs.map((clip, i) => {
+                    const tagsText = clip.tags.join(" ");
+                    return (
+                      <li
+                        key={`${clip.video_index}-${clip.start_s}-${i}`}
+                        className="rounded-xl border border-border/80 bg-background px-3 py-3"
+                      >
+                        <p className="text-xs font-medium text-muted-foreground">
+                          Video {clip.video_index + 1} ·{" "}
+                          {formatMmSs(clip.start_s)}–
+                          {formatMmSs(clip.end_s)}
+                        </p>
+                        {clip.overlay_text && (
+                          <p className="mt-1 text-sm font-medium text-foreground">
+                            Overlay: {clip.overlay_text}
+                          </p>
+                        )}
+                        <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">
+                          {clip.caption}
+                        </p>
+                        {tagsText && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {tagsText}
+                          </p>
+                        )}
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <CopyActionButton
+                            copyKey={`clip-caption-${i}`}
+                            label="Copy caption"
+                            copiedKey={copiedKey}
+                            errorKey={errorKey}
+                            onCopy={() =>
+                              copy(clip.caption, `clip-caption-${i}`)
+                            }
+                            variant="studio"
+                          />
+                          {tagsText && (
+                            <CopyActionButton
+                              copyKey={`clip-tags-${i}`}
+                              label="Copy tags"
+                              copiedKey={copiedKey}
+                              errorKey={errorKey}
+                              onCopy={() => copy(tagsText, `clip-tags-${i}`)}
+                              variant="studio"
+                            />
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
         </section>
       )}
 

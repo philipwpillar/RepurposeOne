@@ -3,6 +3,7 @@ import type {
   BundleGenerateSuccessResponse,
   BundlePack,
   BundleRepurposeResult,
+  BundleVideoInput,
   TargetFormat,
   UsageInfo,
 } from "@/types";
@@ -24,6 +25,7 @@ export class BundleGenerateApiError extends Error {
 
 export async function callBundleGenerateApi(params: {
   photos: Array<{ data: string; filename?: string }>;
+  videos?: BundleVideoInput[];
   context: string;
   title?: string;
   formats?: TargetFormat[];
@@ -37,6 +39,10 @@ export async function callBundleGenerateApi(params: {
     context: params.context,
     photos: params.photos,
   };
+
+  if (params.videos?.length) {
+    body.videos = params.videos;
+  }
 
   if (params.title) {
     body.title = params.title;

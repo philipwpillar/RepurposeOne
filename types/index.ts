@@ -251,7 +251,7 @@ export const GenerateErrorResponseSchema = z.object({
 export type GenerateErrorResponse = z.infer<typeof GenerateErrorResponseSchema>;
 
 // ---------------------------------------------------------------------------
-// Moment Bundle (Brief 1b — photo pack)
+// Moment Bundle (Brief 1b photo pack + Brief 2c video clip specs)
 // ---------------------------------------------------------------------------
 
 const BundlePhotoInputSchema = z.object({
@@ -259,18 +259,36 @@ const BundlePhotoInputSchema = z.object({
   filename: z.string().max(255).optional(),
 });
 
-export const BundleGenerateRequestSchema = z.object({
-  title: z.string().max(200).optional(),
-  context: z
-    .string()
-    .min(
-      PHOTO_CONTEXT_MIN_LENGTH,
-      `Context must be at least ${PHOTO_CONTEXT_MIN_LENGTH} characters`
-    )
-    .max(PHOTO_CONTEXT_MAX_LENGTH),
-  photos: z.array(BundlePhotoInputSchema).min(1).max(8),
-  formats: z.array(TargetFormatSchema).min(1).max(4).optional(),
+const BundleVideoSheetSchema = z.object({
+  data: z.string().min(1, "Sheet image data is required"),
+  timestamps: z.array(z.number()).min(1).max(9),
 });
+
+export const BundleVideoInputSchema = z.object({
+  sheets: z.array(BundleVideoSheetSchema).min(1).max(4),
+  duration_s: z.number().gt(0).lte(183),
+  filename: z.string().max(255).optional(),
+});
+export type BundleVideoInput = z.infer<typeof BundleVideoInputSchema>;
+
+export const BundleGenerateRequestSchema = z
+  .object({
+    title: z.string().max(200).optional(),
+    context: z
+      .string()
+      .min(
+        PHOTO_CONTEXT_MIN_LENGTH,
+        `Context must be at least ${PHOTO_CONTEXT_MIN_LENGTH} characters`
+      )
+      .max(PHOTO_CONTEXT_MAX_LENGTH),
+    photos: z.array(BundlePhotoInputSchema).min(0).max(8).default([]),
+    videos: z.array(BundleVideoInputSchema).max(2).optional(),
+    formats: z.array(TargetFormatSchema).min(1).max(4).optional(),
+  })
+  .refine(
+    (data) => data.photos.length + (data.videos?.length ?? 0) >= 1,
+    { message: "Add at least one photo or video" }
+  );
 export type BundleGenerateRequest = z.infer<typeof BundleGenerateRequestSchema>;
 
 export const BundlePhotoAnalysisSchema = z.object({
@@ -285,6 +303,55 @@ export const BundlePhotoAnalysisSchema = z.object({
 });
 export type BundlePhotoAnalysis = z.infer<typeof BundlePhotoAnalysisSchema>;
 
+export const BundleVideoMomentsSchema = z.object({
+  moments: z
+    .array(
+      z.object({
+        start_s: z.number().nonnegative(),
+        end_s: z.number().positive(),
+        description: z.string().min(1),
+        why_interesting: z.string().min(1),
+      })
+    )
+    .min(1)
+    .max(5),
+});
+export type BundleVideoMoments = z.infer<typeof BundleVideoMomentsSchema>;
+
+export const BundleClipSpecSchema = z
+  .object({
+    video_index: z.number().int().nonnegative(),
+    start_s: z.number().nonnegative(),
+    end_s: z.number().positive(),
+    overlay_text: z.string().max(60),
+    caption: z.string().min(1).max(2200),
+    tags: z.array(z.string().max(40)).max(12),
+  })
+  .refine((c) => c.end_s > c.start_s, {
+    message: "end_s must be greater than start_s",
+  })
+  .refine((c) => {
+    const dur = c.end_s - c.start_s;
+    return dur >= 10 && dur <= 45;
+  }, {
+    message: "clip window must be between 10 and 45 seconds",
+  });
+export type BundleClipSpec = z.infer<typeof BundleClipSpecSchema>;
+
+/** Looser clip shape for stage-2 AI parse — window length enforced in backstops. */
+const BundleClipSpecAiSchema = z
+  .object({
+    video_index: z.number().int().nonnegative(),
+    start_s: z.number().nonnegative(),
+    end_s: z.number().positive(),
+    overlay_text: z.string().max(60),
+    caption: z.string().min(1).max(2200),
+    tags: z.array(z.string().max(40)).max(12).default([]),
+  })
+  .refine((c) => c.end_s > c.start_s, {
+    message: "end_s must be greater than start_s",
+  });
+
 export const BundlePackSchema = z.object({
   photo_captions: z.array(
     z.object({
@@ -295,8 +362,23 @@ export const BundlePackSchema = z.object({
   ),
   posting_order: z.array(z.number().int().nonnegative()),
   post_brief: z.string().min(1).max(2000),
+  clip_specs: z.array(BundleClipSpecSchema).max(6).default([]),
 });
 export type BundlePack = z.infer<typeof BundlePackSchema>;
+
+/** Stage-2 AI output — clip windows tightened by applyClipSpecBackstops. */
+export const BundlePackAiSchema = z.object({
+  photo_captions: z.array(
+    z.object({
+      photo_index: z.number().int().nonnegative(),
+      caption: z.string().min(1).max(2200),
+      alt_text: z.string().max(500),
+    })
+  ),
+  posting_order: z.array(z.number().int().nonnegative()),
+  post_brief: z.string().min(1).max(2000),
+  clip_specs: z.array(BundleClipSpecAiSchema).max(6).default([]),
+});
 
 export const BundleRepurposeResultSchema = z.object({
   id: z.string().uuid(),
