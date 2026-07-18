@@ -25,6 +25,8 @@ import {
   type TargetFormat,
 } from "@/types";
 
+export const maxDuration = 120;
+
 const ALL_FORMATS: TargetFormat[] = [
   "x_thread",
   "linkedin",

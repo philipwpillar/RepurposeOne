@@ -330,6 +330,8 @@ Rules:
 - Include one caption object per photo index 0..${ctx.photoCount - 1}.
 - posting_order must be a permutation of those indexes.
 - post_brief must capture the story, angles, and key beats so a text-only writer can produce X / LinkedIn / Instagram / email without seeing the images.
+- Write post_brief as the creator in first person — facts and feelings, not analytical or consultant language. Never use meta-language about "photos", "stages", or "documentation".
+- When referring to photos in any user-facing string (captions, alt_text, post_brief), number them from 1 (Photo 1, Photo 2, …); JSON indexes remain 0-based.
 - Follow the brand voice strictly.`,
     user: `Brand voice (follow strictly):
 ${ctx.brandVoiceText}
