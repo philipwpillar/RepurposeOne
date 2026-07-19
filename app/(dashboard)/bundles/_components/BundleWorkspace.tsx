@@ -17,7 +17,9 @@ import {
 } from "@/lib/image/downscale";
 import {
   BundleGenerateApiError,
+  BundleUploadError,
   callBundleGenerateApi,
+  prepareUploadAndGenerate,
 } from "@/lib/repurpose/bundle-generate-client";
 import { createClient } from "@/lib/supabase/client";
 import type { BundlePack } from "@/types";
@@ -66,6 +68,7 @@ export default function BundleWorkspace({ pastBundles }: BundleWorkspaceProps) {
   const [fileErrors, setFileErrors] = useState<string[]>([]);
   const [contextError, setContextError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const [progressIndex, setProgressIndex] = useState(0);
   const [error, setError] = useState<{
     message: string;
@@ -280,22 +283,35 @@ export default function BundleWorkspace({ pastBundles }: BundleWorkspaceProps) {
     }
 
     setGenerating(true);
+    setUploadProgress(null);
     setPack(null);
     setLibraryHash(null);
 
     try {
-      const result = await callBundleGenerateApi({
-        photos: photos.map((p) => ({
-          data: p.base64,
-          filename: p.fileName,
-        })),
-        videos:
-          VIDEO_BUNDLES_DEV && videos.length
-            ? videos.map((v) => v.payload)
-            : undefined,
-        context: context.trim(),
-        title: title.trim() || undefined,
-      });
+      const photoPayload = photos.map((p) => ({
+        data: p.base64,
+        filename: p.fileName,
+      }));
+      const contextTrimmed = context.trim();
+      const titleOpt = title.trim() || undefined;
+
+      const result =
+        VIDEO_BUNDLES_DEV && videos.length > 0
+          ? await prepareUploadAndGenerate({
+              photos: photoPayload,
+              videos: videos.map((v) => ({
+                file: v.file,
+                payload: v.payload,
+              })),
+              context: contextTrimmed,
+              title: titleOpt,
+              onUploadProgress: setUploadProgress,
+            })
+          : await callBundleGenerateApi({
+              photos: photoPayload,
+              context: contextTrimmed,
+              title: titleOpt,
+            });
 
       setPack(result.pack);
       setResultPreviews(
@@ -322,7 +338,9 @@ export default function BundleWorkspace({ pastBundles }: BundleWorkspaceProps) {
         }
       }
     } catch (err) {
-      if (err instanceof BundleGenerateApiError) {
+      if (err instanceof BundleUploadError) {
+        setError({ message: err.message });
+      } else if (err instanceof BundleGenerateApiError) {
         setError({
           message: err.message,
           code: err.code,
@@ -341,6 +359,7 @@ export default function BundleWorkspace({ pastBundles }: BundleWorkspaceProps) {
         });
       }
     } finally {
+      setUploadProgress(null);
       setGenerating(false);
     }
   };
@@ -484,7 +503,7 @@ export default function BundleWorkspace({ pastBundles }: BundleWorkspaceProps) {
           {generating ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              {PROGRESS_MESSAGES[progressIndex]}
+              {uploadProgress ?? PROGRESS_MESSAGES[progressIndex]}
             </>
           ) : (
             "Generate pack"

@@ -3,9 +3,11 @@ import {
   VIDEO_TOO_LARGE_MESSAGE,
   VIDEO_TOO_LONG_MESSAGE,
   VIDEO_UNSUPPORTED_MESSAGE,
+  videoTooShortMessage,
 } from "./constants";
 
 export type VideoSampleErrorCode =
+  | "video_too_short"
   | "video_too_long"
   | "video_too_large"
   | "video_unsupported"
@@ -20,6 +22,13 @@ export class VideoSampleError extends Error {
     this.name = "VideoSampleError";
     this.code = code;
   }
+}
+
+export function videoTooShortError(durationS: number): VideoSampleError {
+  return new VideoSampleError(
+    "video_too_short",
+    videoTooShortMessage(durationS)
+  );
 }
 
 export function videoTooLongError(): VideoSampleError {

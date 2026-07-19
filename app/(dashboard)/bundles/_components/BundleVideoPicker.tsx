@@ -15,6 +15,7 @@ import type { BundleVideoInput } from "@/types";
 
 export interface BundleVideoItem {
   id: string;
+  file: File;
   fileName: string;
   durationS: number;
   thumbDataUrl: string;
@@ -123,7 +124,7 @@ export default function BundleVideoPicker({
               : "Choose video"}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          ≤3 min · ≤500 MB · H.264 on desktop; HEVC on iPhone
+          15s–3 min · ≤500 MB · H.264 on desktop; HEVC on iPhone
         </p>
       </button>
     </div>
@@ -159,6 +160,7 @@ export async function prepareBundleVideo(
 
   return {
     id: crypto.randomUUID(),
+    file,
     fileName: file.name,
     durationS: sampled.duration,
     thumbDataUrl: sheets[0]?.dataUrl ?? "",
@@ -172,6 +174,7 @@ export function videoErrorMessage(err: unknown): string {
     if (err.code === "video_unsupported") {
       return `${VIDEO_UNSUPPORTED_MESSAGE} On desktop, try exporting as MP4 (H.264), or run this on your phone.`;
     }
+    if (err.code === "video_too_short") return err.message;
     if (err.code === "video_too_long") return VIDEO_TOO_LONG_MESSAGE;
     if (err.code === "video_too_large") return VIDEO_TOO_LARGE_MESSAGE;
     return err.message;

@@ -1,5 +1,6 @@
-/** Video sampling caps (N4) and contact-sheet knobs — Brief 2a. */
+/** Video sampling caps (N4) and contact-sheet knobs — Brief 2a / 3a. */
 
+export const VIDEO_MIN_DURATION_S = 15;
 export const VIDEO_MAX_DURATION_S = 180;
 export const VIDEO_MAX_BYTES = 500 * 1024 * 1024;
 
@@ -22,6 +23,11 @@ export const VIDEO_TOO_LARGE_MESSAGE =
 
 export const VIDEO_TOO_LONG_MESSAGE =
   "This video is too long (max 3 minutes). Trim it and try again.";
+
+export function videoTooShortMessage(durationS: number): string {
+  const n = Math.max(0, Math.round(durationS));
+  return `Videos need to be at least 15 seconds for clip suggestions. This one is ${n}s.`;
+}
 
 export const VIDEO_UNSUPPORTED_MESSAGE =
   "This video couldn't be read by your browser. Try a different file or format.";
