@@ -268,11 +268,13 @@ export const BundleVideoInputSchema = z.object({
   sheets: z.array(BundleVideoSheetSchema).min(1).max(4),
   duration_s: z.number().gt(0).lte(183),
   filename: z.string().max(255).optional(),
+  asset_id: z.string().uuid().optional(),
 });
 export type BundleVideoInput = z.infer<typeof BundleVideoInputSchema>;
 
 export const BundleGenerateRequestSchema = z
   .object({
+    bundle_id: z.string().uuid().optional(),
     title: z.string().max(200).optional(),
     context: z
       .string()
@@ -326,6 +328,7 @@ export const BundleClipSpecSchema = z
     overlay_text: z.string().max(60),
     caption: z.string().min(1).max(2200),
     tags: z.array(z.string().max(40)).max(12),
+    clip_id: z.string().uuid().optional(),
   })
   .refine((c) => c.end_s > c.start_s, {
     message: "end_s must be greater than start_s",
@@ -409,6 +412,7 @@ export const BundleGenerateErrorResponseSchema = z.object({
     "generation_failed",
     "internal_error",
     "plan_required",
+    "conflict",
   ]),
   usage: UsageInfoSchema.optional(),
   upgrade_message: z.string().optional(),
@@ -416,4 +420,49 @@ export const BundleGenerateErrorResponseSchema = z.object({
 });
 export type BundleGenerateErrorResponse = z.infer<
   typeof BundleGenerateErrorResponseSchema
+>;
+
+/** Brief 3a — prepare signed uploads before generate. */
+export const BundlePrepareVideoSchema = z.object({
+  filename: z.string().min(1).max(255),
+  size_bytes: z.number().int().positive().max(500 * 1024 * 1024),
+  duration_s: z.number().min(15).max(180),
+});
+
+export const BundlePrepareRequestSchema = z.object({
+  videos: z.array(BundlePrepareVideoSchema).min(1).max(2),
+});
+export type BundlePrepareRequest = z.infer<typeof BundlePrepareRequestSchema>;
+
+export const BundlePrepareUploadSchema = z.object({
+  asset_id: z.string().uuid(),
+  storage_path: z.string().min(1),
+  signed_url: z.string().url(),
+  token: z.string().min(1),
+});
+
+export const BundlePrepareSuccessResponseSchema = z.object({
+  bundle_id: z.string().uuid(),
+  uploads: z.array(BundlePrepareUploadSchema).min(1).max(2),
+});
+export type BundlePrepareSuccessResponse = z.infer<
+  typeof BundlePrepareSuccessResponseSchema
+>;
+
+export const BundlePrepareErrorResponseSchema = z.object({
+  error: z.string(),
+  code: z.enum([
+    "unauthorized",
+    "validation_error",
+    "bundle_limit_reached",
+    "rate_limited",
+    "internal_error",
+    "plan_required",
+  ]),
+  usage: UsageInfoSchema.optional(),
+  upgrade_message: z.string().optional(),
+  retry_after_seconds: z.number().int().optional(),
+});
+export type BundlePrepareErrorResponse = z.infer<
+  typeof BundlePrepareErrorResponseSchema
 >;

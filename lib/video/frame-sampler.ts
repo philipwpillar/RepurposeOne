@@ -5,11 +5,13 @@ import {
   SEEK_TIMEOUT_MS,
   VIDEO_MAX_BYTES,
   VIDEO_MAX_DURATION_S,
+  VIDEO_MIN_DURATION_S,
 } from "./constants";
 import {
   seekTimeoutError,
   videoTooLargeError,
   videoTooLongError,
+  videoTooShortError,
   videoUnsupportedError,
 } from "./errors";
 
@@ -202,6 +204,10 @@ export async function sampleVideoFrames(
       height <= 0
     ) {
       throw videoUnsupportedError("invalid metadata");
+    }
+
+    if (duration < VIDEO_MIN_DURATION_S) {
+      throw videoTooShortError(duration);
     }
 
     if (duration > VIDEO_MAX_DURATION_S) {

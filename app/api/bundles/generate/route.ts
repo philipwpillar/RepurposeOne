@@ -10,6 +10,7 @@ import {
 } from "@/lib/config";
 import type { PhotoMimeType } from "@/lib/image/constants";
 import { resolveDefaultBrandVoice } from "@/lib/repurpose/brand-voice";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
   checkRateLimit,
@@ -18,8 +19,10 @@ import {
   getUpgradeMessage,
   getUserPlan,
 } from "@/lib/usage";
+import { bundleMediaObjectExists } from "@/lib/video/storage-verify";
 import {
   BundleGenerateRequestSchema,
+  type BundleClipSpec,
   type BundleGenerateErrorResponse,
   type BundleRepurposeResult,
   type TargetFormat,
@@ -77,12 +80,19 @@ function mimeFromFilename(filename?: string): PhotoMimeType {
   return "image/jpeg";
 }
 
+function metaObject(metadata: unknown): Record<string, unknown> {
+  return metadata && typeof metadata === "object"
+    ? { ...(metadata as Record<string, unknown>) }
+    : {};
+}
+
 /**
  * POST /api/bundles/generate
  *
- * Moment Bundle (Brief 1b photos + Brief 2c video sheets → clip_specs preview):
- * auth → plan → rate → generation cap → N2 → analyze → format fan-out.
- * Videos are request-ephemeral — no video asset / bundle_clips writes.
+ * Moment Bundle (Brief 1b photos + Brief 2c/3a video):
+ * auth → plan → rate → generation cap → N2 (new bundles only) → analyze →
+ * optional clip persistence for verified uploads → format fan-out.
+ * Photo-only requests without bundle_id behave as in 1c.
  */
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -150,6 +160,24 @@ export async function POST(request: Request) {
     : ALL_FORMATS;
   const photos = requestData.photos ?? [];
   const videos = requestData.videos ?? [];
+  const preparedBundleId = requestData.bundle_id;
+
+  if (preparedBundleId) {
+    if (videos.length === 0) {
+      return errorResponse(400, {
+        error: "Prepared bundles require at least one video with asset_id",
+        code: "validation_error",
+      });
+    }
+    for (const video of videos) {
+      if (!video.asset_id) {
+        return errorResponse(400, {
+          error: "Each video must include asset_id when bundle_id is set",
+          code: "validation_error",
+        });
+      }
+    }
+  }
 
   for (const photo of photos) {
     if (photo.data.length > AI_CONFIG.maxImageBase64Chars) {
@@ -219,54 +247,150 @@ export async function POST(request: Request) {
     });
   }
 
-  // N2 — monthly bundle cap (failed excluded; in-flight count)
-  const { start, end } = getCurrentBillingPeriod();
-  const { data: bundleCount, error: bundleCountError } = await supabase.rpc(
-    "count_monthly_bundles",
-    {
-      p_user_id: user.id,
-      p_start: formatISO(start),
-      p_end: formatISO(end),
+  // N2 — only for new bundles. Prepared pending rows already reserved a slot.
+  if (!preparedBundleId) {
+    const { start, end } = getCurrentBillingPeriod();
+    const { data: bundleCount, error: bundleCountError } = await supabase.rpc(
+      "count_monthly_bundles",
+      {
+        p_user_id: user.id,
+        p_start: formatISO(start),
+        p_end: formatISO(end),
+      }
+    );
+
+    if (bundleCountError) {
+      console.error("Bundle cap check failed:", bundleCountError);
+      return errorResponse(500, {
+        error: "Failed to check bundle limits",
+        code: "internal_error",
+      });
     }
-  );
 
-  if (bundleCountError) {
-    console.error("Bundle cap check failed:", bundleCountError);
-    return errorResponse(500, {
-      error: "Failed to check bundle limits",
-      code: "internal_error",
-    });
-  }
-
-  if ((bundleCount ?? 0) >= BUNDLE_MONTHLY_LIMIT) {
-    return errorResponse(402, {
-      error: `Monthly Moment Bundle limit reached (${BUNDLE_MONTHLY_LIMIT}/month on Pro Plus).`,
-      code: "bundle_limit_reached",
-      usage: usageCheck.usage,
-      upgrade_message: getUpgradeMessage(plan),
-    });
+    if ((bundleCount ?? 0) >= BUNDLE_MONTHLY_LIMIT) {
+      return errorResponse(402, {
+        error: `Monthly Moment Bundle limit reached (${BUNDLE_MONTHLY_LIMIT}/month on Pro Plus).`,
+        code: "bundle_limit_reached",
+        usage: usageCheck.usage,
+        upgrade_message: getUpgradeMessage(plan),
+      });
+    }
   }
 
   const { voice: resolvedVoice, brandVoiceId } =
     await resolveDefaultBrandVoice(supabase, user.id);
 
-  const { data: bundle, error: bundleInsertError } = await supabase
-    .from("bundles")
-    .insert({
-      user_id: user.id,
-      title: requestData.title ?? null,
-      context: requestData.context,
-      status: "analyzing",
-    })
-    .select("id, generation_id")
-    .single();
+  let bundle: { id: string; generation_id: string };
 
-  if (bundleInsertError || !bundle) {
-    console.error("Failed to insert bundle:", bundleInsertError);
-    return errorResponse(500, {
-      error: "Failed to create bundle record",
-      code: "internal_error",
-    });
+  if (preparedBundleId) {
+    const { data: existing, error: loadError } = await supabase
+      .from("bundles")
+      .select("id, generation_id, status, user_id")
+      .eq("id", preparedBundleId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (loadError) {
+      console.error("Failed to load prepared bundle:", loadError);
+      return errorResponse(500, {
+        error: "Failed to load prepared bundle",
+        code: "internal_error",
+      });
+    }
+
+    if (!existing) {
+      return errorResponse(409, {
+        error: "Prepared bundle not found or not owned by you",
+        code: "conflict",
+      });
+    }
+
+    if (existing.status !== "pending") {
+      return errorResponse(409, {
+        error: `Prepared bundle is not pending (status: ${existing.status})`,
+        code: "conflict",
+      });
+    }
+
+    const assetIds = videos.map((v) => v.asset_id as string);
+    const { data: ownedAssets, error: assetCheckError } = await supabase
+      .from("bundle_assets")
+      .select("id")
+      .eq("bundle_id", existing.id)
+      .eq("user_id", user.id)
+      .eq("kind", "video")
+      .in("id", assetIds);
+
+    if (assetCheckError) {
+      console.error("Failed to verify video assets:", assetCheckError);
+      return errorResponse(500, {
+        error: "Failed to verify video assets",
+        code: "internal_error",
+      });
+    }
+
+    const owned = new Set((ownedAssets ?? []).map((a) => a.id));
+    for (const id of assetIds) {
+      if (!owned.has(id)) {
+        return errorResponse(400, {
+          error: "One or more asset_id values do not belong to this bundle",
+          code: "validation_error",
+        });
+      }
+    }
+
+    const { data: updated, error: updateError } = await supabase
+      .from("bundles")
+      .update({
+        title: requestData.title ?? null,
+        context: requestData.context,
+        status: "analyzing",
+        error_message: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", existing.id)
+      .eq("user_id", user.id)
+      .eq("status", "pending")
+      .select("id, generation_id")
+      .maybeSingle();
+
+    if (updateError) {
+      console.error("Failed to claim prepared bundle:", updateError);
+      return errorResponse(500, {
+        error: "Failed to claim prepared bundle",
+        code: "internal_error",
+      });
+    }
+
+    if (!updated) {
+      return errorResponse(409, {
+        error: "Prepared bundle is no longer pending",
+        code: "conflict",
+      });
+    }
+
+    bundle = updated;
+  } else {
+    const { data: inserted, error: bundleInsertError } = await supabase
+      .from("bundles")
+      .insert({
+        user_id: user.id,
+        title: requestData.title ?? null,
+        context: requestData.context,
+        status: "analyzing",
+      })
+      .select("id, generation_id")
+      .single();
+
+    if (bundleInsertError || !inserted) {
+      console.error("Failed to insert bundle:", bundleInsertError);
+      return errorResponse(500, {
+        error: "Failed to create bundle record",
+        code: "internal_error",
+      });
+    }
+
+    bundle = inserted;
   }
 
   const assetRows = photos.map((photo, index) => ({
@@ -357,10 +481,7 @@ export async function POST(request: Request) {
     const caption = pack.photo_captions.find(
       (c) => c.photo_index === photoIndex
     );
-    const prevMeta =
-      asset.metadata && typeof asset.metadata === "object"
-        ? (asset.metadata as Record<string, unknown>)
-        : {};
+    const prevMeta = metaObject(asset.metadata);
 
     await supabase
       .from("bundle_assets")
@@ -383,10 +504,7 @@ export async function POST(request: Request) {
     if (!asset) continue;
     if (pack.posting_order.includes(caption.photo_index)) continue;
 
-    const prevMeta =
-      asset.metadata && typeof asset.metadata === "object"
-        ? (asset.metadata as Record<string, unknown>)
-        : {};
+    const prevMeta = metaObject(asset.metadata);
 
     await supabase
       .from("bundle_assets")
@@ -399,6 +517,151 @@ export async function POST(request: Request) {
       })
       .eq("id", asset.id)
       .eq("user_id", user.id);
+  }
+
+  // Brief 3a: verify uploads then persist bundle_clips for verified sources only
+  let responseClipSpecs: BundleClipSpec[] = pack.clip_specs;
+
+  if (preparedBundleId) {
+    const videoAssetIds = [
+      ...new Set(
+        videos
+          .map((v) => v.asset_id)
+          .filter((id): id is string => typeof id === "string")
+      ),
+    ];
+
+    const { data: videoAssets, error: videoAssetsError } = await supabase
+      .from("bundle_assets")
+      .select("id, storage_path, metadata")
+      .eq("bundle_id", bundle.id)
+      .eq("user_id", user.id)
+      .eq("kind", "video")
+      .in("id", videoAssetIds);
+
+    if (videoAssetsError) {
+      console.error(
+        "Failed to load video assets for clip persist:",
+        videoAssetsError
+      );
+    }
+
+    const assetById = new Map(
+      (videoAssets ?? []).map((a) => [
+        a.id as string,
+        {
+          id: a.id as string,
+          storage_path: a.storage_path as string | null,
+          metadata: a.metadata,
+        },
+      ])
+    );
+
+    const verifiedAssetIds = new Set<string>();
+
+    let admin: ReturnType<typeof createAdminClient> | null = null;
+    try {
+      admin = createAdminClient();
+    } catch (err) {
+      console.error("Admin client unavailable for upload verification:", err);
+    }
+
+    for (const assetId of videoAssetIds) {
+      const asset = assetById.get(assetId);
+      const prevMeta = metaObject(asset?.metadata);
+      const exists =
+        asset?.storage_path && admin
+          ? await bundleMediaObjectExists(admin, asset.storage_path)
+          : false;
+
+      if (asset) {
+        await supabase
+          .from("bundle_assets")
+          .update({
+            metadata: {
+              ...prevMeta,
+              upload_verified: exists,
+            },
+          })
+          .eq("id", asset.id)
+          .eq("user_id", user.id);
+      }
+
+      if (exists) {
+        verifiedAssetIds.add(assetId);
+      } else {
+        console.info(
+          `[bundle] video asset ${assetId} missing from storage — clips not persisted`
+        );
+      }
+    }
+
+    if (pack.clip_specs.length > 0) {
+      const clipRows: Array<{
+        user_id: string;
+        bundle_id: string;
+        asset_id: string;
+        start_s: number;
+        end_s: number;
+        overlay_text: string;
+        caption: string;
+        tags: string[];
+        render_status: "pending";
+      }> = [];
+
+      const clipSpecIndexes: number[] = [];
+
+      pack.clip_specs.forEach((spec, index) => {
+        const assetId = videos[spec.video_index]?.asset_id;
+        if (!assetId || !verifiedAssetIds.has(assetId)) {
+          if (!assetId) {
+            console.info(
+              `[bundle] clip_spec video_index ${spec.video_index} has no uploaded asset — not persisted`
+            );
+          }
+          return;
+        }
+
+        clipSpecIndexes.push(index);
+        clipRows.push({
+          user_id: user.id,
+          bundle_id: bundle.id,
+          asset_id: assetId,
+          start_s: spec.start_s,
+          end_s: spec.end_s,
+          overlay_text: spec.overlay_text,
+          caption: spec.caption,
+          tags: spec.tags,
+          render_status: "pending",
+        });
+      });
+
+      if (clipRows.length > 0) {
+        const { data: insertedClips, error: clipsInsertError } = await supabase
+          .from("bundle_clips")
+          .insert(clipRows)
+          .select("id");
+
+        if (clipsInsertError || !insertedClips) {
+          console.error("Failed to insert bundle_clips:", clipsInsertError);
+        } else {
+          responseClipSpecs = pack.clip_specs.map((spec, index) => {
+            const rowPos = clipSpecIndexes.indexOf(index);
+            if (rowPos < 0) return spec;
+            const clipId = insertedClips[rowPos]?.id as string | undefined;
+            return clipId ? { ...spec, clip_id: clipId } : spec;
+          });
+        }
+      }
+    }
+  } else if (pack.clip_specs.length > 0) {
+    for (const spec of pack.clip_specs) {
+      if (!videos[spec.video_index]?.asset_id) {
+        console.info(
+          `[bundle] clip_spec video_index ${spec.video_index} has no uploaded asset — not persisted`
+        );
+      }
+    }
   }
 
   const inputContent = `${pack.post_brief}\n\n${requestData.context}`;
@@ -526,7 +789,10 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     bundle_id: bundle.id,
-    pack,
+    pack: {
+      ...pack,
+      clip_specs: responseClipSpecs,
+    },
     repurposes: repurposeResults,
     usage,
   });
