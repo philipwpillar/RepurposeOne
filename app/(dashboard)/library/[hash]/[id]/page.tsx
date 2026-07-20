@@ -47,12 +47,14 @@ export default async function HistoryDetailPage({
   const initialRating = (repurpose.user_rating ?? null) as UserRating | null;
   const initialWorkflowStatus = (repurpose.user_workflow_status ??
     null) as UserWorkflowStatus | null;
+  const initialEditedAt = (repurpose.edited_at ?? null) as string | null;
 
   const feedbackProps = {
     repurposeId: repurpose.id as string,
     initialRating,
     initialUserOutput,
     initialWorkflowStatus,
+    initialEditedAt,
   };
 
   return (

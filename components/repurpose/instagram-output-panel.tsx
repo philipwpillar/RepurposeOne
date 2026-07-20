@@ -49,6 +49,7 @@ export function InstagramOutputPanel({
   initialRating,
   initialUserOutput,
   initialWorkflowStatus,
+  initialEditedAt,
   onFeedback,
 }: InstagramOutputPanelProps) {
   const [workflowStatus, setWorkflowStatus] = useState<UserWorkflowStatus | null>(
@@ -64,6 +65,7 @@ export function InstagramOutputPanel({
     repurposeId,
     initialRating,
     initialUserOutput: initialUserOutput as InstagramOutput | null | undefined,
+    initialEditedAt,
     onFeedback,
   });
 
@@ -78,10 +80,13 @@ export function InstagramOutputPanel({
           editing={feedback.editing}
           saving={feedback.saving}
           error={feedback.error}
+          pendingRestore={feedback.pendingRestore}
           onRate={(r: UserRating) => void feedback.toggleRating(r)}
           onEdit={feedback.startEdit}
           onSave={() => void feedback.saveEdit()}
           onCancel={feedback.cancelEdit}
+          onRestoreDraft={feedback.restoreDraft}
+          onDiscardDraft={feedback.discardStoredDraft}
           variant={variant}
         />
       )}
