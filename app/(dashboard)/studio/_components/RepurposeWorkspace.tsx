@@ -15,6 +15,7 @@ import InputModeTabs from './InputModeTabs';
 import PhotoInputSection from './PhotoInputSection';
 import TextSourceCard from './TextSourceCard';
 import VoiceSetupBanner from './VoiceSetupBanner';
+import StudioFormatPicker from './StudioFormatPicker';
 import { EmailOutputPanel } from '@/components/repurpose/email-output-panel';
 import { InstagramOutputPanel } from '@/components/repurpose/instagram-output-panel';
 import { LinkedInOutputPanel } from '@/components/repurpose/linkedin-output-panel';
@@ -162,6 +163,9 @@ export default function RepurposeWorkspace({
     createFormatRecord(null)
   );
   const [isRegeneratingAll, setIsRegeneratingAll] = useState(false);
+  const [selectedFormats, setSelectedFormats] = useState<Set<TargetFormat>>(
+    () => new Set(ALL_FORMATS)
+  );
   const [usedCount, setUsedCount] = useState(repurposesUsed);
   const [reactiveUpgradeGate, setReactiveUpgradeGate] = useState<UpgradeGate | null>(
     null
@@ -169,8 +173,10 @@ export default function RepurposeWorkspace({
 
   const atLimit = usedCount >= repurposesLimit;
 
+  const activeFormats = ALL_FORMATS.filter((format) => selectedFormats.has(format));
+
   const isAnyLoading =
-    isRegeneratingAll || ALL_FORMATS.some((format) => formatLoading[format]);
+    isRegeneratingAll || activeFormats.some((format) => formatLoading[format]);
 
   const callGenerateApi = useCallback(
     async (
@@ -455,14 +461,15 @@ export default function RepurposeWorkspace({
   const regenerateAll = async () => {
     setIsRegeneratingAll(true);
     const generationId = crypto.randomUUID();
+    const formats = ALL_FORMATS.filter((format) => selectedFormats.has(format));
 
     if (isPhotoMode) {
       await Promise.allSettled(
-        ALL_FORMATS.map((format) => generatePhotoFormat(format, { generationId }))
+        formats.map((format) => generatePhotoFormat(format, { generationId }))
       );
     } else {
       await Promise.allSettled(
-        ALL_FORMATS.map((format) => generateFormat(format, { generationId }))
+        formats.map((format) => generateFormat(format, { generationId }))
       );
     }
 
@@ -473,8 +480,9 @@ export default function RepurposeWorkspace({
     setInputSummary(content);
     setIsRegeneratingAll(true);
     const generationId = crypto.randomUUID();
+    const formats = ALL_FORMATS.filter((format) => selectedFormats.has(format));
     await Promise.allSettled(
-      ALL_FORMATS.map((format) =>
+      formats.map((format) =>
         generateFormat(format, { generationId, inputContent: content })
       )
     );
@@ -603,8 +611,13 @@ export default function RepurposeWorkspace({
         <div className="bg-teal-500/10 border border-teal-500/30 rounded-2xl px-4 py-2 flex items-center gap-x-2">
           <i className="fas fa-clock text-teal-600"></i>
           <div className="text-sm">
-            <span className="font-medium text-teal-700">~40 min saved</span>
-            <span className="text-teal-600 text-xs ml-1">(~10 min × 4 formats)</span>
+            <span className="font-medium text-teal-700">
+              ~{activeFormats.length * 10} min saved
+            </span>
+            <span className="text-teal-600 text-xs ml-1">
+              (~10 min × {activeFormats.length} format
+              {activeFormats.length === 1 ? '' : 's'})
+            </span>
           </div>
         </div>
       </div>
@@ -633,15 +646,27 @@ export default function RepurposeWorkspace({
         <UpgradePrompt gate="rate_limit" plan={userPlan} />
       )}
 
+      <StudioFormatPicker
+        selected={selectedFormats}
+        onChange={setSelectedFormats}
+        disabled={isAnyLoading}
+      />
+
       <div className="flex items-center justify-between mb-3 px-1">
         <div className="text-xs font-semibold tracking-wider text-muted-foreground">GENERATED OUTPUTS</div>
-        <div className="text-xs text-muted-foreground">4 formats</div>
+        <div className="text-xs text-muted-foreground">
+          {activeFormats.length} of {ALL_FORMATS.length} formats selected
+        </div>
       </div>
 
       <div className="space-y-4">
 
         {/* X / Twitter */}
-        <div className="bg-card border border-border rounded-3xl overflow-hidden">
+        <div
+          className={`bg-card border border-border rounded-3xl overflow-hidden${
+            selectedFormats.has('x_thread') ? '' : ' opacity-50'
+          }`}
+        >
           <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-border">
             <div className="flex items-center gap-x-3">
               <i className="fab fa-x-twitter text-xl"></i>
@@ -709,7 +734,11 @@ export default function RepurposeWorkspace({
         </div>
 
         {/* LinkedIn */}
-        <div className="bg-card border border-border rounded-3xl overflow-hidden">
+        <div
+          className={`bg-card border border-border rounded-3xl overflow-hidden${
+            selectedFormats.has('linkedin') ? '' : ' opacity-50'
+          }`}
+        >
           <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-border">
             <div className="flex items-center gap-x-3">
               <i className="fab fa-linkedin text-xl text-blue-600"></i>
@@ -755,7 +784,11 @@ export default function RepurposeWorkspace({
         </div>
 
         {/* Instagram */}
-        <div className="bg-card border border-border rounded-3xl overflow-hidden">
+        <div
+          className={`bg-card border border-border rounded-3xl overflow-hidden${
+            selectedFormats.has('instagram') ? '' : ' opacity-50'
+          }`}
+        >
           <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-border">
             <div className="flex items-center gap-x-3">
               <i className="fab fa-instagram text-xl text-pink-600"></i>
@@ -801,7 +834,11 @@ export default function RepurposeWorkspace({
         </div>
 
         {/* Email */}
-        <div className="bg-card border border-border rounded-3xl overflow-hidden">
+        <div
+          className={`bg-card border border-border rounded-3xl overflow-hidden${
+            selectedFormats.has('email') ? '' : ' opacity-50'
+          }`}
+        >
           <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-border">
             <div className="flex items-center gap-x-3">
               <i className="fas fa-envelope text-xl text-muted-foreground"></i>
@@ -861,8 +898,10 @@ export default function RepurposeWorkspace({
             {isRegeneratingAll
               ? isPhotoMode
                 ? 'Analysing your photo…'
-                : 'Regenerating all formats…'
-              : 'Regenerate All'}
+                : 'Regenerating selected formats…'
+              : activeFormats.length === ALL_FORMATS.length
+                ? 'Regenerate All'
+                : `Regenerate ${activeFormats.length} format${activeFormats.length === 1 ? '' : 's'}`}
           </button>
 
           <button
