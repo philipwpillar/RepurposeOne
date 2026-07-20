@@ -360,6 +360,10 @@ export default function BundleWorkspace({
           billingHint:
             err.code === "generation_failed" ||
             err.code === "internal_error" ||
+            err.code === "limit_exceeded" ||
+            err.code === "bundle_limit_reached" ||
+            err.code === "plan_required" ||
+            err.code === "rate_limited" ||
             !err.code,
         });
       } else {
@@ -493,6 +497,7 @@ export default function BundleWorkspace({
             gate={bundleErrorUpgradeGate(error.code)!}
             plan={userPlan}
             message={error.message}
+            billingHint={error.billingHint}
             className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-3"
           />
         ) : error ? (

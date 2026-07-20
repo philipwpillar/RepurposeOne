@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { Sparkles, X } from "lucide-react";
 
 const DISMISS_KEY = "repurposeone.voice_nudge_dismissed";
 
@@ -32,7 +32,7 @@ export default function VoiceSetupBanner() {
 
   return (
     <div className="mb-6 flex items-start gap-3 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3">
-      <i className="fas fa-magic mt-0.5 text-primary" aria-hidden />
+      <Sparkles className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" aria-hidden />
       <div className="flex-1 text-sm">
         <p className="font-medium text-foreground">
           Set up your Brand Voice before your first generation

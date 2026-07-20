@@ -15,6 +15,7 @@ interface UpgradePromptProps {
   gate: UpgradeGate;
   plan: Plan;
   message?: string;
+  billingHint?: boolean;
   className?: string;
 }
 
@@ -62,6 +63,7 @@ export function UpgradePrompt({
   gate,
   plan,
   message,
+  billingHint,
   className,
 }: UpgradePromptProps) {
   const copy = promptCopy(gate, plan);
@@ -78,6 +80,11 @@ export function UpgradePrompt({
       <div className="flex-1 text-sm">
         <p className="font-medium text-amber-900">{copy.title}</p>
         <p className="mt-1 text-amber-800/90">{message ?? copy.body}</p>
+        {billingHint ? (
+          <p className="mt-1 text-xs text-amber-800/75">
+            This attempt wasn&apos;t billed — you can retry safely.
+          </p>
+        ) : null}
         {copy.cta ? (
           <Link
             href="/billing"

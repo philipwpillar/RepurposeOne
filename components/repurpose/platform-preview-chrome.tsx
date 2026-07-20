@@ -1,3 +1,4 @@
+import { ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function PlatformAuthorRow({
@@ -33,8 +34,8 @@ export function InstagramPhotoFrame({ className }: { className?: string }) {
         className
       )}
     >
-      <div className="text-center text-xs text-muted-foreground">
-        <i className="far fa-image mb-2 block text-lg" aria-hidden />
+      <div className="flex flex-col items-center gap-2 text-center text-xs text-muted-foreground">
+        <ImageIcon className="h-6 w-6" aria-hidden />
         Your photo goes here
       </div>
     </div>
