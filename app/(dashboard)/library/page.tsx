@@ -13,9 +13,13 @@ import {
 } from "@/components/ui/card";
 import { formatLabel, getOutputPreview } from "@/lib/format-output";
 import { deriveSourceTitle } from "@/lib/source-title";
+import {
+  parseLibrarySearchQuery,
+} from "@/lib/repurpose/library-search";
 import LibraryFormatFilter, {
   parseLibraryFormatFilter,
 } from "./_components/LibraryFormatFilter";
+import LibrarySearchBar from "./_components/LibrarySearchBar";
 import { WorkflowStatusBadge } from "@/components/repurpose/workflow-status-badge";
 import type { RepurposeOutput, TargetFormat, UserWorkflowStatus } from "@/types";
 
@@ -27,13 +31,25 @@ interface SourceGroup {
   repurposeCount: number;
 }
 
+type LibraryRow = {
+  id: string;
+  target_format: TargetFormat;
+  created_at: string;
+  input_content: string;
+  source_hash: string | null;
+  output: unknown;
+  user_workflow_status: UserWorkflowStatus | null;
+};
+
 export default async function HistoryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ format?: string }>;
+  searchParams: Promise<{ format?: string; q?: string }>;
 }) {
-  const { format: formatParam } = await searchParams;
+  const { format: formatParam, q: qParam } = await searchParams;
   const formatFilter = parseLibraryFormatFilter(formatParam);
+  const searchQuery = parseLibrarySearchQuery(qParam);
+  const useFlatList = Boolean(formatFilter || searchQuery);
   const supabase = await createClient();
 
   const {
@@ -42,43 +58,70 @@ export default async function HistoryPage({
 
   if (!user) return null;
 
-  const { data: repurposes } = await supabase
+  let query = supabase
     .from("repurposes")
-    .select("id, target_format, created_at, input_content, source_hash, output, user_workflow_status")
+    .select(
+      "id, target_format, created_at, input_content, source_hash, output, user_workflow_status"
+    )
     .eq("user_id", user.id)
     .eq("status", "complete")
     .order("created_at", { ascending: false });
 
+  if (formatFilter) {
+    query = query.eq("target_format", formatFilter);
+  }
+  if (searchQuery) {
+    query = query.ilike("input_content", `%${searchQuery}%`);
+  }
+
+  const { data: repurposes } = await query;
+  const rows = (repurposes ?? []) as LibraryRow[];
+
   const groups = new Map<string, SourceGroup>();
 
-  for (const item of repurposes ?? []) {
-    const hash = item.source_hash;
-    if (!hash) continue; // defensive — column is always set by the DB
+  if (!useFlatList) {
+    for (const item of rows) {
+      const hash = item.source_hash;
+      if (!hash) continue;
 
-    const existing = groups.get(hash);
-    if (existing) {
-      existing.repurposeCount += 1;
-      if (!existing.formats.includes(item.target_format)) {
-        existing.formats.push(item.target_format);
+      const existing = groups.get(hash);
+      if (existing) {
+        existing.repurposeCount += 1;
+        if (!existing.formats.includes(item.target_format)) {
+          existing.formats.push(item.target_format);
+        }
+      } else {
+        groups.set(hash, {
+          sourceHash: hash,
+          title: deriveSourceTitle(item.input_content),
+          latestCreatedAt: item.created_at,
+          formats: [item.target_format],
+          repurposeCount: 1,
+        });
       }
-      // Rows arrive newest-first, so the first row seen per hash already
-      // carries the latest created_at — nothing further to compare.
-    } else {
-      groups.set(hash, {
-        sourceHash: hash,
-        title: deriveSourceTitle(item.input_content),
-        latestCreatedAt: item.created_at,
-        formats: [item.target_format],
-        repurposeCount: 1,
-      });
     }
   }
 
   const sourceGroups = Array.from(groups.values());
 
-  const filteredRepurposes = formatFilter
-    ? (repurposes ?? []).filter((item) => item.target_format === formatFilter)
-    : [];
+  const emptyFilterTitle = (() => {
+    if (formatFilter && searchQuery) {
+      return `No ${formatLabel(formatFilter)} matches for “${searchQuery}”`;
+    }
+    if (searchQuery) {
+      return `No matches for “${searchQuery}”`;
+    }
+    if (formatFilter) {
+      return `No ${formatLabel(formatFilter)} outputs yet`;
+    }
+    return "No history yet";
+  })();
+
+  const emptyFilterDescription = searchQuery
+    ? "Try a different search term, clear search, or switch format."
+    : formatFilter
+      ? "Generate content in Studio or switch back to All to browse by source."
+      : "Completed repurposes will appear here.";
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -90,22 +133,23 @@ export default async function HistoryPage({
       </div>
 
       <Suspense fallback={null}>
-        <LibraryFormatFilter />
+        <div className="space-y-3">
+          <LibrarySearchBar />
+          <LibraryFormatFilter />
+        </div>
       </Suspense>
 
-      {formatFilter ? (
-        !filteredRepurposes.length ? (
+      {useFlatList ? (
+        !rows.length ? (
           <Card>
             <CardHeader>
-              <CardTitle>No {formatLabel(formatFilter)} outputs yet</CardTitle>
-              <CardDescription>
-                Generate content in Studio or switch back to All to browse by source.
-              </CardDescription>
+              <CardTitle>{emptyFilterTitle}</CardTitle>
+              <CardDescription>{emptyFilterDescription}</CardDescription>
             </CardHeader>
           </Card>
         ) : (
           <div className="space-y-3">
-            {filteredRepurposes.map((item) => (
+            {rows.map((item) => (
               <Link
                 key={item.id}
                 href={`/library/${item.source_hash}/${item.id}`}
@@ -115,12 +159,10 @@ export default async function HistoryPage({
                     <div className="min-w-0 flex-1 space-y-2">
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge variant="secondary">
-                          {formatLabel(item.target_format as TargetFormat)}
+                          {formatLabel(item.target_format)}
                         </Badge>
                         <WorkflowStatusBadge
-                          status={
-                            item.user_workflow_status as UserWorkflowStatus | null
-                          }
+                          status={item.user_workflow_status}
                         />
                         <p className="text-sm font-medium">
                           {deriveSourceTitle(item.input_content)}
@@ -132,7 +174,10 @@ export default async function HistoryPage({
                           : "No preview available"}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {format(new Date(item.created_at), "MMM d, yyyy 'at' h:mm a")}
+                        {format(
+                          new Date(item.created_at),
+                          "MMM d, yyyy 'at' h:mm a"
+                        )}
                       </p>
                     </div>
                     <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -175,9 +220,13 @@ export default async function HistoryPage({
                       ))}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {group.repurposeCount} repurpose{group.repurposeCount === 1 ? "" : "s"} ·
-                      last updated{" "}
-                      {format(new Date(group.latestCreatedAt), "MMM d, yyyy 'at' h:mm a")}
+                      {group.repurposeCount}{" "}
+                      repurpose{group.repurposeCount === 1 ? "" : "s"} · last
+                      updated{" "}
+                      {format(
+                        new Date(group.latestCreatedAt),
+                        "MMM d, yyyy 'at' h:mm a"
+                      )}
                     </p>
                   </div>
                   <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
