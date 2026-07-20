@@ -1,8 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 import { checkUsageLimit } from "@/lib/usage";
+import { STUDIO_EXAMPLE_INPUT } from "@/lib/repurpose/studio-example";
 import RepurposeWorkspace from "./_components/RepurposeWorkspace";
 
-export default async function StudioPage() {
+export default async function StudioPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ example?: string }>;
+}) {
+  const { example } = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -23,9 +29,11 @@ export default async function StudioPage() {
   ]);
 
   const defaultVoice = voices?.[0] ?? null;
+  const initialInput = example === "1" ? STUDIO_EXAMPLE_INPUT : "";
 
   return (
     <RepurposeWorkspace
+      initialInput={initialInput}
       repurposesUsed={usage.used}
       repurposesLimit={usage.limit}
       userPlan={usage.plan}

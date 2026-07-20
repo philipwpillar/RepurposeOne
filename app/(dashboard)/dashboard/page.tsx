@@ -14,6 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import DashboardRecentEmpty from "./_components/DashboardRecentEmpty";
 import { formatLabel, getOutputPreview } from "@/lib/format-output";
 import type { RepurposeOutput } from "@/types";
 
@@ -31,7 +32,14 @@ export default async function DashboardPage() {
 
   if (!user) return null;
 
-  const { usage } = await checkUsageLimit(supabase, user.id);
+  const [{ usage }, { data: profile }] = await Promise.all([
+    checkUsageLimit(supabase, user.id),
+    supabase
+      .from("profiles")
+      .select("onboarding_completed_at")
+      .eq("id", user.id)
+      .single(),
+  ]);
 
   const { data: recent } = await supabase
     .from("repurposes")
@@ -113,16 +121,9 @@ export default async function DashboardPage() {
         </div>
 
         {!recent?.length ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">
-                No repurposes yet. Create your first one!
-              </p>
-              <Button asChild className="mt-4">
-                <Link href="/studio">Get started</Link>
-              </Button>
-            </CardContent>
-          </Card>
+          <DashboardRecentEmpty
+            bannerEligible={Boolean(profile?.onboarding_completed_at)}
+          />
         ) : (
           <div className="space-y-3">
             {recent.map((item) => (
