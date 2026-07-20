@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
+import { isNativePlatform } from "@/lib/platform";
 import { Separator } from "@/components/ui/separator";
 
 interface AuthFormProps {
@@ -106,16 +107,18 @@ export function AuthForm({ mode, redirectTo = "/dashboard", initialError }: Auth
       <CardContent className="space-y-4">
         <GoogleSignInButton redirectTo={redirectTo} />
 
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <Separator />
+        {!isNativePlatform() && (
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <Separator />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">
+                or continue with email
+              </span>
+            </div>
           </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">
-              or continue with email
-            </span>
-          </div>
-        </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">

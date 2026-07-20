@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { isGoogleAuthEnabled } from "@/lib/auth-config";
+import { isNativePlatform } from "@/lib/platform";
 import { Button } from "@/components/ui/button";
 
 interface GoogleSignInButtonProps {
@@ -13,6 +14,8 @@ interface GoogleSignInButtonProps {
 export function GoogleSignInButton({ redirectTo = "/dashboard" }: GoogleSignInButtonProps) {
   const [loading, setLoading] = useState(false);
   const googleEnabled = isGoogleAuthEnabled();
+
+  if (isNativePlatform()) return null;
 
   async function handleGoogleSignIn() {
     if (!googleEnabled) return;
