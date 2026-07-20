@@ -1,13 +1,21 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { RepurposeOutput, UserRating, UserWorkflowStatus } from "@/types";
+import {
+  clearEditDraft,
+  isRecoverableDraft,
+  readEditDraft,
+  writeEditDraft,
+} from "@/lib/repurpose/edit-draft-storage";
 
 export type FeedbackProps = {
   repurposeId?: string;
   initialRating?: UserRating | null;
   initialUserOutput?: RepurposeOutput | null;
   initialWorkflowStatus?: UserWorkflowStatus | null;
+  /** ISO timestamp of last server-side user_output save — used for draft staleness. */
+  initialEditedAt?: string | null;
   onFeedback?: (payload: {
     rating: UserRating | null;
     user_output: RepurposeOutput | null;
@@ -19,14 +27,18 @@ type UseOutputFeedbackArgs<T extends RepurposeOutput> = {
   repurposeId?: string;
   initialRating?: UserRating | null;
   initialUserOutput?: T | null;
+  initialEditedAt?: string | null;
   onFeedback?: FeedbackProps["onFeedback"];
 };
+
+const DRAFT_DEBOUNCE_MS = 500;
 
 export function useOutputFeedback<T extends RepurposeOutput>({
   output,
   repurposeId,
   initialRating = null,
   initialUserOutput = null,
+  initialEditedAt = null,
   onFeedback,
 }: UseOutputFeedbackArgs<T>) {
   const feedbackEnabled = Boolean(repurposeId);
@@ -35,9 +47,46 @@ export function useOutputFeedback<T extends RepurposeOutput>({
   );
   const [rating, setRating] = useState<UserRating | null>(initialRating ?? null);
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState<T>(displayOutput);
+  const [draft, setDraftState] = useState<T>(displayOutput);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingRestore, setPendingRestore] = useState(false);
+  const editedAtRef = useRef<string | null>(initialEditedAt ?? null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  const persistDraft = useCallback(
+    (next: T) => {
+      if (!repurposeId) return;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        writeEditDraft(repurposeId, next);
+      }, DRAFT_DEBOUNCE_MS);
+    },
+    [repurposeId]
+  );
+
+  const setDraft = useCallback(
+    (next: T | ((prev: T) => T)) => {
+      setDraftState((prev) => {
+        const resolved = typeof next === "function" ? next(prev) : next;
+        persistDraft(resolved);
+        return resolved;
+      });
+    },
+    [persistDraft]
+  );
+
+  const clearStoredDraft = useCallback(() => {
+    if (!repurposeId) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    clearEditDraft(repurposeId);
+  }, [repurposeId]);
 
   const patchFeedback = useCallback(
     async (body: {
@@ -63,6 +112,7 @@ export function useOutputFeedback<T extends RepurposeOutput>({
         return data.repurpose as {
           user_rating: UserRating | null;
           user_output: T | null;
+          edited_at?: string | null;
         };
       } catch (err) {
         const message =
@@ -91,29 +141,66 @@ export function useOutputFeedback<T extends RepurposeOutput>({
   );
 
   const startEdit = useCallback(() => {
-    setDraft(displayOutput);
+    setDraftState(displayOutput);
     setEditing(true);
     setError(null);
-  }, [displayOutput]);
+
+    if (!repurposeId) {
+      setPendingRestore(false);
+      return;
+    }
+
+    const stored = readEditDraft<T>(repurposeId);
+    const recoverable =
+      stored !== null &&
+      isRecoverableDraft(stored, displayOutput, editedAtRef.current);
+
+    setPendingRestore(recoverable);
+  }, [displayOutput, repurposeId]);
+
+  const restoreDraft = useCallback(() => {
+    if (!repurposeId) return;
+    const stored = readEditDraft<T>(repurposeId);
+    if (!stored) {
+      setPendingRestore(false);
+      return;
+    }
+    setDraftState(stored.draft);
+    setPendingRestore(false);
+  }, [repurposeId]);
+
+  const discardStoredDraft = useCallback(() => {
+    clearStoredDraft();
+    setPendingRestore(false);
+  }, [clearStoredDraft]);
 
   const cancelEdit = useCallback(() => {
-    setDraft(displayOutput);
+    setDraftState(displayOutput);
     setEditing(false);
+    setPendingRestore(false);
     setError(null);
-  }, [displayOutput]);
+    clearStoredDraft();
+  }, [clearStoredDraft, displayOutput]);
 
   const saveEdit = useCallback(async () => {
     const updated = await patchFeedback({ user_output: draft });
     if (!updated) return;
     const nextOutput = (updated.user_output as T | null) ?? draft;
     setDisplayOutput(nextOutput);
-    setDraft(nextOutput);
+    setDraftState(nextOutput);
     setEditing(false);
+    setPendingRestore(false);
+    clearStoredDraft();
+    if (updated.edited_at) {
+      editedAtRef.current = updated.edited_at;
+    } else {
+      editedAtRef.current = new Date().toISOString();
+    }
     onFeedback?.({
       rating: updated.user_rating ?? rating,
       user_output: nextOutput,
     });
-  }, [draft, onFeedback, patchFeedback, rating]);
+  }, [clearStoredDraft, draft, onFeedback, patchFeedback, rating]);
 
   return {
     feedbackEnabled,
@@ -124,6 +211,9 @@ export function useOutputFeedback<T extends RepurposeOutput>({
     setDraft,
     saving,
     error,
+    pendingRestore,
+    restoreDraft,
+    discardStoredDraft,
     toggleRating,
     startEdit,
     cancelEdit,

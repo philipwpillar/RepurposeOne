@@ -67,6 +67,7 @@ export function LinkedInOutputPanel({
   initialRating,
   initialUserOutput,
   initialWorkflowStatus,
+  initialEditedAt,
   onFeedback,
 }: LinkedInOutputPanelProps) {
   const [workflowStatus, setWorkflowStatus] = useState<UserWorkflowStatus | null>(
@@ -82,6 +83,7 @@ export function LinkedInOutputPanel({
     repurposeId,
     initialRating,
     initialUserOutput: initialUserOutput as LinkedInOutput | null | undefined,
+    initialEditedAt,
     onFeedback,
   });
 
@@ -96,10 +98,13 @@ export function LinkedInOutputPanel({
           editing={feedback.editing}
           saving={feedback.saving}
           error={feedback.error}
+          pendingRestore={feedback.pendingRestore}
           onRate={(r: UserRating) => void feedback.toggleRating(r)}
           onEdit={feedback.startEdit}
           onSave={() => void feedback.saveEdit()}
           onCancel={feedback.cancelEdit}
+          onRestoreDraft={feedback.restoreDraft}
+          onDiscardDraft={feedback.discardStoredDraft}
           variant={variant}
         />
       )}

@@ -33,6 +33,7 @@ export function EmailOutputPanel({
   initialRating,
   initialUserOutput,
   initialWorkflowStatus,
+  initialEditedAt,
   onFeedback,
 }: EmailOutputPanelProps) {
   const [workflowStatus, setWorkflowStatus] = useState<UserWorkflowStatus | null>(
@@ -48,6 +49,7 @@ export function EmailOutputPanel({
     repurposeId,
     initialRating,
     initialUserOutput: initialUserOutput as EmailOutput | null | undefined,
+    initialEditedAt,
     onFeedback,
   });
 
@@ -62,10 +64,13 @@ export function EmailOutputPanel({
           editing={feedback.editing}
           saving={feedback.saving}
           error={feedback.error}
+          pendingRestore={feedback.pendingRestore}
           onRate={(r: UserRating) => void feedback.toggleRating(r)}
           onEdit={feedback.startEdit}
           onSave={() => void feedback.saveEdit()}
           onCancel={feedback.cancelEdit}
+          onRestoreDraft={feedback.restoreDraft}
+          onDiscardDraft={feedback.discardStoredDraft}
           variant={variant}
         />
       )}
