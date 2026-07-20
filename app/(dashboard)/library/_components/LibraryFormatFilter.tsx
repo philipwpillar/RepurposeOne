@@ -27,6 +27,21 @@ export function parseLibraryFormatFilter(
   return null;
 }
 
+function hrefForFormat(
+  pathname: string,
+  searchParams: URLSearchParams,
+  format: "all" | TargetFormat
+): string {
+  const params = new URLSearchParams(searchParams.toString());
+  if (format === "all") {
+    params.delete("format");
+  } else {
+    params.set("format", format);
+  }
+  const qs = params.toString();
+  return qs ? `${pathname}?${qs}` : pathname;
+}
+
 export default function LibraryFormatFilter() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -35,10 +50,7 @@ export default function LibraryFormatFilter() {
   return (
     <div className="flex flex-wrap gap-2">
       {FILTER_OPTIONS.map((option) => {
-        const href =
-          option.value === "all"
-            ? pathname
-            : `${pathname}?format=${option.value}`;
+        const href = hrefForFormat(pathname, searchParams, option.value);
 
         return (
           <Link
