@@ -11,6 +11,7 @@ import { InstagramOutputPanel } from "@/components/repurpose/instagram-output-pa
 import { EmailOutputPanel } from "@/components/repurpose/email-output-panel";
 import { formatLabel } from "@/lib/format-output";
 import { WorkflowStatusControls } from "@/components/repurpose/workflow-status-controls";
+import { VoiceAttributionBadge } from "@/components/repurpose/voice-attribution-badge";
 import type { RepurposeOutput, UserRating, UserWorkflowStatus } from "@/types";
 
 interface HistoryDetailPageProps {
@@ -57,6 +58,22 @@ export default async function HistoryDetailPage({
     initialEditedAt,
   };
 
+  let voiceAttribution: {
+    description: string | null;
+    is_default: boolean;
+    samples: string[] | null;
+  } | null = null;
+
+  if (repurpose.brand_voice_id) {
+    const { data: voice } = await supabase
+      .from("brand_voices")
+      .select("description, is_default, samples")
+      .eq("id", repurpose.brand_voice_id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    voiceAttribution = voice;
+  }
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center gap-4">
@@ -74,6 +91,7 @@ export default async function HistoryDetailPage({
           <Badge variant="secondary">
             {formatLabel(repurpose.target_format)}
           </Badge>
+          <VoiceAttributionBadge voice={voiceAttribution} />
         </div>
         <p className="text-sm text-muted-foreground">
           Created {format(new Date(repurpose.created_at), "MMM d, yyyy 'at' h:mm a")}
