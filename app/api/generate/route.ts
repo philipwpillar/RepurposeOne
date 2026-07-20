@@ -2,7 +2,13 @@ import { NextResponse } from "next/server";
 import { generateRepurpose, generateRepurposeFromImage } from "@/lib/ai/generate";
 import { fetchVoiceExemplarsText } from "@/lib/ai/exemplars";
 import { AI_CONFIG, planAllowsVision } from "@/lib/config";
+import {
+  computeSourceHash,
+  GenerationIdValidationError,
+  resolveGenerationId,
+} from "@/lib/repurpose/generation-id";
 import { resolveBrandVoice } from "@/lib/repurpose/brand-voice";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
   checkRateLimit,
@@ -204,8 +210,43 @@ export async function POST(request: Request) {
     );
   }
 
+  const sourceHash = computeSourceHash(input_content);
+
+  let resolvedGenerationId: string | undefined;
+  try {
+    resolvedGenerationId = await resolveGenerationId(supabase, {
+      userId: user.id,
+      clientGenerationId: generation_id,
+      sourceHash,
+      targetFormat: target_format,
+    });
+  } catch (err) {
+    if (err instanceof GenerationIdValidationError) {
+      return errorResponse(400, {
+        error: err.message,
+        code: "validation_error",
+      });
+    }
+    console.error("generation_id validation failed:", err);
+    return errorResponse(500, {
+      error: "Failed to validate generation group",
+      code: "internal_error",
+    });
+  }
+
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch (err) {
+    console.error("Admin client unavailable:", err);
+    return errorResponse(500, {
+      error: "Failed to create repurpose record",
+      code: "internal_error",
+    });
+  }
+
   // Insert pending row before AI call (audit trail + status tracking)
-  const { data: repurpose, error: insertError } = await supabase
+  const { data: repurpose, error: insertError } = await admin
     .from("repurposes")
     .insert({
       user_id: user.id,
@@ -214,7 +255,9 @@ export async function POST(request: Request) {
       brand_voice_id: brand_voice_id ?? null,
       target_format,
       status: "pending",
-      generation_id: generation_id ?? undefined, // undefined → DB default (own uuid); shared id groups a multi-format run for billing
+      ...(resolvedGenerationId
+        ? { generation_id: resolvedGenerationId }
+        : {}),
     })
     .select("id, source_hash")
     .single();
@@ -247,7 +290,7 @@ export async function POST(request: Request) {
           exemplarsText: exemplarsText || undefined,
         });
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await admin
       .from("repurposes")
       .update({
         output: result.output,
@@ -283,7 +326,7 @@ export async function POST(request: Request) {
   } catch (err) {
     const message = toUserFacingGenerationError(err);
 
-    await supabase
+    await admin
       .from("repurposes")
       .update({
         status: "failed",

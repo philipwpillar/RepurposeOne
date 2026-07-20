@@ -134,7 +134,18 @@ export async function POST(request: Request) {
     });
   }
 
-  const { data: bundle, error: bundleInsertError } = await supabase
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch (err) {
+    console.error("Admin client unavailable:", err);
+    return errorResponse(500, {
+      error: "Failed to create bundle record",
+      code: "internal_error",
+    });
+  }
+
+  const { data: bundle, error: bundleInsertError } = await admin
     .from("bundles")
     .insert({
       user_id: user.id,
@@ -177,14 +188,14 @@ export async function POST(request: Request) {
     };
   });
 
-  const { data: insertedAssets, error: assetsInsertError } = await supabase
+  const { data: insertedAssets, error: assetsInsertError } = await admin
     .from("bundle_assets")
     .insert(assetRows)
     .select("id, storage_path");
 
   if (assetsInsertError || !insertedAssets) {
     console.error("Failed to insert video assets:", assetsInsertError);
-    await supabase
+    await admin
       .from("bundles")
       .update({
         status: "failed",
@@ -207,7 +218,7 @@ export async function POST(request: Request) {
     const inserted = byId.get(row.id);
     if (!inserted?.storage_path) {
       console.error("Missing inserted asset after prepare:", row.id);
-      await supabase
+      await admin
         .from("bundles")
         .update({
           status: "failed",
@@ -225,27 +236,6 @@ export async function POST(request: Request) {
     orderedAssets.push({
       id: inserted.id,
       storage_path: inserted.storage_path,
-    });
-  }
-
-  let admin;
-  try {
-    admin = createAdminClient();
-  } catch (err) {
-    console.error("Admin client unavailable for signed uploads:", err);
-    await supabase
-      .from("bundles")
-      .update({
-        status: "failed",
-        error_message: "Storage signing unavailable",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", bundle.id)
-      .eq("user_id", user.id);
-
-    return errorResponse(500, {
-      error: "Failed to prepare video uploads",
-      code: "internal_error",
     });
   }
 
@@ -275,7 +265,7 @@ export async function POST(request: Request) {
     }
   } catch (err) {
     console.error("Failed to create signed upload URLs:", err);
-    await supabase
+    await admin
       .from("bundles")
       .update({
         status: "failed",

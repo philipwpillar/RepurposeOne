@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getStripePriceId, stripe } from "@/lib/stripe";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 const CheckoutRequestSchema = z.object({
@@ -61,7 +62,8 @@ export async function POST(request: Request) {
 
     customerId = customer.id;
 
-    const { error: updateError } = await supabase
+    const admin = createAdminClient();
+    const { error: updateError } = await admin
       .from("profiles")
       .update({ stripe_customer_id: customerId })
       .eq("id", user.id);
