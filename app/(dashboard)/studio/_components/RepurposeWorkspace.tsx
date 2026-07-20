@@ -19,6 +19,7 @@ import { EmailOutputPanel } from '@/components/repurpose/email-output-panel';
 import { InstagramOutputPanel } from '@/components/repurpose/instagram-output-panel';
 import { LinkedInOutputPanel } from '@/components/repurpose/linkedin-output-panel';
 import { UpgradePrompt, type UpgradeGate } from '@/components/repurpose/upgrade-prompt';
+import { ProcessingTrustNote } from '@/components/repurpose/processing-trust-note';
 import { XThreadTweetList } from '@/components/repurpose/x-thread-tweet-list';
 import {
   formatEmailForCopy,
@@ -591,6 +592,8 @@ export default function RepurposeWorkspace({
           onUpdate={handleTextInputUpdate}
         />
       )}
+
+      <ProcessingTrustNote />
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <Link href="/brand-voice" className="flex items-center gap-x-2 cursor-pointer">
