@@ -13,6 +13,10 @@ import {
 } from "@/components/ui/card";
 import { CopyActionButton } from "./copy-action-button";
 import { OutputFeedbackControls } from "./output-feedback-controls";
+import {
+  LinkedInEngagementBar,
+  PlatformAuthorRow,
+} from "./platform-preview-chrome";
 import { ShareActionButton } from "./share-action-button";
 import { useCopyToClipboard } from "./use-copy-to-clipboard";
 import { useOutputFeedback, type FeedbackProps } from "./use-output-feedback";
@@ -91,6 +95,34 @@ export function LinkedInOutputPanel({
 
   const content = (
     <div className="space-y-4">
+      {variant === "studio" && (
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <PlatformAuthorRow
+            name="Your name"
+            handle="Headline · 1st"
+            avatarClassName="bg-blue-600/20"
+          />
+          <div>
+            {feedback.editing ? (
+              <textarea
+                className="w-full rounded-md border border-border bg-background p-3 text-sm leading-relaxed"
+                rows={8}
+                value={active.post}
+                onChange={(e) =>
+                  feedback.setDraft({ ...feedback.draft, post: e.target.value })
+                }
+              />
+            ) : (
+              <div className="whitespace-pre-line text-sm leading-relaxed text-foreground">
+                {display.post}
+              </div>
+            )}
+          </div>
+          <LinkedInEngagementBar />
+        </div>
+      )}
+
+      {variant !== "studio" && (
       <div>
         <div className="mb-2 text-xs font-medium text-muted-foreground">
           POST
@@ -105,17 +137,12 @@ export function LinkedInOutputPanel({
             }
           />
         ) : (
-          <div
-            className={
-              variant === "studio"
-                ? "rounded-2xl bg-secondary p-4 text-sm leading-relaxed whitespace-pre-line text-foreground"
-                : "whitespace-pre-wrap text-sm"
-            }
-          >
+          <div className="whitespace-pre-wrap text-sm">
             {display.post}
           </div>
         )}
       </div>
+      )}
 
       <div>
         <div className="mb-2 text-xs font-medium text-muted-foreground">

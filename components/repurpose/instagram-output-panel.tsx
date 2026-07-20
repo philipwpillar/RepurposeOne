@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { CopyActionButton } from "./copy-action-button";
 import { OutputFeedbackControls } from "./output-feedback-controls";
+import { InstagramPhotoFrame } from "./platform-preview-chrome";
 import { useCopyToClipboard } from "./use-copy-to-clipboard";
 import { useOutputFeedback, type FeedbackProps } from "./use-output-feedback";
 
@@ -74,6 +75,8 @@ export function InstagramOutputPanel({
 
   const content = (
     <div className="space-y-4">
+      {variant === "studio" && <InstagramPhotoFrame />}
+
       <div>
         <div className="mb-2 text-xs font-medium text-muted-foreground">
           CAPTION
@@ -88,7 +91,13 @@ export function InstagramOutputPanel({
             }
           />
         ) : (
-          <div className="whitespace-pre-line text-sm leading-relaxed text-foreground">
+          <div
+            className={
+              variant === "studio"
+                ? "rounded-2xl border border-border bg-card p-4 text-sm leading-relaxed text-foreground"
+                : "whitespace-pre-line text-sm leading-relaxed text-foreground"
+            }
+          >
             {display.caption}
           </div>
         )}

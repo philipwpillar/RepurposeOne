@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { ArrowRight } from "lucide-react";
@@ -10,9 +11,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { formatLabel } from "@/lib/format-output";
+import { formatLabel, getOutputPreview } from "@/lib/format-output";
 import { deriveSourceTitle } from "@/lib/source-title";
-import type { TargetFormat } from "@/types";
+import LibraryFormatFilter, {
+  parseLibraryFormatFilter,
+} from "./_components/LibraryFormatFilter";
+import type { RepurposeOutput, TargetFormat } from "@/types";
 
 interface SourceGroup {
   sourceHash: string;
@@ -22,7 +26,13 @@ interface SourceGroup {
   repurposeCount: number;
 }
 
-export default async function HistoryPage() {
+export default async function HistoryPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ format?: string }>;
+}) {
+  const { format: formatParam } = await searchParams;
+  const formatFilter = parseLibraryFormatFilter(formatParam);
   const supabase = await createClient();
 
   const {
@@ -33,7 +43,7 @@ export default async function HistoryPage() {
 
   const { data: repurposes } = await supabase
     .from("repurposes")
-    .select("id, target_format, created_at, input_content, source_hash")
+    .select("id, target_format, created_at, input_content, source_hash, output")
     .eq("user_id", user.id)
     .eq("status", "complete")
     .order("created_at", { ascending: false });
@@ -65,6 +75,10 @@ export default async function HistoryPage() {
 
   const sourceGroups = Array.from(groups.values());
 
+  const filteredRepurposes = formatFilter
+    ? (repurposes ?? []).filter((item) => item.target_format === formatFilter)
+    : [];
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
@@ -74,7 +88,55 @@ export default async function HistoryPage() {
         </p>
       </div>
 
-      {!sourceGroups.length ? (
+      <Suspense fallback={null}>
+        <LibraryFormatFilter />
+      </Suspense>
+
+      {formatFilter ? (
+        !filteredRepurposes.length ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>No {formatLabel(formatFilter)} outputs yet</CardTitle>
+              <CardDescription>
+                Generate content in Studio or switch back to All to browse by source.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {filteredRepurposes.map((item) => (
+              <Link
+                key={item.id}
+                href={`/library/${item.source_hash}/${item.id}`}
+              >
+                <Card className="transition-colors hover:bg-muted/30">
+                  <CardContent className="flex items-start justify-between gap-4 py-4">
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="secondary">
+                          {formatLabel(item.target_format as TargetFormat)}
+                        </Badge>
+                        <p className="text-sm font-medium">
+                          {deriveSourceTitle(item.input_content)}
+                        </p>
+                      </div>
+                      <p className="line-clamp-2 text-sm text-muted-foreground">
+                        {item.output
+                          ? getOutputPreview(item.output as RepurposeOutput)
+                          : "No preview available"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(item.created_at), "MMM d, yyyy 'at' h:mm a")}
+                      </p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )
+      ) : !sourceGroups.length ? (
         <Card>
           <CardHeader>
             <CardTitle>No history yet</CardTitle>

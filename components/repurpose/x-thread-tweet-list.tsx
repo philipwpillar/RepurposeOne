@@ -4,6 +4,7 @@ import type { Tweet, XThreadOutput, UserRating } from "@/types";
 import { formatXThreadForCopy } from "@/lib/format-output";
 import { CopyActionButton } from "./copy-action-button";
 import { OutputFeedbackControls } from "./output-feedback-controls";
+import { PlatformAuthorRow } from "./platform-preview-chrome";
 import { ShareActionButton } from "./share-action-button";
 import { useCopyToClipboard } from "./use-copy-to-clipboard";
 import { useOutputFeedback, type FeedbackProps } from "./use-output-feedback";
@@ -58,7 +59,7 @@ export function XThreadTweetList({
 
   const tweetCardClass =
     variant === "studio"
-      ? "group relative rounded-2xl bg-secondary p-4"
+      ? "group relative rounded-2xl border border-border bg-card p-4"
       : "group relative rounded-lg border border-border bg-muted/30 p-4";
 
   return (
@@ -105,6 +106,13 @@ export function XThreadTweetList({
 
       {activeTweets.map((tweet, index) => (
         <div key={tweet.number} className={tweetCardClass}>
+          {variant === "studio" && index === 0 && !feedback.editing && (
+            <PlatformAuthorRow
+              name="Your name"
+              handle="@yourhandle"
+              avatarClassName="bg-foreground/10"
+            />
+          )}
           <div className="mb-2 flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground">
               Tweet {tweet.number}
