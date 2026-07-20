@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { CopyActionButton } from "./copy-action-button";
 import { OutputFeedbackControls } from "./output-feedback-controls";
+import { EmailInboxChrome } from "./platform-preview-chrome";
 import { useCopyToClipboard } from "./use-copy-to-clipboard";
 import { useOutputFeedback, type FeedbackProps } from "./use-output-feedback";
 
@@ -84,6 +85,13 @@ export function EmailOutputPanel({
 
   const content = (
     <div className="space-y-4">
+      {variant === "studio" && !feedback.editing && (
+        <EmailInboxChrome
+          subject={display.subject_line}
+          previewText={display.preview_text}
+        />
+      )}
+
       <div>
         <div className="mb-1 text-xs font-medium text-muted-foreground">
           SUBJECT LINE

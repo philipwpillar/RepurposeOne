@@ -2,6 +2,8 @@
 
 import React, { useCallback, useState } from 'react';
 import Link from 'next/link';
+import { Loader2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { INPUT_CONTENT_MIN_LENGTH, planAllowsVision } from '@/lib/config';
 import {
   callPhotoGenerateApi,
@@ -12,9 +14,11 @@ import type { Plan } from '@/types';
 import InputModeTabs from './InputModeTabs';
 import PhotoInputSection from './PhotoInputSection';
 import TextSourceCard from './TextSourceCard';
+import VoiceSetupBanner from './VoiceSetupBanner';
 import { EmailOutputPanel } from '@/components/repurpose/email-output-panel';
 import { InstagramOutputPanel } from '@/components/repurpose/instagram-output-panel';
 import { LinkedInOutputPanel } from '@/components/repurpose/linkedin-output-panel';
+import { UpgradePrompt, type UpgradeGate } from '@/components/repurpose/upgrade-prompt';
 import { XThreadTweetList } from '@/components/repurpose/x-thread-tweet-list';
 import {
   formatEmailForCopy,
@@ -40,6 +44,13 @@ const TWITTER_LENGTH_MAX = 15;
 
 const ALL_FORMATS: TargetFormat[] = ['x_thread', 'linkedin', 'instagram', 'email'];
 
+const FORMAT_FALLBACK_ERRORS: Record<TargetFormat, string> = {
+  x_thread: 'Something went wrong while generating the Twitter thread. Please try again.',
+  linkedin: 'Something went wrong while generating the LinkedIn content. Please try again.',
+  instagram: 'Something went wrong while generating the Instagram caption. Please try again.',
+  email: 'Something went wrong while generating the email newsletter. Please try again.',
+};
+
 type FormatLoadingState = Record<TargetFormat, boolean>;
 type FormatErrorState = Record<TargetFormat, string | null>;
 
@@ -54,6 +65,20 @@ function createFormatRecord<T>(value: T): Record<TargetFormat, T> {
 
 function clampTargetTweets(count: number): number {
   return Math.min(TWITTER_LENGTH_MAX, Math.max(TWITTER_LENGTH_MIN, count));
+}
+
+function FormatGeneratingPlaceholder() {
+  return (
+    <div className="space-y-3 py-1" aria-busy="true">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        <span>Generating…</span>
+      </div>
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-4 w-5/6" />
+      <Skeleton className="h-4 w-2/3" />
+    </div>
+  );
 }
 
 function isFormatOutput<F extends TargetFormat>(
@@ -138,6 +163,11 @@ export default function RepurposeWorkspace({
   );
   const [isRegeneratingAll, setIsRegeneratingAll] = useState(false);
   const [usedCount, setUsedCount] = useState(repurposesUsed);
+  const [reactiveUpgradeGate, setReactiveUpgradeGate] = useState<UpgradeGate | null>(
+    null
+  );
+
+  const atLimit = usedCount >= repurposesLimit;
 
   const isAnyLoading =
     isRegeneratingAll || ALL_FORMATS.some((format) => formatLoading[format]);
@@ -241,6 +271,49 @@ export default function RepurposeWorkspace({
     [onTwitterGenerate]
   );
 
+  const resolveGenerateError = useCallback(
+    (
+      err: unknown,
+      format: TargetFormat,
+      fallbackMessages: Record<TargetFormat, string>
+    ): boolean => {
+      const apiErr =
+        err instanceof GenerateApiError || err instanceof PhotoGenerateApiError
+          ? err
+          : null;
+
+      if (apiErr?.usage) {
+        setUsedCount(apiErr.usage.used);
+      }
+
+      if (apiErr?.code === 'limit_exceeded') {
+        setReactiveUpgradeGate('monthly_limit');
+        setFormatErrors((prev) => ({ ...prev, [format]: null }));
+        return true;
+      }
+
+      if (apiErr?.code === 'plan_required') {
+        setReactiveUpgradeGate('vision');
+        setFormatErrors((prev) => ({ ...prev, [format]: null }));
+        return true;
+      }
+
+      if (apiErr?.code === 'rate_limited') {
+        setReactiveUpgradeGate('rate_limit');
+        setFormatErrors((prev) => ({ ...prev, [format]: null }));
+        return true;
+      }
+
+      setFormatErrors((prev) => ({
+        ...prev,
+        [format]:
+          err instanceof Error ? err.message : fallbackMessages[format],
+      }));
+      return false;
+    },
+    []
+  );
+
   const isPhotoMode = inputMode === 'photo';
   const canGeneratePhoto =
     isPhotoMode && photoInput !== null && planAllowsVision(userPlan);
@@ -265,17 +338,20 @@ export default function RepurposeWorkspace({
       options?: { targetTweets?: number; generationId?: string }
     ) => {
       if (!photoInput || !planAllowsVision(userPlan)) {
-        setFormatErrors((prev) => ({
-          ...prev,
-          [format]:
-            !planAllowsVision(userPlan)
-              ? 'Photo repurpose requires a Creator or Pro plan.'
-              : 'Add a photo and context before generating.',
-        }));
+        if (!planAllowsVision(userPlan)) {
+          setReactiveUpgradeGate('vision');
+          setFormatErrors((prev) => ({ ...prev, [format]: null }));
+        } else {
+          setFormatErrors((prev) => ({
+            ...prev,
+            [format]: 'Add a photo and context before generating.',
+          }));
+        }
         return;
       }
 
       setFormatErrors((prev) => ({ ...prev, [format]: null }));
+      setReactiveUpgradeGate(null);
       setFormatLoading((prev) => ({ ...prev, [format]: true }));
 
       try {
@@ -296,25 +372,12 @@ export default function RepurposeWorkspace({
         }
       } catch (err) {
         console.error(err);
-        if (err instanceof PhotoGenerateApiError && err.usage) {
-          setUsedCount(err.usage.used);
-        }
-        const fallbackMessages: Record<TargetFormat, string> = {
-          x_thread: 'Something went wrong while generating the Twitter thread. Please try again.',
-          linkedin: 'Something went wrong while generating the LinkedIn content. Please try again.',
-          instagram: 'Something went wrong while generating the Instagram caption. Please try again.',
-          email: 'Something went wrong while generating the email newsletter. Please try again.',
-        };
-        setFormatErrors((prev) => ({
-          ...prev,
-          [format]:
-            err instanceof Error ? err.message : fallbackMessages[format],
-        }));
+        resolveGenerateError(err, format, FORMAT_FALLBACK_ERRORS);
       } finally {
         setFormatLoading((prev) => ({ ...prev, [format]: false }));
       }
     },
-    [applyOutput, brandVoice, photoInput, userPlan]
+    [applyOutput, brandVoice, photoInput, resolveGenerateError, userPlan]
   );
 
   const generateFormat = useCallback(
@@ -332,6 +395,7 @@ export default function RepurposeWorkspace({
       }
 
       setFormatErrors((prev) => ({ ...prev, [format]: null }));
+      setReactiveUpgradeGate(null);
       setFormatLoading((prev) => ({ ...prev, [format]: true }));
 
       try {
@@ -351,25 +415,12 @@ export default function RepurposeWorkspace({
         }
       } catch (err) {
         console.error(err);
-        if (err instanceof GenerateApiError && err.usage) {
-          setUsedCount(err.usage.used);
-        }
-        const fallbackMessages: Record<TargetFormat, string> = {
-          x_thread: 'Something went wrong while generating the Twitter thread. Please try again.',
-          linkedin: 'Something went wrong while generating the LinkedIn content. Please try again.',
-          instagram: 'Something went wrong while generating the Instagram caption. Please try again.',
-          email: 'Something went wrong while generating the email newsletter. Please try again.',
-        };
-        setFormatErrors((prev) => ({
-          ...prev,
-          [format]:
-            err instanceof Error ? err.message : fallbackMessages[format],
-        }));
+        resolveGenerateError(err, format, FORMAT_FALLBACK_ERRORS);
       } finally {
         setFormatLoading((prev) => ({ ...prev, [format]: false }));
       }
     },
-    [applyOutput, callGenerateApi, inputSummary]
+    [applyOutput, callGenerateApi, inputSummary, resolveGenerateError]
   );
 
   const generateTwitter = (
@@ -463,6 +514,37 @@ export default function RepurposeWorkspace({
     }
   };
 
+  const renderFormatBody = (
+    format: TargetFormat,
+    output: React.ReactNode,
+    emptyPlaceholder: React.ReactNode
+  ) => {
+    if (formatLoading[format] && !output) {
+      return <FormatGeneratingPlaceholder />;
+    }
+
+    if (output) {
+      return (
+        <div className={formatLoading[format] ? 'opacity-60 transition-opacity' : undefined}>
+          {output}
+        </div>
+      );
+    }
+
+    return emptyPlaceholder;
+  };
+
+  const formatStatusLabel = (
+    format: TargetFormat,
+    readyLabel: string,
+    emptyLabel: string
+  ) => {
+    if (formatLoading[format]) {
+      return 'Generating…';
+    }
+    return readyLabel || emptyLabel;
+  };
+
   const renderFormatError = (format: TargetFormat, message: string) => (
     <div className="mb-3 text-xs text-destructive bg-destructive/10 border border-destructive/30 rounded-2xl px-3 py-2 flex items-start gap-2">
       <i className="fas fa-exclamation-circle mt-0.5"></i>
@@ -486,6 +568,8 @@ export default function RepurposeWorkspace({
         <h1 className="text-2xl font-semibold tracking-tight">Content Studio</h1>
         <p className="text-sm text-muted-foreground mt-1">One input → Multiple high-quality outputs</p>
       </div>
+
+      {!brandVoice && <VoiceSetupBanner />}
 
       <InputModeTabs
         value={inputMode}
@@ -529,13 +613,25 @@ export default function RepurposeWorkspace({
         <div className="text-muted-foreground">
           <span className="font-medium">{usedCount} / {repurposesLimit}</span> repurposes used this month
         </div>
-        <Link
-          href="/billing"
-          className="text-primary hover:text-primary text-xs font-medium"
-        >
-          Upgrade →
-        </Link>
+        {!atLimit && (
+          <Link
+            href="/billing"
+            className="text-primary hover:text-primary text-xs font-medium"
+          >
+            Upgrade →
+          </Link>
+        )}
       </div>
+
+      {(atLimit || reactiveUpgradeGate === 'monthly_limit') && (
+        <UpgradePrompt gate="monthly_limit" plan={userPlan} />
+      )}
+      {reactiveUpgradeGate === 'vision' && (
+        <UpgradePrompt gate="vision" plan={userPlan} />
+      )}
+      {reactiveUpgradeGate === 'rate_limit' && (
+        <UpgradePrompt gate="rate_limit" plan={userPlan} />
+      )}
 
       <div className="flex items-center justify-between mb-3 px-1">
         <div className="text-xs font-semibold tracking-wider text-muted-foreground">GENERATED OUTPUTS</div>
@@ -552,16 +648,22 @@ export default function RepurposeWorkspace({
               <div>
                 <div className="font-semibold">X / Twitter Thread</div>
                 <div className="text-xs text-muted-foreground">
-                  {xThreadOutput ? `${twitterLength} tweets` : 'Not generated yet'}
+                  {formatStatusLabel(
+                    'x_thread',
+                    xThreadOutput ? `${twitterLength} tweets` : '',
+                    'Not generated yet'
+                  )}
                 </div>
               </div>
             </div>
           </div>
 
           <div className="p-5">
-            {xThreadOutput ? (
-              <XThreadTweetList tweets={xThreadOutput.tweets} variant="studio" />
-            ) : (
+            {renderFormatBody(
+              'x_thread',
+              xThreadOutput ? (
+                <XThreadTweetList tweets={xThreadOutput.tweets} variant="studio" />
+              ) : null,
               <div className="text-sm mb-4 leading-relaxed text-muted-foreground italic">
                 Click Regenerate to generate your X thread from the source content.
               </div>
@@ -585,7 +687,7 @@ export default function RepurposeWorkspace({
               <div className="flex justify-end mt-2">
                 <button
                   onClick={handleApplyTwitterLength}
-                  disabled={formatLoading.x_thread}
+                  disabled={formatLoading.x_thread || atLimit}
                   className="text-xs px-4 py-1.5 rounded-2xl bg-primary text-primary-foreground font-medium disabled:opacity-50"
                 >
                   {formatLoading.x_thread ? 'Generating...' : 'Apply & Regenerate'}
@@ -597,7 +699,7 @@ export default function RepurposeWorkspace({
           <div className="px-5 py-3 bg-secondary border-t border-border flex gap-2">
             <button
               onClick={() => regenerateFormat('x_thread')}
-              disabled={formatLoading.x_thread}
+              disabled={formatLoading.x_thread || atLimit}
               className="flex-1 py-2 text-xs rounded-2xl border border-border disabled:opacity-50"
             >
               {formatLoading.x_thread ? 'Generating…' : 'Regenerate'}
@@ -614,9 +716,13 @@ export default function RepurposeWorkspace({
               <div>
                 <div className="font-semibold">LinkedIn Carousel</div>
                 <div className="text-xs text-muted-foreground">
-                  {linkedinOutput
-                    ? `${linkedinOutput.carousel_slides.length} slides`
-                    : 'Not generated yet'}
+                  {formatStatusLabel(
+                    'linkedin',
+                    linkedinOutput
+                      ? `${linkedinOutput.carousel_slides.length} slides`
+                      : '',
+                    'Not generated yet'
+                  )}
                 </div>
               </div>
             </div>
@@ -625,9 +731,11 @@ export default function RepurposeWorkspace({
           <div className="p-5 space-y-4">
             {formatErrors.linkedin && renderFormatError('linkedin', formatErrors.linkedin)}
 
-            {linkedinOutput ? (
-              <LinkedInOutputPanel output={linkedinOutput} variant="studio" />
-            ) : (
+            {renderFormatBody(
+              'linkedin',
+              linkedinOutput ? (
+                <LinkedInOutputPanel output={linkedinOutput} variant="studio" />
+              ) : null,
               <p className="text-sm text-muted-foreground italic">
                 Click Regenerate to generate your LinkedIn post and carousel slide ideas.
               </p>
@@ -637,7 +745,7 @@ export default function RepurposeWorkspace({
           <div className="px-5 py-3 bg-secondary border-t border-border flex gap-2">
             <button
               onClick={() => regenerateFormat('linkedin')}
-              disabled={formatLoading.linkedin}
+              disabled={formatLoading.linkedin || atLimit}
               className="flex-1 py-2 text-xs rounded-2xl border border-border disabled:opacity-50"
             >
               {formatLoading.linkedin ? 'Generating…' : 'Regenerate'}
@@ -654,9 +762,13 @@ export default function RepurposeWorkspace({
               <div>
                 <div className="font-semibold">Instagram Caption</div>
                 <div className="text-xs text-muted-foreground">
-                  {instagramOutput
-                    ? `${instagramOutput.hook_variations.length} hook variations`
-                    : 'Not generated yet'}
+                  {formatStatusLabel(
+                    'instagram',
+                    instagramOutput
+                      ? `${instagramOutput.hook_variations.length} hook variations`
+                      : '',
+                    'Not generated yet'
+                  )}
                 </div>
               </div>
             </div>
@@ -665,9 +777,11 @@ export default function RepurposeWorkspace({
           <div className="p-5 space-y-4">
             {formatErrors.instagram && renderFormatError('instagram', formatErrors.instagram)}
 
-            {instagramOutput ? (
-              <InstagramOutputPanel output={instagramOutput} variant="studio" />
-            ) : (
+            {renderFormatBody(
+              'instagram',
+              instagramOutput ? (
+                <InstagramOutputPanel output={instagramOutput} variant="studio" />
+              ) : null,
               <p className="text-sm text-muted-foreground italic">
                 Click Regenerate to generate your Instagram caption, hooks, and hashtags.
               </p>
@@ -677,7 +791,7 @@ export default function RepurposeWorkspace({
           <div className="px-5 py-3 bg-secondary border-t border-border flex gap-2">
             <button
               onClick={() => regenerateFormat('instagram')}
-              disabled={formatLoading.instagram}
+              disabled={formatLoading.instagram || atLimit}
               className="flex-1 py-2 text-xs rounded-2xl border border-border disabled:opacity-50"
             >
               {formatLoading.instagram ? 'Generating…' : 'Regenerate'}
@@ -694,7 +808,11 @@ export default function RepurposeWorkspace({
               <div>
                 <div className="font-semibold">Email Newsletter</div>
                 <div className="text-xs text-muted-foreground">
-                  {emailOutput ? 'Newsletter draft' : 'Not generated yet'}
+                  {formatStatusLabel(
+                    'email',
+                    emailOutput ? 'Newsletter draft' : '',
+                    'Not generated yet'
+                  )}
                 </div>
               </div>
             </div>
@@ -703,9 +821,11 @@ export default function RepurposeWorkspace({
           <div className="p-5 space-y-4">
             {formatErrors.email && renderFormatError('email', formatErrors.email)}
 
-            {emailOutput ? (
-              <EmailOutputPanel output={emailOutput} variant="studio" />
-            ) : (
+            {renderFormatBody(
+              'email',
+              emailOutput ? (
+                <EmailOutputPanel output={emailOutput} variant="studio" />
+              ) : null,
               <p className="text-sm text-muted-foreground italic">
                 Click Regenerate to generate your email subject line and newsletter draft.
               </p>
@@ -715,7 +835,7 @@ export default function RepurposeWorkspace({
           <div className="px-5 py-3 bg-secondary border-t border-border flex gap-2">
             <button
               onClick={() => regenerateFormat('email')}
-              disabled={formatLoading.email}
+              disabled={formatLoading.email || atLimit}
               className="flex-1 py-2 text-xs rounded-2xl border border-border disabled:opacity-50"
             >
               {formatLoading.email ? 'Generating…' : 'Regenerate'}
@@ -731,6 +851,7 @@ export default function RepurposeWorkspace({
             onClick={() => void regenerateAll()}
             disabled={
               isAnyLoading ||
+              atLimit ||
               (isPhotoMode
                 ? !canGeneratePhoto
                 : inputSummary.trim().length < INPUT_CONTENT_MIN_LENGTH)
@@ -753,24 +874,6 @@ export default function RepurposeWorkspace({
           </button>
         </div>
       </div>
-
-      {isRegeneratingAll && (
-        <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-[70]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-3"></div>
-            <p className="text-sm text-muted-foreground">
-              {isPhotoMode
-                ? 'Analysing your photo and generating all formats…'
-                : 'Generating all formats…'}
-            </p>
-            {isPhotoMode ? (
-              <p className="mt-1 text-xs text-muted-foreground">
-                This may take a little longer than text.
-              </p>
-            ) : null}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

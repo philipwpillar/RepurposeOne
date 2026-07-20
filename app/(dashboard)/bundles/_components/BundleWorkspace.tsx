@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { CopyActionButton } from "@/components/repurpose/copy-action-button";
+import { UpgradePrompt, type UpgradeGate } from "@/components/repurpose/upgrade-prompt";
 import { useCopyToClipboard } from "@/components/repurpose/use-copy-to-clipboard";
 import {
   BUNDLE_MAX_PHOTOS,
@@ -22,7 +23,7 @@ import {
   prepareUploadAndGenerate,
 } from "@/lib/repurpose/bundle-generate-client";
 import { createClient } from "@/lib/supabase/client";
-import type { BundlePack } from "@/types";
+import type { BundlePack, Plan } from "@/types";
 import BundlePhotoPicker, {
   type BundlePhotoItem,
 } from "./BundlePhotoPicker";
@@ -53,11 +54,23 @@ function formatMmSs(seconds: number): string {
   return `${m}:${r.toString().padStart(2, "0")}`;
 }
 
-interface BundleWorkspaceProps {
-  pastBundles: PastBundleItem[];
+function bundleErrorUpgradeGate(code?: string): UpgradeGate | null {
+  if (code === "limit_exceeded") return "monthly_limit";
+  if (code === "bundle_limit_reached") return "bundle_monthly_cap";
+  if (code === "plan_required") return "bundles";
+  if (code === "rate_limited") return "rate_limit";
+  return null;
 }
 
-export default function BundleWorkspace({ pastBundles }: BundleWorkspaceProps) {
+interface BundleWorkspaceProps {
+  pastBundles: PastBundleItem[];
+  userPlan: Plan;
+}
+
+export default function BundleWorkspace({
+  pastBundles,
+  userPlan,
+}: BundleWorkspaceProps) {
   const [photos, setPhotos] = useState<BundlePhotoItem[]>([]);
   const [videos, setVideos] = useState<BundleVideoItem[]>([]);
   const [title, setTitle] = useState("");
@@ -347,6 +360,10 @@ export default function BundleWorkspace({ pastBundles }: BundleWorkspaceProps) {
           billingHint:
             err.code === "generation_failed" ||
             err.code === "internal_error" ||
+            err.code === "limit_exceeded" ||
+            err.code === "bundle_limit_reached" ||
+            err.code === "plan_required" ||
+            err.code === "rate_limited" ||
             !err.code,
         });
       } else {
@@ -475,24 +492,24 @@ export default function BundleWorkspace({ pastBundles }: BundleWorkspaceProps) {
           </div>
         </div>
 
-        {error && (
+        {error && bundleErrorUpgradeGate(error.code) ? (
+          <UpgradePrompt
+            gate={bundleErrorUpgradeGate(error.code)!}
+            plan={userPlan}
+            message={error.message}
+            billingHint={error.billingHint}
+            className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-3"
+          />
+        ) : error ? (
           <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
             <p>{error.message}</p>
-            {error.code === "plan_required" && (
-              <Link
-                href="/billing"
-                className="mt-2 inline-block font-medium underline underline-offset-2"
-              >
-                View plans →
-              </Link>
-            )}
             {error.billingHint && (
               <p className="mt-1 text-xs text-muted-foreground">
                 This attempt wasn’t billed — you can retry safely.
               </p>
             )}
           </div>
-        )}
+        ) : null}
 
         <button
           type="button"

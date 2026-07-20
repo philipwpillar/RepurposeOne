@@ -79,5 +79,5 @@ export default async function BundlesPage() {
     sourceHash: hashByBundle.get(b.id) ?? null,
   }));
 
-  return <BundleWorkspace pastBundles={pastBundles} />;
+  return <BundleWorkspace pastBundles={pastBundles} userPlan={usage.plan} />;
 }
