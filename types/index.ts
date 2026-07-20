@@ -189,6 +189,9 @@ export const RepurposeOutputSchema = z.discriminatedUnion("format", [
 ]);
 export type RepurposeOutput = z.infer<typeof RepurposeOutputSchema>;
 
+export const UserWorkflowStatusSchema = z.enum(["copied", "posted"]);
+export type UserWorkflowStatus = z.infer<typeof UserWorkflowStatusSchema>;
+
 export const RepurposeSchema = z.object({
   id: z.string().uuid(),
   user_id: z.string().uuid(),
@@ -204,6 +207,7 @@ export const RepurposeSchema = z.object({
   user_rating: z.union([z.literal(-1), z.literal(1)]).nullish(),
   user_output: RepurposeOutputSchema.nullish(),
   edited_at: z.string().nullish(),
+  user_workflow_status: UserWorkflowStatusSchema.nullish(),
 });
 export type Repurpose = z.infer<typeof RepurposeSchema>;
 

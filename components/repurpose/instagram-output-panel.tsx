@@ -1,6 +1,7 @@
 "use client";
 
-import type { InstagramOutput, UserRating } from "@/types";
+import { useState } from "react";
+import type { InstagramOutput, UserRating, UserWorkflowStatus } from "@/types";
 import { formatInstagramCaptionForCopy } from "@/lib/format-output";
 import {
   Card,
@@ -29,9 +30,17 @@ export function InstagramOutputPanel({
   repurposeId,
   initialRating,
   initialUserOutput,
+  initialWorkflowStatus,
   onFeedback,
 }: InstagramOutputPanelProps) {
-  const { copy, copiedKey, errorKey } = useCopyToClipboard();
+  const [workflowStatus, setWorkflowStatus] = useState<UserWorkflowStatus | null>(
+    initialWorkflowStatus ?? null
+  );
+  const { copy, copiedKey, errorKey } = useCopyToClipboard({
+    repurposeId,
+    workflowStatus,
+    onWorkflowStatusChange: setWorkflowStatus,
+  });
   const feedback = useOutputFeedback({
     output,
     repurposeId,

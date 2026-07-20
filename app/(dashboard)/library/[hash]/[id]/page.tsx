@@ -10,7 +10,8 @@ import { LinkedInOutputPanel } from "@/components/repurpose/linkedin-output-pane
 import { InstagramOutputPanel } from "@/components/repurpose/instagram-output-panel";
 import { EmailOutputPanel } from "@/components/repurpose/email-output-panel";
 import { formatLabel } from "@/lib/format-output";
-import type { RepurposeOutput, UserRating } from "@/types";
+import { WorkflowStatusControls } from "@/components/repurpose/workflow-status-controls";
+import type { RepurposeOutput, UserRating, UserWorkflowStatus } from "@/types";
 
 interface HistoryDetailPageProps {
   params: Promise<{ hash: string; id: string }>;
@@ -44,11 +45,14 @@ export default async function HistoryDetailPage({
   const initialUserOutput = (repurpose.user_output ??
     null) as RepurposeOutput | null;
   const initialRating = (repurpose.user_rating ?? null) as UserRating | null;
+  const initialWorkflowStatus = (repurpose.user_workflow_status ??
+    null) as UserWorkflowStatus | null;
 
   const feedbackProps = {
     repurposeId: repurpose.id as string,
     initialRating,
     initialUserOutput,
+    initialWorkflowStatus,
   };
 
   return (
@@ -72,6 +76,10 @@ export default async function HistoryDetailPage({
         <p className="text-sm text-muted-foreground">
           Created {format(new Date(repurpose.created_at), "MMM d, yyyy 'at' h:mm a")}
         </p>
+        <WorkflowStatusControls
+          repurposeId={repurpose.id as string}
+          initialStatus={initialWorkflowStatus}
+        />
       </div>
 
       <div className="rounded-lg border border-border bg-muted/20 p-4">

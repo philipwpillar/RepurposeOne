@@ -1,12 +1,13 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import type { RepurposeOutput, UserRating } from "@/types";
+import type { RepurposeOutput, UserRating, UserWorkflowStatus } from "@/types";
 
 export type FeedbackProps = {
   repurposeId?: string;
   initialRating?: UserRating | null;
   initialUserOutput?: RepurposeOutput | null;
+  initialWorkflowStatus?: UserWorkflowStatus | null;
   onFeedback?: (payload: {
     rating: UserRating | null;
     user_output: RepurposeOutput | null;

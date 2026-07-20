@@ -1,6 +1,7 @@
 "use client";
 
-import type { EmailOutput, UserRating } from "@/types";
+import { useState } from "react";
+import type { EmailOutput, UserRating, UserWorkflowStatus } from "@/types";
 import {
   formatEmailBodyForCopy,
   formatEmailSubjectForCopy,
@@ -29,9 +30,17 @@ export function EmailOutputPanel({
   repurposeId,
   initialRating,
   initialUserOutput,
+  initialWorkflowStatus,
   onFeedback,
 }: EmailOutputPanelProps) {
-  const { copy, copiedKey, errorKey } = useCopyToClipboard();
+  const [workflowStatus, setWorkflowStatus] = useState<UserWorkflowStatus | null>(
+    initialWorkflowStatus ?? null
+  );
+  const { copy, copiedKey, errorKey } = useCopyToClipboard({
+    repurposeId,
+    workflowStatus,
+    onWorkflowStatusChange: setWorkflowStatus,
+  });
   const feedback = useOutputFeedback({
     output,
     repurposeId,
