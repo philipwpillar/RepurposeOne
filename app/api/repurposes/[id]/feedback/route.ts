@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
   EmailOutputSchema,
@@ -135,7 +136,18 @@ export async function PATCH(
     updates.user_workflow_status = parsed.data.user_workflow_status;
   }
 
-  const { data: updated, error: updateError } = await supabase
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch (err) {
+    console.error("Admin client unavailable:", err);
+    return NextResponse.json(
+      { error: "Failed to save feedback" },
+      { status: 500 }
+    );
+  }
+
+  const { data: updated, error: updateError } = await admin
     .from("repurposes")
     .update(updates)
     .eq("id", idParsed.data)

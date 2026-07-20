@@ -280,6 +280,17 @@ export async function POST(request: Request) {
   const { voice: resolvedVoice, brandVoiceId } =
     await resolveDefaultBrandVoice(supabase, user.id);
 
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch (err) {
+    console.error("Admin client unavailable:", err);
+    return errorResponse(500, {
+      error: "Failed to create bundle record",
+      code: "internal_error",
+    });
+  }
+
   let bundle: { id: string; generation_id: string };
 
   if (preparedBundleId) {
@@ -339,7 +350,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const { data: updated, error: updateError } = await supabase
+    const { data: updated, error: updateError } = await admin
       .from("bundles")
       .update({
         title: requestData.title ?? null,
@@ -371,7 +382,7 @@ export async function POST(request: Request) {
 
     bundle = updated;
   } else {
-    const { data: inserted, error: bundleInsertError } = await supabase
+    const { data: inserted, error: bundleInsertError } = await admin
       .from("bundles")
       .insert({
         user_id: user.id,
@@ -410,14 +421,14 @@ export async function POST(request: Request) {
   }> = [];
 
   if (assetRows.length > 0) {
-    const { data: insertedAssets, error: assetsInsertError } = await supabase
+    const { data: insertedAssets, error: assetsInsertError } = await admin
       .from("bundle_assets")
       .insert(assetRows)
       .select("id, sort_order, metadata");
 
     if (assetsInsertError || !insertedAssets) {
       console.error("Failed to insert bundle assets:", assetsInsertError);
-      await supabase
+      await admin
         .from("bundles")
         .update({
           status: "failed",
@@ -449,7 +460,7 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     const message = toUserFacingBundleError(err);
-    await supabase
+    await admin
       .from("bundles")
       .update({
         status: "failed",
@@ -483,7 +494,7 @@ export async function POST(request: Request) {
     );
     const prevMeta = metaObject(asset.metadata);
 
-    await supabase
+    await admin
       .from("bundle_assets")
       .update({
         sort_order: position,
@@ -506,7 +517,7 @@ export async function POST(request: Request) {
 
     const prevMeta = metaObject(asset.metadata);
 
-    await supabase
+    await admin
       .from("bundle_assets")
       .update({
         metadata: {
@@ -559,23 +570,16 @@ export async function POST(request: Request) {
 
     const verifiedAssetIds = new Set<string>();
 
-    let admin: ReturnType<typeof createAdminClient> | null = null;
-    try {
-      admin = createAdminClient();
-    } catch (err) {
-      console.error("Admin client unavailable for upload verification:", err);
-    }
-
     for (const assetId of videoAssetIds) {
       const asset = assetById.get(assetId);
       const prevMeta = metaObject(asset?.metadata);
       const exists =
-        asset?.storage_path && admin
+        asset?.storage_path
           ? await bundleMediaObjectExists(admin, asset.storage_path)
           : false;
 
       if (asset) {
-        await supabase
+        await admin
           .from("bundle_assets")
           .update({
             metadata: {
@@ -637,7 +641,7 @@ export async function POST(request: Request) {
       });
 
       if (clipRows.length > 0) {
-        const { data: insertedClips, error: clipsInsertError } = await supabase
+        const { data: insertedClips, error: clipsInsertError } = await admin
           .from("bundle_clips")
           .insert(clipRows)
           .select("id");
@@ -679,7 +683,7 @@ export async function POST(request: Request) {
       targetFormat
     );
 
-    const { data: repurpose, error: insertError } = await supabase
+    const { data: repurpose, error: insertError } = await admin
       .from("repurposes")
       .insert({
         user_id: user.id,
@@ -714,7 +718,7 @@ export async function POST(request: Request) {
       formatTokenTotals.promptTokens += result.promptTokens ?? 0;
       formatTokenTotals.completionTokens += result.completionTokens ?? 0;
 
-      const { error: updateError } = await supabase
+      const { error: updateError } = await admin
         .from("repurposes")
         .update({
           output: result.output,
@@ -741,7 +745,7 @@ export async function POST(request: Request) {
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Format generation failed";
-      await supabase
+      await admin
         .from("repurposes")
         .update({
           status: "failed",
@@ -771,7 +775,7 @@ export async function POST(request: Request) {
   const totalCompletionTokens =
     tokenTotals.completionTokens + formatTokenTotals.completionTokens;
 
-  await supabase
+  await admin
     .from("bundles")
     .update({
       status: "complete",
