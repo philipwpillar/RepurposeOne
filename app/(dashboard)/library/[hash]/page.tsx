@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatLabel, getOutputPreview } from "@/lib/format-output";
 import { deriveSourceTitle } from "@/lib/source-title";
-import type { RepurposeOutput } from "@/types";
+import { WorkflowStatusBadge } from "@/components/repurpose/workflow-status-badge";
+import type { RepurposeOutput, UserWorkflowStatus } from "@/types";
 
 interface SourceGroupPageProps {
   params: Promise<{ hash: string }>;
@@ -33,7 +34,7 @@ export default async function SourceGroupPage({
 
   const { data: repurposes } = await supabase
     .from("repurposes")
-    .select("id, target_format, output, created_at, input_content")
+    .select("id, target_format, output, created_at, input_content, user_workflow_status")
     .eq("user_id", user.id)
     .eq("source_hash", hash)
     .eq("status", "complete")
@@ -80,6 +81,11 @@ export default async function SourceGroupPage({
                     <Badge variant="secondary">
                       {formatLabel(item.target_format)}
                     </Badge>
+                    <WorkflowStatusBadge
+                      status={
+                        item.user_workflow_status as UserWorkflowStatus | null
+                      }
+                    />
                     <span className="text-xs text-muted-foreground">
                       {format(new Date(item.created_at), "MMM d, yyyy 'at' h:mm a")}
                     </span>

@@ -1,6 +1,7 @@
 "use client";
 
-import type { LinkedInOutput, UserRating } from "@/types";
+import { useState } from "react";
+import type { LinkedInOutput, UserRating, UserWorkflowStatus } from "@/types";
 import {
   formatLinkedInPostForCopy,
   formatLinkedInSlidesForCopy,
@@ -65,9 +66,17 @@ export function LinkedInOutputPanel({
   repurposeId,
   initialRating,
   initialUserOutput,
+  initialWorkflowStatus,
   onFeedback,
 }: LinkedInOutputPanelProps) {
-  const { copy, copiedKey, errorKey } = useCopyToClipboard();
+  const [workflowStatus, setWorkflowStatus] = useState<UserWorkflowStatus | null>(
+    initialWorkflowStatus ?? null
+  );
+  const { copy, copiedKey, errorKey } = useCopyToClipboard({
+    repurposeId,
+    workflowStatus,
+    onWorkflowStatusChange: setWorkflowStatus,
+  });
   const feedback = useOutputFeedback({
     output,
     repurposeId,

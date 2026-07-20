@@ -1,6 +1,7 @@
 "use client";
 
-import type { Tweet, XThreadOutput, UserRating } from "@/types";
+import { useState } from "react";
+import type { Tweet, XThreadOutput, UserRating, UserWorkflowStatus } from "@/types";
 import { formatXThreadForCopy } from "@/lib/format-output";
 import { CopyActionButton } from "./copy-action-button";
 import { OutputFeedbackControls } from "./output-feedback-controls";
@@ -27,9 +28,17 @@ export function XThreadTweetList({
   repurposeId,
   initialRating,
   initialUserOutput,
+  initialWorkflowStatus,
   onFeedback,
 }: XThreadTweetListProps) {
-  const { copy, copiedKey, errorKey } = useCopyToClipboard();
+  const [workflowStatus, setWorkflowStatus] = useState<UserWorkflowStatus | null>(
+    initialWorkflowStatus ?? null
+  );
+  const { copy, copiedKey, errorKey } = useCopyToClipboard({
+    repurposeId,
+    workflowStatus,
+    onWorkflowStatusChange: setWorkflowStatus,
+  });
 
   const baseOutput: XThreadOutput =
     output ??
@@ -209,6 +218,7 @@ export function XThreadOutputPanel({
   repurposeId,
   initialRating,
   initialUserOutput,
+  initialWorkflowStatus,
   onFeedback,
 }: XThreadOutputPanelProps) {
   return (

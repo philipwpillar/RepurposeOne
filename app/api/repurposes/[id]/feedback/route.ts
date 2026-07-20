@@ -7,6 +7,7 @@ import {
   LinkedInOutputSchema,
   RepurposeOutputSchema,
   TargetFormatSchema,
+  UserWorkflowStatusSchema,
   XThreadOutputSchema,
   type TargetFormat,
 } from "@/types";
@@ -15,10 +16,16 @@ const FeedbackBodySchema = z
   .object({
     rating: z.union([z.literal(-1), z.literal(1), z.null()]).optional(),
     user_output: RepurposeOutputSchema.optional(),
+    user_workflow_status: z
+      .union([UserWorkflowStatusSchema, z.null()])
+      .optional(),
   })
   .refine(
-    (body) => body.rating !== undefined || body.user_output !== undefined,
-    { message: "Provide rating and/or user_output" }
+    (body) =>
+      body.rating !== undefined ||
+      body.user_output !== undefined ||
+      body.user_workflow_status !== undefined,
+    { message: "Provide rating, user_output, and/or user_workflow_status" }
   );
 
 function schemaForFormat(format: TargetFormat) {
@@ -96,6 +103,7 @@ export async function PATCH(
     user_rating?: -1 | 1 | null;
     user_output?: unknown;
     edited_at?: string;
+    user_workflow_status?: "copied" | "posted" | null;
   } = {};
 
   if (parsed.data.rating !== undefined) {
@@ -121,6 +129,10 @@ export async function PATCH(
     }
     updates.user_output = outputParsed.data;
     updates.edited_at = new Date().toISOString();
+  }
+
+  if (parsed.data.user_workflow_status !== undefined) {
+    updates.user_workflow_status = parsed.data.user_workflow_status;
   }
 
   const { data: updated, error: updateError } = await supabase

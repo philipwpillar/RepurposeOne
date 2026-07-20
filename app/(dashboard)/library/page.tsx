@@ -16,7 +16,8 @@ import { deriveSourceTitle } from "@/lib/source-title";
 import LibraryFormatFilter, {
   parseLibraryFormatFilter,
 } from "./_components/LibraryFormatFilter";
-import type { RepurposeOutput, TargetFormat } from "@/types";
+import { WorkflowStatusBadge } from "@/components/repurpose/workflow-status-badge";
+import type { RepurposeOutput, TargetFormat, UserWorkflowStatus } from "@/types";
 
 interface SourceGroup {
   sourceHash: string;
@@ -43,7 +44,7 @@ export default async function HistoryPage({
 
   const { data: repurposes } = await supabase
     .from("repurposes")
-    .select("id, target_format, created_at, input_content, source_hash, output")
+    .select("id, target_format, created_at, input_content, source_hash, output, user_workflow_status")
     .eq("user_id", user.id)
     .eq("status", "complete")
     .order("created_at", { ascending: false });
@@ -116,6 +117,11 @@ export default async function HistoryPage({
                         <Badge variant="secondary">
                           {formatLabel(item.target_format as TargetFormat)}
                         </Badge>
+                        <WorkflowStatusBadge
+                          status={
+                            item.user_workflow_status as UserWorkflowStatus | null
+                          }
+                        />
                         <p className="text-sm font-medium">
                           {deriveSourceTitle(item.input_content)}
                         </p>

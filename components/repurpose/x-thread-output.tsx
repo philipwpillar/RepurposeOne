@@ -21,6 +21,7 @@ export function XThreadOutputDisplay({
   repurposeId,
   initialRating,
   initialUserOutput,
+  initialWorkflowStatus,
   onFeedback,
 }: XThreadOutputDisplayProps) {
   const tweetCount =
@@ -55,6 +56,7 @@ export function XThreadOutputDisplay({
           initialUserOutput={
             initialUserOutput as XThreadOutput | null | undefined
           }
+          initialWorkflowStatus={initialWorkflowStatus}
           onFeedback={onFeedback}
         />
       </CardContent>
