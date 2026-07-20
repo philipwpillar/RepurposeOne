@@ -5,6 +5,7 @@ import {
   formatEmailBodyForCopy,
   formatEmailSubjectForCopy,
 } from "@/lib/format-output";
+import { EMAIL_SUBJECT_MAX } from "@/lib/repurpose/output-limits";
 import {
   Card,
   CardContent,
@@ -13,6 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { CopyActionButton } from "./copy-action-button";
+import { LengthIndicator } from "./length-indicator";
 import { OutputFeedbackControls } from "./output-feedback-controls";
 import { EmailInboxChrome } from "./platform-preview-chrome";
 import { useCopyToClipboard } from "./use-copy-to-clipboard";
@@ -93,13 +95,23 @@ export function EmailOutputPanel({
       )}
 
       <div>
-        <div className="mb-1 text-xs font-medium text-muted-foreground">
-          SUBJECT LINE
+        <div className="mb-1 flex items-center justify-between">
+          <div className="text-xs font-medium text-muted-foreground">
+            SUBJECT LINE
+          </div>
+          {feedback.editing && (
+            <LengthIndicator
+              mode="hard"
+              length={active.subject_line.length}
+              max={EMAIL_SUBJECT_MAX}
+            />
+          )}
         </div>
         {feedback.editing ? (
           <input
             type="text"
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm font-medium"
+            maxLength={EMAIL_SUBJECT_MAX}
             value={active.subject_line}
             onChange={(e) =>
               feedback.setDraft({

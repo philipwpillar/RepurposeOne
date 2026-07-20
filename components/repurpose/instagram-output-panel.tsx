@@ -3,12 +3,17 @@
 import type { InstagramOutput, UserRating } from "@/types";
 import { formatInstagramCaptionForCopy } from "@/lib/format-output";
 import {
+  INSTAGRAM_CAPTION_MAX,
+  INSTAGRAM_SOFT_TRUNCATION,
+} from "@/lib/repurpose/output-limits";
+import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { CopyActionButton } from "./copy-action-button";
+import { LengthIndicator } from "./length-indicator";
 import { OutputFeedbackControls } from "./output-feedback-controls";
 import { InstagramPhotoFrame } from "./platform-preview-chrome";
 import { useCopyToClipboard } from "./use-copy-to-clipboard";
@@ -21,6 +26,19 @@ interface InstagramOutputPanelProps extends FeedbackProps {
 
 function formatHashtags(hashtags: string[]): string {
   return hashtags.map((t) => (t.startsWith("#") ? t : `#${t}`)).join(" ");
+}
+
+function CaptionLengthIndicators({ length }: { length: number }) {
+  return (
+    <div className="flex items-center gap-2">
+      <LengthIndicator
+        mode="soft"
+        length={length}
+        softThreshold={INSTAGRAM_SOFT_TRUNCATION}
+      />
+      <LengthIndicator mode="info" length={length} max={INSTAGRAM_CAPTION_MAX} />
+    </div>
+  );
 }
 
 export function InstagramOutputPanel({
@@ -78,8 +96,13 @@ export function InstagramOutputPanel({
       {variant === "studio" && <InstagramPhotoFrame />}
 
       <div>
-        <div className="mb-2 text-xs font-medium text-muted-foreground">
-          CAPTION
+        <div className="mb-2 flex items-center justify-between">
+          <div className="text-xs font-medium text-muted-foreground">
+            CAPTION
+          </div>
+          {feedback.editing && (
+            <CaptionLengthIndicators length={active.caption.length} />
+          )}
         </div>
         {feedback.editing ? (
           <textarea
