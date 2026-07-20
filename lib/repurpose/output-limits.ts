@@ -1,0 +1,7 @@
+export const LINKEDIN_SOFT_TRUNCATION = 210;
+export const LINKEDIN_POST_MAX = 3000;
+
+export const INSTAGRAM_SOFT_TRUNCATION = 125;
+export const INSTAGRAM_CAPTION_MAX = 2200;
+
+export const EMAIL_SUBJECT_MAX = 200;

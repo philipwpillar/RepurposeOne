@@ -6,12 +6,17 @@ import {
   formatLinkedInSlidesForCopy,
 } from "@/lib/format-output";
 import {
+  LINKEDIN_POST_MAX,
+  LINKEDIN_SOFT_TRUNCATION,
+} from "@/lib/repurpose/output-limits";
+import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { CopyActionButton } from "./copy-action-button";
+import { LengthIndicator } from "./length-indicator";
 import { OutputFeedbackControls } from "./output-feedback-controls";
 import {
   LinkedInEngagementBar,
@@ -24,6 +29,34 @@ import { useOutputFeedback, type FeedbackProps } from "./use-output-feedback";
 interface LinkedInOutputPanelProps extends FeedbackProps {
   output: LinkedInOutput;
   variant?: "studio" | "library";
+}
+
+function PostLengthIndicators({ length }: { length: number }) {
+  return (
+    <div className="flex items-center gap-2">
+      <LengthIndicator
+        mode="soft"
+        length={length}
+        softThreshold={LINKEDIN_SOFT_TRUNCATION}
+      />
+      <LengthIndicator mode="info" length={length} max={LINKEDIN_POST_MAX} />
+    </div>
+  );
+}
+
+function PostEditLabelRow({
+  label,
+  length,
+}: {
+  label: string;
+  length: number;
+}) {
+  return (
+    <div className="mb-2 flex items-center justify-between">
+      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      <PostLengthIndicators length={length} />
+    </div>
+  );
 }
 
 export function LinkedInOutputPanel({
@@ -93,6 +126,17 @@ export function LinkedInOutputPanel({
     </div>
   );
 
+  const postTextarea = (
+    <textarea
+      className="w-full rounded-md border border-border bg-background p-3 text-sm leading-relaxed"
+      rows={8}
+      value={active.post}
+      onChange={(e) =>
+        feedback.setDraft({ ...feedback.draft, post: e.target.value })
+      }
+    />
+  );
+
   const content = (
     <div className="space-y-4">
       {variant === "studio" && (
@@ -104,14 +148,10 @@ export function LinkedInOutputPanel({
           />
           <div>
             {feedback.editing ? (
-              <textarea
-                className="w-full rounded-md border border-border bg-background p-3 text-sm leading-relaxed"
-                rows={8}
-                value={active.post}
-                onChange={(e) =>
-                  feedback.setDraft({ ...feedback.draft, post: e.target.value })
-                }
-              />
+              <>
+                <PostEditLabelRow label="Post" length={active.post.length} />
+                {postTextarea}
+              </>
             ) : (
               <div className="whitespace-pre-line text-sm leading-relaxed text-foreground">
                 {display.post}
@@ -123,25 +163,21 @@ export function LinkedInOutputPanel({
       )}
 
       {variant !== "studio" && (
-      <div>
-        <div className="mb-2 text-xs font-medium text-muted-foreground">
-          POST
+        <div>
+          {feedback.editing ? (
+            <>
+              <PostEditLabelRow label="POST" length={active.post.length} />
+              {postTextarea}
+            </>
+          ) : (
+            <>
+              <div className="mb-2 text-xs font-medium text-muted-foreground">
+                POST
+              </div>
+              <div className="whitespace-pre-wrap text-sm">{display.post}</div>
+            </>
+          )}
         </div>
-        {feedback.editing ? (
-          <textarea
-            className="w-full rounded-md border border-border bg-background p-3 text-sm leading-relaxed"
-            rows={8}
-            value={active.post}
-            onChange={(e) =>
-              feedback.setDraft({ ...feedback.draft, post: e.target.value })
-            }
-          />
-        ) : (
-          <div className="whitespace-pre-wrap text-sm">
-            {display.post}
-          </div>
-        )}
-      </div>
       )}
 
       <div>
