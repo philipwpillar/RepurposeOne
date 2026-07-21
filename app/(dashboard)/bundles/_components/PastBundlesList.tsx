@@ -8,8 +8,21 @@ export interface PastBundleItem {
   context: string | null;
   status: string;
   createdAt: string;
-  assetCount: number;
+  photoCount: number;
+  videoCount: number;
   sourceHash: string | null;
+}
+
+function assetSummary(photoCount: number, videoCount: number): string | null {
+  if (photoCount === 0 && videoCount === 0) return null;
+  const parts: string[] = [];
+  if (photoCount > 0) {
+    parts.push(`${photoCount} photo${photoCount === 1 ? "" : "s"}`);
+  }
+  if (videoCount > 0) {
+    parts.push(`${videoCount} video${videoCount === 1 ? "" : "s"}`);
+  }
+  return parts.join(", ");
 }
 
 interface PastBundlesListProps {
@@ -39,6 +52,7 @@ export default function PastBundlesList({ bundles }: PastBundlesListProps) {
               ? bundle.context.slice(0, 80) +
                 (bundle.context.length > 80 ? "…" : "")
               : "Untitled bundle");
+          const summary = assetSummary(bundle.photoCount, bundle.videoCount);
 
           return (
             <li
@@ -51,9 +65,8 @@ export default function PastBundlesList({ bundles }: PastBundlesListProps) {
                     {label}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {format(new Date(bundle.createdAt), "d MMM yyyy")} ·{" "}
-                    {bundle.assetCount} photo
-                    {bundle.assetCount === 1 ? "" : "s"} · {bundle.status}
+                    {format(new Date(bundle.createdAt), "d MMM yyyy")}
+                    {summary ? ` · ${summary}` : ""} · {bundle.status}
                   </p>
                 </div>
                 {bundle.sourceHash ? (
