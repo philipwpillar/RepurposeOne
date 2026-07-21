@@ -60,6 +60,8 @@ function getAiClient(): OpenAI {
   return new OpenAI({
     apiKey,
     baseURL: "https://openrouter.ai/api/v1",
+    timeout: 50_000,
+    maxRetries: 0,
   });
 }
 
