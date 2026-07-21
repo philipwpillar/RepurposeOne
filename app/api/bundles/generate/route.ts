@@ -28,7 +28,7 @@ import {
   type TargetFormat,
 } from "@/types";
 
-export const maxDuration = 120;
+export const maxDuration = 280;
 
 /** ~4MB raw body — headroom under Vercel limits for 8 photos + ≤8 sheets. */
 const MAX_BODY_BYTES = 4_000_000;
@@ -669,6 +669,111 @@ export async function POST(request: Request) {
   }
 
   const inputContent = `${pack.post_brief}\n\n${requestData.context}`;
+
+  const formatOutcomes = await Promise.all(
+    formats.map(async (targetFormat) => {
+      const exemplarsText = await fetchVoiceExemplarsText(
+        supabase,
+        user.id,
+        targetFormat
+      );
+
+      const { data: repurpose, error: insertError } = await admin
+        .from("repurposes")
+        .insert({
+          user_id: user.id,
+          input_type: "paste",
+          input_content: inputContent,
+          brand_voice_id: brandVoiceId,
+          target_format: targetFormat,
+          status: "pending",
+          generation_id: bundle.generation_id,
+          bundle_id: bundle.id,
+        })
+        .select("id")
+        .single();
+
+      if (insertError || !repurpose) {
+        console.error(
+          `Failed to insert repurpose for format ${targetFormat}:`,
+          insertError
+        );
+        return null;
+      }
+
+      try {
+        const result = await generateRepurpose({
+          inputContent,
+          brandVoice: resolvedVoice,
+          targetFormat,
+          exemplarsText: exemplarsText || undefined,
+        });
+
+        const { error: updateError } = await admin
+          .from("repurposes")
+          .update({
+            output: result.output,
+            status: "complete",
+            error_message: null,
+            tokens_used: result.tokensUsed ?? null,
+            prompt_tokens: result.promptTokens ?? null,
+            completion_tokens: result.completionTokens ?? null,
+            model: result.model,
+          })
+          .eq("id", repurpose.id)
+          .eq("user_id", user.id);
+
+        if (updateError) {
+          throw new Error(updateError.message);
+        }
+
+        return {
+          result: {
+            id: repurpose.id,
+            target_format: targetFormat,
+            status: "complete" as const,
+            output: result.output,
+          },
+          tokens: {
+            tokensUsed: result.tokensUsed ?? 0,
+            promptTokens: result.promptTokens ?? 0,
+            completionTokens: result.completionTokens ?? 0,
+          },
+        };
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Format generation failed";
+        await admin
+          .from("repurposes")
+          .update({
+            status: "failed",
+            error_message: message,
+          })
+          .eq("id", repurpose.id)
+          .eq("user_id", user.id);
+
+        console.error(
+          `Bundle format ${targetFormat} failed for ${bundle.id}:`,
+          err
+        );
+
+        return {
+          result: {
+            id: repurpose.id,
+            target_format: targetFormat,
+            status: "failed" as const,
+            output: null,
+          },
+          tokens: {
+            tokensUsed: 0,
+            promptTokens: 0,
+            completionTokens: 0,
+          },
+        };
+      }
+    })
+  );
+
   const formatTokenTotals = {
     tokensUsed: 0,
     promptTokens: 0,
@@ -676,96 +781,12 @@ export async function POST(request: Request) {
   };
   const repurposeResults: BundleRepurposeResult[] = [];
 
-  for (const targetFormat of formats) {
-    const exemplarsText = await fetchVoiceExemplarsText(
-      supabase,
-      user.id,
-      targetFormat
-    );
-
-    const { data: repurpose, error: insertError } = await admin
-      .from("repurposes")
-      .insert({
-        user_id: user.id,
-        input_type: "paste",
-        input_content: inputContent,
-        brand_voice_id: brandVoiceId,
-        target_format: targetFormat,
-        status: "pending",
-        generation_id: bundle.generation_id,
-        bundle_id: bundle.id,
-      })
-      .select("id")
-      .single();
-
-    if (insertError || !repurpose) {
-      console.error(
-        `Failed to insert repurpose for format ${targetFormat}:`,
-        insertError
-      );
-      continue;
-    }
-
-    try {
-      const result = await generateRepurpose({
-        inputContent,
-        brandVoice: resolvedVoice,
-        targetFormat,
-        exemplarsText: exemplarsText || undefined,
-      });
-
-      formatTokenTotals.tokensUsed += result.tokensUsed ?? 0;
-      formatTokenTotals.promptTokens += result.promptTokens ?? 0;
-      formatTokenTotals.completionTokens += result.completionTokens ?? 0;
-
-      const { error: updateError } = await admin
-        .from("repurposes")
-        .update({
-          output: result.output,
-          status: "complete",
-          error_message: null,
-          tokens_used: result.tokensUsed ?? null,
-          prompt_tokens: result.promptTokens ?? null,
-          completion_tokens: result.completionTokens ?? null,
-          model: result.model,
-        })
-        .eq("id", repurpose.id)
-        .eq("user_id", user.id);
-
-      if (updateError) {
-        throw new Error(updateError.message);
-      }
-
-      repurposeResults.push({
-        id: repurpose.id,
-        target_format: targetFormat,
-        status: "complete",
-        output: result.output,
-      });
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Format generation failed";
-      await admin
-        .from("repurposes")
-        .update({
-          status: "failed",
-          error_message: message,
-        })
-        .eq("id", repurpose.id)
-        .eq("user_id", user.id);
-
-      console.error(
-        `Bundle format ${targetFormat} failed for ${bundle.id}:`,
-        err
-      );
-
-      repurposeResults.push({
-        id: repurpose.id,
-        target_format: targetFormat,
-        status: "failed",
-        output: null,
-      });
-    }
+  for (const outcome of formatOutcomes) {
+    if (!outcome) continue;
+    repurposeResults.push(outcome.result);
+    formatTokenTotals.tokensUsed += outcome.tokens.tokensUsed;
+    formatTokenTotals.promptTokens += outcome.tokens.promptTokens;
+    formatTokenTotals.completionTokens += outcome.tokens.completionTokens;
   }
 
   const totalTokensUsed =
