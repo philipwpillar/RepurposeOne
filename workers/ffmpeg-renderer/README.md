@@ -4,7 +4,7 @@ Always-on Railway worker for RepurposeOne Moment Bundles. Polls `bundle_clips` f
 
 ## Requirements
 
-- Node 20+
+- Node 22+
 - ffmpeg with `drawtext` filter (Debian bookworm package satisfies this; Docker build verifies via `grep drawtext`)
 - Supabase service role key (**Railway env only** — never in the repo, never in Vercel)
 
