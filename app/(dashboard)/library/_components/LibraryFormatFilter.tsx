@@ -13,20 +13,6 @@ const FILTER_OPTIONS: Array<{ value: "all" | TargetFormat; label: string }> = [
   { value: "email", label: "Email" },
 ];
 
-export function parseLibraryFormatFilter(
-  value: string | undefined
-): TargetFormat | null {
-  if (
-    value === "x_thread" ||
-    value === "linkedin" ||
-    value === "instagram" ||
-    value === "email"
-  ) {
-    return value;
-  }
-  return null;
-}
-
 function hrefForFormat(
   pathname: string,
   searchParams: URLSearchParams,
