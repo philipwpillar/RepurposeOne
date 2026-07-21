@@ -1,5 +1,21 @@
+import type { TargetFormat } from "@/types";
+
 const SEARCH_MIN = 2;
 const SEARCH_MAX = 100;
+
+export function parseLibraryFormatFilter(
+  value: string | undefined
+): TargetFormat | null {
+  if (
+    value === "x_thread" ||
+    value === "linkedin" ||
+    value === "instagram" ||
+    value === "email"
+  ) {
+    return value;
+  }
+  return null;
+}
 
 /**
  * Strip ILIKE wildcards from user input so patterns cannot be injected.

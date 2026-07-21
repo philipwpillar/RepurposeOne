@@ -14,11 +14,10 @@ import {
 import { formatLabel, getOutputPreview } from "@/lib/format-output";
 import { deriveSourceTitle } from "@/lib/source-title";
 import {
+  parseLibraryFormatFilter,
   parseLibrarySearchQuery,
 } from "@/lib/repurpose/library-search";
-import LibraryFormatFilter, {
-  parseLibraryFormatFilter,
-} from "./_components/LibraryFormatFilter";
+import LibraryFormatFilter from "./_components/LibraryFormatFilter";
 import LibrarySearchBar from "./_components/LibrarySearchBar";
 import { WorkflowStatusBadge } from "@/components/repurpose/workflow-status-badge";
 import type { RepurposeOutput, TargetFormat, UserWorkflowStatus } from "@/types";
