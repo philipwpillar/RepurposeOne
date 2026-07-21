@@ -390,13 +390,10 @@ export default function BundleWorkspace({
   return (
     <div className="mx-auto max-w-3xl space-y-10">
       <div>
-        <p className="eyebrow text-muted-foreground">Moment Bundles</p>
-        <h1 className="mt-1 font-display text-3xl font-bold tracking-tight">
-          <span className="aurora-text">
-            {VIDEO_BUNDLES_DEV ? "Moment pack" : "Photo pack"}
-          </span>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          {VIDEO_BUNDLES_DEV ? "Moment pack" : "Photo pack"}
         </h1>
-        <p className="mt-2 max-w-xl text-muted-foreground">
+        <p className="mt-1 max-w-xl text-sm text-muted-foreground">
           Upload up to {BUNDLE_MAX_PHOTOS} photos
           {VIDEO_BUNDLES_DEV ? " and 2 short videos" : ""}, add context, and get
           captions, a posting order, and four platform posts in one run.

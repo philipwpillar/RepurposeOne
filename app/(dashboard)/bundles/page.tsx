@@ -33,11 +33,17 @@ export default async function BundlesPage() {
     bundleIds.length
       ? supabase
           .from("bundle_assets")
-          .select("bundle_id, sort_order")
+          .select("bundle_id, kind, sort_order")
           .eq("user_id", user.id)
           .in("bundle_id", bundleIds)
           .order("sort_order", { ascending: true })
-      : Promise.resolve({ data: [] as { bundle_id: string; sort_order: number }[] }),
+      : Promise.resolve({
+          data: [] as {
+            bundle_id: string;
+            kind: string;
+            sort_order: number;
+          }[],
+        }),
     bundleIds.length
       ? supabase
           .from("repurposes")
@@ -54,12 +60,20 @@ export default async function BundlesPage() {
         }),
   ]);
 
-  const assetCountByBundle = new Map<string, number>();
+  const photoCountByBundle = new Map<string, number>();
+  const videoCountByBundle = new Map<string, number>();
   for (const asset of assets ?? []) {
-    assetCountByBundle.set(
-      asset.bundle_id,
-      (assetCountByBundle.get(asset.bundle_id) ?? 0) + 1
-    );
+    if (asset.kind === "video") {
+      videoCountByBundle.set(
+        asset.bundle_id,
+        (videoCountByBundle.get(asset.bundle_id) ?? 0) + 1
+      );
+    } else if (asset.kind === "photo") {
+      photoCountByBundle.set(
+        asset.bundle_id,
+        (photoCountByBundle.get(asset.bundle_id) ?? 0) + 1
+      );
+    }
   }
 
   const hashByBundle = new Map<string, string>();
@@ -75,7 +89,8 @@ export default async function BundlesPage() {
     context: b.context,
     status: b.status,
     createdAt: b.created_at,
-    assetCount: assetCountByBundle.get(b.id) ?? 0,
+    photoCount: photoCountByBundle.get(b.id) ?? 0,
+    videoCount: videoCountByBundle.get(b.id) ?? 0,
     sourceHash: hashByBundle.get(b.id) ?? null,
   }));
 
