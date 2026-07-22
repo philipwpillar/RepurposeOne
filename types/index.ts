@@ -471,3 +471,41 @@ export const BundlePrepareErrorResponseSchema = z.object({
 export type BundlePrepareErrorResponse = z.infer<
   typeof BundlePrepareErrorResponseSchema
 >;
+
+/** Brief 3c — per-bundle clip render status + signed download URLs. */
+export const ClipRenderStatusSchema = z.enum([
+  "pending",
+  "rendering",
+  "complete",
+  "failed",
+]);
+export type ClipRenderStatus = z.infer<typeof ClipRenderStatusSchema>;
+
+export const BundleClipStatusSchema = z.object({
+  clip_id: z.string().uuid(),
+  video_index: z.number().int().nonnegative(),
+  start_s: z.number().nonnegative(),
+  end_s: z.number().positive(),
+  overlay_text: z.string().nullable(),
+  caption: z.string(),
+  tags: z.array(z.string()),
+  render_status: ClipRenderStatusSchema,
+  error_message: z.string().nullable(),
+  download_url: z.string().url().optional(),
+});
+export type BundleClipStatus = z.infer<typeof BundleClipStatusSchema>;
+
+export const BundleStatusResponseSchema = z.object({
+  bundle: z.object({
+    id: z.string().uuid(),
+    status: z.enum([
+      "pending",
+      "analyzing",
+      "rendering",
+      "complete",
+      "failed",
+    ]),
+  }),
+  clips: z.array(BundleClipStatusSchema),
+});
+export type BundleStatusResponse = z.infer<typeof BundleStatusResponseSchema>;
