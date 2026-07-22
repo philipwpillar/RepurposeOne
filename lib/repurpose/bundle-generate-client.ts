@@ -5,10 +5,12 @@ import type {
   BundlePrepareErrorResponse,
   BundlePrepareSuccessResponse,
   BundleRepurposeResult,
+  BundleStatusResponse,
   BundleVideoInput,
   TargetFormat,
   UsageInfo,
 } from "@/types";
+import { BundleStatusResponseSchema } from "@/types";
 
 export class BundleGenerateApiError extends Error {
   usage?: UsageInfo;
@@ -201,6 +203,33 @@ export async function callBundleGenerateApi(params: {
     repurposes: data.repurposes,
     usage: data.usage,
   };
+}
+
+/**
+ * Poll clip render status + signed download URLs for a bundle (Brief 3c).
+ */
+export async function fetchBundleStatus(
+  bundleId: string
+): Promise<BundleStatusResponse> {
+  const response = await fetch(`/api/bundles/${bundleId}`, {
+    method: "GET",
+    headers: { Accept: "application/json" },
+  });
+
+  if (!response.ok) {
+    const { message, usage, code } = await parseErrorResponse(
+      response,
+      "Failed to load clip status"
+    );
+    throw new BundleGenerateApiError(message, { usage, code });
+  }
+
+  const data: unknown = await response.json();
+  const parsed = BundleStatusResponseSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new Error("Unexpected response from bundle status API");
+  }
+  return parsed.data;
 }
 
 /**
