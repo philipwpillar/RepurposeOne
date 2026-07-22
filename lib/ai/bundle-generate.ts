@@ -7,6 +7,7 @@ import {
 } from "@/lib/ai/prompts";
 import { AI_CONFIG } from "@/lib/config";
 import type { PhotoMimeType } from "@/lib/image/constants";
+import { stripDataUrlPrefix } from "@/lib/utils/data-url";
 import {
   BundlePackAiSchema,
   BundlePhotoAnalysisSchema,
@@ -48,11 +49,6 @@ export interface RunBundleGenerationResult {
   tokenTotals: BundleTokenTotals;
   visionModel: string;
   strongModel: string;
-}
-
-function stripDataUrlPrefix(data: string): string {
-  const match = data.match(/^data:[^;]+;base64,(.+)$/i);
-  return match ? match[1] : data;
 }
 
 function emptyTotals(): BundleTokenTotals {
