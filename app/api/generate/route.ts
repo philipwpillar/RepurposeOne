@@ -15,6 +15,8 @@ import {
   checkUsageLimit,
   getUpgradeMessage,
   getUserPlan,
+  QuotaExceededError,
+  reservePendingRepurpose,
 } from "@/lib/usage";
 import {
   GenerateRequestSchema,
@@ -245,25 +247,28 @@ export async function POST(request: Request) {
     });
   }
 
-  // Insert pending row before AI call (audit trail + status tracking)
-  const { data: repurpose, error: insertError } = await admin
-    .from("repurposes")
-    .insert({
-      user_id: user.id,
-      input_type,
-      input_content,
-      brand_voice_id: brand_voice_id ?? null,
-      target_format,
-      status: "pending",
-      ...(resolvedGenerationId
-        ? { generation_id: resolvedGenerationId }
-        : {}),
-    })
-    .select("id, source_hash")
-    .single();
-
-  if (insertError || !repurpose) {
-    console.error("Failed to insert repurpose:", insertError);
+  // Insert pending row before AI call (atomic quota reservation)
+  let repurpose: { id: string; source_hash: string | null };
+  try {
+    repurpose = await reservePendingRepurpose(admin, {
+      userId: user.id,
+      limit: usageCheck.usage.limit,
+      inputType: input_type,
+      inputContent: input_content,
+      brandVoiceId: brand_voice_id ?? null,
+      targetFormat: target_format,
+      generationId: resolvedGenerationId,
+    });
+  } catch (err) {
+    if (err instanceof QuotaExceededError) {
+      return errorResponse(402, {
+        error: "Monthly repurpose limit reached",
+        code: "limit_exceeded",
+        usage: usageCheck.usage,
+        upgrade_message: getUpgradeMessage(usageCheck.usage.plan),
+      });
+    }
+    console.error("Failed to insert repurpose:", err);
     return errorResponse(500, {
       error: "Failed to create repurpose record",
       code: "internal_error",

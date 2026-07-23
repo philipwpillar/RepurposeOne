@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { formatISO } from "date-fns";
 import { runBundleGeneration } from "@/lib/ai/bundle-generate";
 import { fetchVoiceExemplarsText } from "@/lib/ai/exemplars";
 import { generateRepurpose } from "@/lib/ai/generate";
@@ -15,9 +14,10 @@ import { createClient } from "@/lib/supabase/server";
 import {
   checkRateLimit,
   checkUsageLimit,
-  getCurrentBillingPeriod,
   getUpgradeMessage,
   getUserPlan,
+  QuotaExceededError,
+  reserveBundleUnderCap,
 } from "@/lib/usage";
 import { bundleMediaObjectExists } from "@/lib/video/storage-verify";
 import {
@@ -247,36 +247,6 @@ export async function POST(request: Request) {
     });
   }
 
-  // N2 — only for new bundles. Prepared pending rows already reserved a slot.
-  if (!preparedBundleId) {
-    const { start, end } = getCurrentBillingPeriod();
-    const { data: bundleCount, error: bundleCountError } = await supabase.rpc(
-      "count_monthly_bundles",
-      {
-        p_user_id: user.id,
-        p_start: formatISO(start),
-        p_end: formatISO(end),
-      }
-    );
-
-    if (bundleCountError) {
-      console.error("Bundle cap check failed:", bundleCountError);
-      return errorResponse(500, {
-        error: "Failed to check bundle limits",
-        code: "internal_error",
-      });
-    }
-
-    if ((bundleCount ?? 0) >= BUNDLE_MONTHLY_LIMIT) {
-      return errorResponse(402, {
-        error: `Monthly Moment Bundle limit reached (${BUNDLE_MONTHLY_LIMIT}/month on Pro Plus).`,
-        code: "bundle_limit_reached",
-        usage: usageCheck.usage,
-        upgrade_message: getUpgradeMessage(plan),
-      });
-    }
-  }
-
   const { voice: resolvedVoice, brandVoiceId } =
     await resolveDefaultBrandVoice(supabase, user.id);
 
@@ -382,26 +352,30 @@ export async function POST(request: Request) {
 
     bundle = updated;
   } else {
-    const { data: inserted, error: bundleInsertError } = await admin
-      .from("bundles")
-      .insert({
-        user_id: user.id,
+    // N2 — atomically reserve under monthly cap for new (non-prepared) bundles
+    try {
+      bundle = await reserveBundleUnderCap(admin, {
+        userId: user.id,
+        limit: BUNDLE_MONTHLY_LIMIT,
+        status: "analyzing",
         title: requestData.title ?? null,
         context: requestData.context,
-        status: "analyzing",
-      })
-      .select("id, generation_id")
-      .single();
-
-    if (bundleInsertError || !inserted) {
-      console.error("Failed to insert bundle:", bundleInsertError);
+      });
+    } catch (err) {
+      if (err instanceof QuotaExceededError) {
+        return errorResponse(402, {
+          error: `Monthly Moment Bundle limit reached (${BUNDLE_MONTHLY_LIMIT}/month on Pro Plus).`,
+          code: "bundle_limit_reached",
+          usage: usageCheck.usage,
+          upgrade_message: getUpgradeMessage(plan),
+        });
+      }
+      console.error("Failed to insert bundle:", err);
       return errorResponse(500, {
         error: "Failed to create bundle record",
         code: "internal_error",
       });
     }
-
-    bundle = inserted;
   }
 
   const assetRows = photos.map((photo, index) => ({

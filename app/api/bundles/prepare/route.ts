@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { formatISO } from "date-fns";
 import { BUNDLE_MONTHLY_LIMIT, planAllowsBundles } from "@/lib/config";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
   checkBundlePrepareRateLimit,
-  getCurrentBillingPeriod,
   getUpgradeMessage,
   getUserPlan,
+  QuotaExceededError,
+  reserveBundleUnderCap,
 } from "@/lib/usage";
 import {
   buildSourceStoragePath,
@@ -107,33 +107,7 @@ export async function POST(request: Request) {
     });
   }
 
-  // N2 — prepared pending bundles count toward the monthly cap
-  const { start, end } = getCurrentBillingPeriod();
-  const { data: bundleCount, error: bundleCountError } = await supabase.rpc(
-    "count_monthly_bundles",
-    {
-      p_user_id: user.id,
-      p_start: formatISO(start),
-      p_end: formatISO(end),
-    }
-  );
-
-  if (bundleCountError) {
-    console.error("Bundle cap check failed:", bundleCountError);
-    return errorResponse(500, {
-      error: "Failed to check bundle limits",
-      code: "internal_error",
-    });
-  }
-
-  if ((bundleCount ?? 0) >= BUNDLE_MONTHLY_LIMIT) {
-    return errorResponse(402, {
-      error: `Monthly Moment Bundle limit reached (${BUNDLE_MONTHLY_LIMIT}/month on Pro Plus).`,
-      code: "bundle_limit_reached",
-      upgrade_message: getUpgradeMessage(plan),
-    });
-  }
-
+  // N2 — atomically reserve a pending bundle under the monthly cap
   let admin;
   try {
     admin = createAdminClient();
@@ -145,19 +119,24 @@ export async function POST(request: Request) {
     });
   }
 
-  const { data: bundle, error: bundleInsertError } = await admin
-    .from("bundles")
-    .insert({
-      user_id: user.id,
+  let bundle: { id: string };
+  try {
+    bundle = await reserveBundleUnderCap(admin, {
+      userId: user.id,
+      limit: BUNDLE_MONTHLY_LIMIT,
+      status: "pending",
       title: null,
       context: null,
-      status: "pending",
-    })
-    .select("id")
-    .single();
-
-  if (bundleInsertError || !bundle) {
-    console.error("Failed to insert pending bundle:", bundleInsertError);
+    });
+  } catch (err) {
+    if (err instanceof QuotaExceededError) {
+      return errorResponse(402, {
+        error: `Monthly Moment Bundle limit reached (${BUNDLE_MONTHLY_LIMIT}/month on Pro Plus).`,
+        code: "bundle_limit_reached",
+        upgrade_message: getUpgradeMessage(plan),
+      });
+    }
+    console.error("Failed to insert pending bundle:", err);
     return errorResponse(500, {
       error: "Failed to create bundle record",
       code: "internal_error",

@@ -145,3 +145,96 @@ export async function checkBundlePrepareRateLimit(
     retryAfterSeconds: RATE_LIMIT.windowMinutes * 60,
   };
 }
+
+export class QuotaExceededError extends Error {
+  constructor(message = "quota_exceeded") {
+    super(message);
+    this.name = "QuotaExceededError";
+  }
+}
+
+/**
+ * Atomically reserve a pending repurpose under the monthly generation cap
+ * (counts complete+pending DISTINCT generation_id). Call via service role.
+ */
+export async function reservePendingRepurpose(
+  admin: SupabaseClient,
+  params: {
+    userId: string;
+    limit: number;
+    inputType: string;
+    inputContent: string;
+    brandVoiceId: string | null;
+    targetFormat: string;
+    generationId?: string;
+  }
+): Promise<{ id: string; source_hash: string | null }> {
+  const { start, end } = getCurrentBillingPeriod();
+  const { data, error } = await admin.rpc("reserve_pending_repurpose", {
+    p_user_id: params.userId,
+    p_limit: params.limit,
+    p_start: formatISO(start),
+    p_end: formatISO(end),
+    p_input_type: params.inputType,
+    p_input_content: params.inputContent,
+    p_brand_voice_id: params.brandVoiceId,
+    p_target_format: params.targetFormat,
+    p_generation_id: params.generationId ?? null,
+  });
+
+  if (error) {
+    if (error.message.includes("quota_exceeded")) {
+      throw new QuotaExceededError();
+    }
+    throw new Error(`Failed to reserve repurpose: ${error.message}`);
+  }
+
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row?.id) {
+    throw new Error("Failed to reserve repurpose: empty result");
+  }
+
+  return { id: row.id as string, source_hash: (row.source_hash as string) ?? null };
+}
+
+/**
+ * Atomically create a bundle under the monthly N2 cap. Call via service role.
+ */
+export async function reserveBundleUnderCap(
+  admin: SupabaseClient,
+  params: {
+    userId: string;
+    limit: number;
+    status: string;
+    title?: string | null;
+    context?: string | null;
+  }
+): Promise<{ id: string; generation_id: string }> {
+  const { start, end } = getCurrentBillingPeriod();
+  const { data, error } = await admin.rpc("reserve_bundle_under_cap", {
+    p_user_id: params.userId,
+    p_limit: params.limit,
+    p_start: formatISO(start),
+    p_end: formatISO(end),
+    p_status: params.status,
+    p_title: params.title ?? null,
+    p_context: params.context ?? null,
+  });
+
+  if (error) {
+    if (error.message.includes("bundle_quota_exceeded")) {
+      throw new QuotaExceededError("bundle_quota_exceeded");
+    }
+    throw new Error(`Failed to reserve bundle: ${error.message}`);
+  }
+
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row?.id || !row?.generation_id) {
+    throw new Error("Failed to reserve bundle: empty result");
+  }
+
+  return {
+    id: row.id as string,
+    generation_id: row.generation_id as string,
+  };
+}
