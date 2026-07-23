@@ -509,33 +509,3 @@ export const BundleStatusResponseSchema = z.object({
   clips: z.array(BundleClipStatusSchema),
 });
 export type BundleStatusResponse = z.infer<typeof BundleStatusResponseSchema>;
-
-/** Brief 2b — ephemeral voice-note transcription (no Storage / DB). */
-export const TranscribeRequestSchema = z.object({
-  audio: z.string().min(1),
-  mimeType: z.string().min(1),
-});
-export type TranscribeRequest = z.infer<typeof TranscribeRequestSchema>;
-
-export interface TranscribeResponse {
-  transcript: string;
-}
-
-export const TranscribeErrorResponseSchema = z.object({
-  error: z.string(),
-  code: z.enum([
-    "unauthorized",
-    "validation_error",
-    "plan_required",
-    "rate_limited",
-    "payload_too_large",
-    "transcription_failed",
-    "internal_error",
-  ]),
-  usage: UsageInfoSchema.optional(),
-  upgrade_message: z.string().optional(),
-  retry_after_seconds: z.number().int().optional(),
-});
-export type TranscribeErrorResponse = z.infer<
-  typeof TranscribeErrorResponseSchema
->;
