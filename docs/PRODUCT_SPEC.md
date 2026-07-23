@@ -2,7 +2,7 @@
 
 > **Living document.** This is the shared source of truth for product decisions, scope, and roadmap.
 > Grok owns strategic direction; Claude (Cursor) owns implementation. Update this file whenever a decision is made.
-> Last updated: 2026-07-14
+> Last updated: 2026-07-23
 
 ---
 
@@ -42,10 +42,10 @@ Primary objective: **speed to first revenue.** Every decision is weighed against
 - **Auth:** Email + Google (Supabase Auth)
 - **Inputs:**
   - Paste text — **shipped**
-  - Photo upload with guided context (Creator/Pro) — **shipped**
+  - Photo upload with guided context (Creator/Pro/Pro Plus) — **shipped**
   - Upload `.txt` / `.pdf` (basic parsing) — **deferred (post-launch)**
-  - Basic audio upload + transcription (via API) — **deferred (post-launch)**
-  - Video-as-input — sequenced **after** Moment Bundle work
+  - Voice into Moment Bundle context — **native OS/keyboard dictation** (server ASR withdrawn, PR #46)
+  - Video-as-input for Studio — sequenced **after** Moment Bundle video path
 - **Core outputs:**
   - [x] X/Twitter thread (with tweet-count guidance)
   - [x] LinkedIn post + carousel slide ideas
@@ -56,7 +56,8 @@ Primary objective: **speed to first revenue.** Every decision is weighed against
 - **History / library:** List of past repurposes, re-openable (`/library`).
 - **Export:** One-click copy + export to Markdown / plain text. (Carousel *images* are later.)
 - **Dashboard:** Basic usage view + upgrade prompts.
-- **Monetisation:** Free tier (hard limits), Creator £19/mo, Pro £39/mo. Stripe Checkout + customer portal (`/billing`).
+- **Monetisation:** Free tier (hard limits), Creator £19/mo, Pro £44/mo, Pro Plus £59/mo. Stripe Checkout + customer portal (`/billing`).
+- **Moment Bundles (Pro Plus):** photo packs shipped; video/rendered clips behind `NEXT_PUBLIC_VIDEO_BUNDLES_DEV` until prod smoke.
 
 ### Explicitly OUT of MVP (parking lot — needs approval to pull in)
 - Full video / clip generation
@@ -78,9 +79,9 @@ Capacitor iOS shell exists (`docs/MOBILE.md`); App Store submission is pending �
 | Tier | Price | Limits & highlights | Role |
 | --- | --- | --- | --- |
 | Free | £0 | 5–10 repurposes/month, basic features | Acquisition funnel |
-| Creator | £19/month (GBP, settlement) · $30/month (USD) · €25/month (EUR) · Adaptive Pricing for all other currencies | 50–100 repurposes, core formats, brand voice | Main conversion tier |
-| Pro | £45/month (GBP, settlement) · $65/month (USD) · €55/month (EUR) · Adaptive Pricing for all other currencies | High/unlimited limits, advanced voice, priority, more formats | Power users |
-| Pro Plus | £59/month (GBP, settlement) · $80/month (USD) · €70/month (EUR) · Adaptive Pricing for all other currencies | Matches Pro gens, Moment Bundle (30/mo), higher burst | Top tier / Moment Bundle |
+| Creator | £19/month (GBP, settlement) · $33/month (USD) · €28/month (EUR) · Adaptive Pricing for all other currencies | 50–100 repurposes, core formats, brand voice | Main conversion tier |
+| Pro | £44/month (GBP, settlement) · $64/month (USD) · €54/month (EUR) · Adaptive Pricing for all other currencies | High limits, advanced voice, priority, more formats | Power users |
+| Pro Plus | £59/month (GBP, settlement) · $84/month (USD) · €74/month (EUR) · Adaptive Pricing for all other currencies | Matches Pro gens, Moment Bundle (30/mo), higher burst | Top tier / Moment Bundle |
 
 > **Multi-currency note:** USD and EUR are manually-set additional currency price points on each existing Stripe Price object, not new Price IDs — this overrides Adaptive Pricing only for these two currencies; all other 150+ currencies fall through to Adaptive Pricing automatically. `STRIPE_PRICE_ID_CREATOR` and `STRIPE_PRICE_ID_PRO` env vars are unchanged.
 
@@ -103,9 +104,10 @@ Capacitor iOS shell exists (`docs/MOBILE.md`); App Store submission is pending �
 - [x] Landing page (+ waitlist CTA copy; waitlist as product surface may still iterate)
 - [x] Stripe Checkout + portal + usage metering
 - [x] History/library + dashboard
-- [ ] `.txt`/`.pdf` parsing, then audio transcription — **deferred (post-launch)**
-- [ ] Moment Bundle + rendered clips (see `docs/plans/`)
-- [ ] Video-as-input — after Moment Bundle
+- [ ] `.txt`/`.pdf` parsing — **deferred (post-launch)**
+- [x] Moment Bundle photo packs (Pro Plus) — see `docs/plans/`
+- [ ] Moment Bundle video / rendered clips — code shipped; prod UI gated by `NEXT_PUBLIC_VIDEO_BUNDLES_DEV`
+- [ ] Video-as-input (Studio) — after Moment Bundle video path
 - [ ] Direct social publishing — out of scope for current phase; when revisited, X first (no approval gate), then Instagram
 
 ### Beta / soft launch

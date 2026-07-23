@@ -1,7 +1,7 @@
 # ARCHITECTURE.md — Voiceora
 
 > **Living document.** Technical decisions, stack, data model, and the patterns we commit to.
-> Update whenever an architectural decision is made. Last updated: 2026-07-14
+> Update whenever an architectural decision is made. Last updated: 2026-07-23
 
 ---
 
@@ -13,7 +13,7 @@
 | Styling | Tailwind CSS + shadcn/ui + lucide-react `^1.18.0` | Speed, consistent components; lucide 1.x verified with Next 15 + React 19 |
 | Auth | Supabase Auth (email + Google OAuth) | One provider for auth + DB + storage |
 | Database | Supabase Postgres | Row-Level Security, easy from Next.js |
-| Storage | Supabase Storage | Planned for `.txt`/`.pdf`/audio uploads (not wired yet) |
+| Storage | Supabase Storage | Private `bundle-media` for Moment Bundle video sources/clips; `.txt`/`.pdf` still not wired |
 | Payments | Stripe Checkout + Customer Portal | Standard, UK/GBP-friendly, minimal custom billing UI |
 | Hosting | Vercel | Zero-config Next.js deploys, preview envs |
 | AI | OpenRouter (Qwen fast/strong/vision tiers) | Model choice per task — see §6 |
@@ -61,6 +61,8 @@ Text inputs are plain text at the prompt layer. Photo inputs use a vision model 
 | Library | `app/(dashboard)/library` | Grouped by `source_hash`; detail at `/library/[hash]/[id]` |
 | Brand voice | `app/(dashboard)/brand-voice` | Samples + description; `is_default` |
 | Billing | `app/(dashboard)/billing` | Stripe Checkout + Customer Portal |
+| Bundles | `app/(dashboard)/bundles` | Moment Bundle photo (+ video when flagged) |
+| Account | `app/(dashboard)/settings/account` | In-app account deletion |
 
 Permanent redirects (bookmarks / old Stripe cancel URLs): `/history` → `/library`, `/upgrade` → `/billing`, `/new` → `/studio`.
 
@@ -74,20 +76,28 @@ Permanent redirects (bookmarks / old Stripe cancel URLs): `/history` → `/libra
   /(dashboard)        # authed product shell
     /dashboard
     /studio           # core create flow
+    /bundles          # Moment Bundles
     /library          # history (by source_hash)
     /brand-voice
     /billing
+    /settings/account # delete account
   /onboarding
+  /account-deleted
   /api
-    /generate         # generation endpoint (server-side only)
+    /generate
+    /bundles/*        # prepare, generate, [id]
+    /account/delete
     /stripe/*         # checkout, portal, webhook
-/components           # shadcn/ui + shared app components
+/components
 /lib
-  /supabase           # server + browser + admin clients
-  /ai                 # prompt builders, model wrappers
-  /image              # photo validation + downscale
-  /repurpose          # client generate helpers
-/docs                 # living source of truth
+  /supabase
+  /ai                 # prompts, generate, bundle-generate
+  /image
+  /video              # storage paths, verify
+  /repurpose
+/workers
+  /ffmpeg-renderer    # Railway clip worker
+/docs
 ```
 
 > Prompts themselves live in code under `/lib/ai`, but the canonical, reviewed versions are documented in `AI_PROMPTS.md`. Keep them in sync.
@@ -170,12 +180,12 @@ repurposes (
 
 ## 5. Security (non-negotiable)
 
-- **RLS on every table.** Default policy: a user can only `select/insert/update/delete` rows where `user_id = auth.uid()`.
-- **Server-side only AI calls.** Never expose model API keys to the client. Generation runs in `/api/generate` (route handler).
+- **RLS on every table.** Users may SELECT their own rows; metering tables (`repurposes`, `bundles`, `bundle_assets`, `bundle_clips`) are **SELECT-only for authenticated** — writes go through the service-role API after auth checks. Profile billing columns are service-role-only on UPDATE; client INSERT into `profiles` is revoked (signup trigger creates the row).
+- **Server-side only AI calls.** Never expose model API keys to the client. Generation runs in `/api/generate` and bundle routes.
 - **Auth guards** on every `(dashboard)` route — redirect unauthenticated users to login.
 - **Input validation** at the API boundary (zod): max input length, allowed formats, allowed file types/sizes.
 - **Stripe webhook signature verification** — never trust unverified webhook payloads.
-- **Rate limiting** on generation endpoints to cap abuse and runaway cost.
+- **Rate / usage limits** enforced server-side before paid provider spend (monthly DISTINCT generation quota, burst caps, bundle N2).
 
 ---
 
