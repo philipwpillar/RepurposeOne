@@ -11,6 +11,7 @@ import {
   Library,
   Menu,
   Mic,
+  Settings,
   Sparkles,
   X,
 } from "lucide-react";
@@ -32,6 +33,7 @@ const NAV_ITEMS = [
   { href: "/library", label: "Library", icon: Library },
   { href: "/brand-voice", label: "Brand Voice", icon: Mic },
   { href: "/billing", label: "Billing", icon: CreditCard },
+  { href: "/settings/account", label: "Account", icon: Settings },
 ] as const;
 
 function isActivePath(pathname: string, href: string) {
