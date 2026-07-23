@@ -147,7 +147,7 @@ export function UpgradePlans({ currentPlan }: UpgradePlansProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Pro — £45/mo</CardTitle>
+          <CardTitle>Pro — £44/mo</CardTitle>
           <CardDescription>1,000 repurposes per month</CardDescription>
         </CardHeader>
         <CardContent>
@@ -165,8 +165,9 @@ export function UpgradePlans({ currentPlan }: UpgradePlansProps) {
         <CardHeader>
           <CardTitle>Pro Plus — £59/mo</CardTitle>
           <CardDescription>
-            Everything in Pro, plus Moment Bundles &amp; rendered clips (30/mo,
-            coming soon) and a higher burst limit
+            Everything in Pro, plus Moment Bundles (up to 30/mo): captions,
+            posting order, and platform posts from your photos — rendered
+            video clips coming soon — and a higher burst limit
           </CardDescription>
         </CardHeader>
         <CardContent>
