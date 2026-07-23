@@ -92,6 +92,12 @@ export const OPENROUTER_ALLOWED_PROVIDERS = ["deepinfra/fp8"] as const;
  *   strong — qwen/qwen3.5-397b-a17b: coherence for multi-part outputs; same
  *            native VLM also serves the vision path (consistent voice).
  *
+ * Dated OpenRouter pins: as of 2026-07-23, OpenRouter only publishes these
+ * floating Qwen 3.5 slugs (no dated variant like `…:YYYY-MM-DD`). They are
+ * not `-latest` aliases, but weights can still move under the same slug.
+ * Pin lever when a dated slug appears (or for emergency override): set
+ * AI_MODEL_FAST / AI_MODEL_STRONG / AI_MODEL_VISION in Vercel env.
+ *
  * The openai map entries exist only so a mis-set AI_PROVIDER still resolves model
  * IDs for typing; generate.ts will throw rather than call OpenAI directly.
  */

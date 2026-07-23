@@ -197,7 +197,7 @@ The single biggest variable cost is AI tokens. Treat model choice as a per-task 
 | --- | --- | --- |
 | Output generation | Quality first, then cost | Per-format tier via `FORMAT_MODEL_TIER` (`fast` / `strong`) |
 | Photo / vision | Quality + multimodal | `AI_MODEL_VISION` (defaults to strong Qwen VLM) |
-| Voice input (bundles) | Native OS dictation | Server ASR withdrawn (PR #46); dictate into bundle `context` |
+| Voice input (bundles) | Native OS dictation | Server ASR withdrawn (PR #46); type or dictate into bundle `context` |
 | Brand-voice extraction | Quality | Run once per voice, cache the distilled profile — don't re-derive every generation |
 
 Cost-control patterns:
@@ -206,7 +206,7 @@ Cost-control patterns:
 - **Store token usage** per output for ongoing cost visibility.
 - **One generation call per format** (parallelise), so a slow/expensive format can be swapped independently.
 
-> Concrete model strings and pricing change frequently — confirm current models/prices before locking in. Override via `AI_MODEL_FAST` / `AI_MODEL_STRONG` / `AI_MODEL_VISION`.
+> Default OpenRouter Qwen 3.5 slugs (`qwen/qwen3.5-35b-a3b`, `qwen/qwen3.5-397b-a17b`) are floating (no dated OpenRouter pin as of 2026-07-23). Override via `AI_MODEL_FAST` / `AI_MODEL_STRONG` / `AI_MODEL_VISION` when you need a hard pin.
 
 ---
 
