@@ -4,7 +4,7 @@ import { BUNDLE_MONTHLY_LIMIT, planAllowsBundles } from "@/lib/config";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
-  checkRateLimit,
+  checkBundlePrepareRateLimit,
   getCurrentBillingPeriod,
   getUpgradeMessage,
   getUserPlan,
@@ -90,7 +90,7 @@ export async function POST(request: Request) {
 
   let rateCheck;
   try {
-    rateCheck = await checkRateLimit(supabase, user.id, plan);
+    rateCheck = await checkBundlePrepareRateLimit(supabase, user.id, plan);
   } catch (err) {
     console.error("Rate limit check failed:", err);
     return errorResponse(500, {

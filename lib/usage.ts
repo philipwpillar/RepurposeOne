@@ -114,3 +114,34 @@ export async function checkRateLimit(
     retryAfterSeconds: RATE_LIMIT.windowMinutes * 60,
   };
 }
+
+/**
+ * Short-window burst limit for POST /api/bundles/prepare.
+ * Counts bundles rows created in the rolling window — prepare always
+ * creates one on success, so this is a direct proxy for prepare-call
+ * volume, unlike checkRateLimit (which counts repurposes and doesn't
+ * apply here since prepare never creates repurposes rows).
+ */
+export async function checkBundlePrepareRateLimit(
+  supabase: SupabaseClient,
+  userId: string,
+  plan: Plan
+): Promise<{ allowed: boolean; retryAfterSeconds: number }> {
+  const windowStart = subMinutes(new Date(), RATE_LIMIT.windowMinutes);
+
+  const { count, error } = await supabase
+    .from("bundles")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .gte("created_at", formatISO(windowStart));
+
+  if (error) {
+    throw new Error(`Failed to check prepare rate limit: ${error.message}`);
+  }
+
+  const used = count ?? 0;
+  return {
+    allowed: used < rateLimitMaxForPlan(plan),
+    retryAfterSeconds: RATE_LIMIT.windowMinutes * 60,
+  };
+}
