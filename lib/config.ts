@@ -37,7 +37,7 @@ export const INPUT_CONTENT_MIN_LENGTH = 50;
 
 export const UPGRADE_MESSAGES: Record<Plan, string> = {
   free: "You've used all your free repurposes this month. Upgrade to Creator (£19/mo) for 100 repurposes/month.",
-  creator: "You've reached your Creator plan limit. Upgrade to Pro (£45/mo) for higher limits.",
+  creator: "You've reached your Creator plan limit. Upgrade to Pro (£44/mo) for higher limits.",
   pro: "You've reached your Pro plan limit. Upgrade to Pro Plus (£59/mo) for Moment Bundles and a higher burst limit.",
   pro_plus:
     "You've reached your Pro Plus plan limit for this month. Contact support if you need more capacity.",
