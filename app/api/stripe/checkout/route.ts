@@ -83,8 +83,8 @@ export async function POST(request: Request) {
     line_items: [{ price: getStripePriceId(plan), quantity: 1 }],
     client_reference_id: user.id,
     metadata: { supabase_user_id: user.id },
-    success_url: `${origin}/dashboard?checkout=success`,
-    cancel_url: `${origin}/billing?checkout=cancelled`,
+    success_url: `${origin}/account?checkout=success`,
+    cancel_url: `${origin}/account?checkout=cancelled`,
   });
 
   if (!session.url) {

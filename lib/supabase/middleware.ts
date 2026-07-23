@@ -7,6 +7,7 @@ const PROTECTED_PREFIXES = [
   "/library",
   "/brand-voice",
   "/billing",
+  "/account",
 ];
 const AUTH_ROUTES = ["/sign-in", "/sign-up"];
 

@@ -25,7 +25,7 @@ export default function PhotoUpgradeGate({ plan }: PhotoUpgradeGateProps) {
           Upgrade to generate captions from your photos.
         </p>
         <Link
-          href="/billing"
+          href="/account"
           className="mt-2 inline-block text-xs font-medium text-amber-900 underline underline-offset-2"
         >
           View plans →

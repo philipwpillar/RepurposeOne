@@ -87,7 +87,7 @@ export function UpgradePrompt({
         ) : null}
         {copy.cta ? (
           <Link
-            href="/billing"
+            href="/account"
             className="mt-2 inline-block text-xs font-medium text-amber-900 underline underline-offset-2"
           >
             {copy.cta}

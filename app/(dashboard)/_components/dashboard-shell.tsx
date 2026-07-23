@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import type { UsageInfo } from "@/types";
 import {
   Bell,
-  CreditCard,
   LayoutDashboard,
   Layers,
   Library,
@@ -33,8 +32,7 @@ const NAV_ITEMS = [
   { href: "/bundles", label: "Bundles", icon: Layers },
   { href: "/library", label: "Library", icon: Library },
   { href: "/brand-voice", label: "Brand Voice", icon: Mic },
-  { href: "/billing", label: "Billing", icon: CreditCard },
-  { href: "/settings/account", label: "Account", icon: Settings },
+  { href: "/account", label: "Account", icon: Settings },
 ] as const;
 
 function isActivePath(pathname: string, href: string) {
@@ -125,7 +123,7 @@ function UsageIndicator({ usage, compact = false }: { usage: UsageInfo; compact?
           {usage.used} / {usage.limit}
         </span>
         <Link
-          href="/billing"
+          href="/account"
           className="text-xs font-medium text-primary hover:text-primary/80"
         >
           Upgrade
@@ -154,7 +152,7 @@ function UsageIndicator({ usage, compact = false }: { usage: UsageInfo; compact?
       <div className="flex items-center justify-between">
         <span className="text-[11px] text-muted-foreground">repurposes this month</span>
         <Link
-          href="/billing"
+          href="/account"
           className="text-[11px] font-medium text-primary hover:text-primary/80"
         >
           Upgrade →

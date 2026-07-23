@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -26,11 +25,11 @@ type UpgradePlansProps = {
   currentPlan: Plan;
 };
 
-async function postStripeUrl(endpoint: string, body?: { plan: PaidPlan }) {
-  const response = await fetch(endpoint, {
+async function postCheckoutUrl(plan: PaidPlan) {
+  const response = await fetch("/api/stripe/checkout", {
     method: "POST",
-    headers: body ? { "Content-Type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ plan }),
   });
 
   const data = await response.json();
@@ -56,7 +55,7 @@ function PlanAction({
   plan: PaidPlan;
   label: string;
   currentPlan: Plan;
-  loadingPlan: PaidPlan | "portal" | null;
+  loadingPlan: PaidPlan | null;
   onUpgrade: (plan: PaidPlan) => void;
 }) {
   if (currentPlan === plan) {
@@ -85,38 +84,18 @@ function PlanAction({
 }
 
 export function UpgradePlans({ currentPlan }: UpgradePlansProps) {
-  const [loadingPlan, setLoadingPlan] = useState<PaidPlan | "portal" | null>(
-    null
-  );
+  const [loadingPlan, setLoadingPlan] = useState<PaidPlan | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const hasPaidPlan =
-    currentPlan === "creator" ||
-    currentPlan === "pro" ||
-    currentPlan === "pro_plus";
 
   async function handleUpgrade(plan: PaidPlan) {
     setError(null);
     setLoadingPlan(plan);
 
     try {
-      const url = await postStripeUrl("/api/stripe/checkout", { plan });
+      const url = await postCheckoutUrl(plan);
       window.location.href = url;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Checkout failed");
-      setLoadingPlan(null);
-    }
-  }
-
-  async function handleManageBilling() {
-    setError(null);
-    setLoadingPlan("portal");
-
-    try {
-      const url = await postStripeUrl("/api/stripe/portal");
-      window.location.href = url;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not open billing portal");
       setLoadingPlan(null);
     }
   }
@@ -180,21 +159,6 @@ export function UpgradePlans({ currentPlan }: UpgradePlansProps) {
           />
         </CardContent>
       </Card>
-
-      {hasPaidPlan && (
-        <Button
-          variant="outline"
-          className="w-full"
-          disabled={loadingPlan !== null}
-          onClick={handleManageBilling}
-        >
-          {loadingPlan === "portal" ? "Opening portal…" : "Manage billing"}
-        </Button>
-      )}
-
-      <Button asChild variant="ghost">
-        <Link href="/dashboard">Back to dashboard</Link>
-      </Button>
     </div>
   );
 }

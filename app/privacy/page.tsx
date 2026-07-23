@@ -106,7 +106,7 @@ export default function PrivacyPage() {
               We retain your account and content data while your account is
               active. You can delete your account in-app from{" "}
               <a
-                href="/settings/account"
+                href="/account#danger"
                 className="text-foreground underline underline-offset-4"
               >
                 Account settings
