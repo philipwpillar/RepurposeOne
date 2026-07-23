@@ -28,9 +28,9 @@ Settled decisions amending/confirming `docs/plans/moment-bundle-implementation-p
 | A2 | Bundle surface lives at top-level **`app/(dashboard)/bundles/`** — flat sibling to studio/history/brand-voice/upgrade, inheriting the dashboard shell. Not nested under studio. |
 | A3 | Worker: Railway; job dispatch: DB poll ~5s + optional authenticated wake; client observation: HTTP polling 2–3s v1 (per plan §5–6, accepted) |
 | A4 | Data model per plan §1 accepted, plus the N2 bundle counter |
-| A5 | ASR provider: **unpinned** — decision rides with the GDPR track (D6). Brief 2b does not start until pinned. |
+| A5 | ASR: **withdrawn (2026-07-23, PR #46)**. Server-side `/api/transcribe` removed. Bundle `context` uses OS/keyboard native dictation. Brief 4 withdrawn. |
 
 ## Standing constraints (every brief)
-- Protected fence in `RepurposeWorkspace.tsx` untouched: `GenerateApiError`, `callGenerateApi`, both 402 `setUsedCount(err.usage.used)` branches, `PhotoGenerateApiError`/`callPhotoGenerateApi` usage. Brief 0a's three plan-gate expressions (lines 246/267/271 at `9a6c01c`) are the only sanctioned edits in that file until further notice.
+- Protected fence in `RepurposeWorkspace.tsx` (ratified 2026-07-23): `GenerateApiError`, `PhotoGenerateApiError`, `callGenerateApi`, `callPhotoGenerateApi`, `resolveGenerateError`, and usage sync via `setUsedCount(apiErr.usage.used)` / success `setUsedCount(usage.used)`. Round-1 consolidated the former two literal `setUsedCount(err.usage.used)` branches into `resolveGenerateError` — behavior preserved. Verification grep should target `resolveGenerateError` and `setUsedCount(apiErr.usage.used)`, not the obsolete `setUsedCount(err.usage.used)` pattern.
 - Two-push gate: feature branch + PR, no merge; Claude verifies via fresh clone before Phil's go-ahead.
 - Sequencing: **Stripe live-mode activation precedes all implementation briefs.** Brief 0a may be executed by Cursor in parallel with Phil's Stripe afternoon only because it is revenue-adjacent plumbing with zero product surface.

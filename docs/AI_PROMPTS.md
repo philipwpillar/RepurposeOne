@@ -4,10 +4,10 @@ Living registry of every prompt used in Voiceora. The quality of these is the
 product. Treat changes here like code changes: version them, note why, and test
 output before shipping.
 
-**Implementation:** `lib/ai/prompts.ts` → `buildGenerationPrompt()` (text) and
-`buildPhotoGenerationPrompt()` (vision). Called by `lib/ai/generate.ts` →
-`generateRepurpose()` / `generateRepurposeFromImage()` → `POST /api/generate`.
-Keep this file in sync with the code.
+**Implementation:** `lib/ai/prompts.ts` → Studio text/vision builders plus Moment Bundle
+prompts (`buildBundlePhotoAnalysisPrompt`, video moments, pack synthesis). Studio path:
+`lib/ai/generate.ts` → `POST /api/generate`. Bundle path: `lib/ai/bundle-generate.ts` →
+`POST /api/bundles/generate`. Keep this file in sync with the code.
 
 ## Conventions
 
@@ -15,7 +15,8 @@ Keep this file in sync with the code.
 - Each prompt lists: purpose, model tier, variables, the prompt (system + user), and an eval note.
 - Model choice is a cost/quality decision — record the reasoning, not just the name.
   Tier mapping lives in `lib/config.ts` → `FORMAT_MODEL_TIER` (override IDs via
-  `AI_MODEL_FAST` / `AI_MODEL_STRONG`).
+  `AI_MODEL_FAST` / `AI_MODEL_STRONG` / `AI_MODEL_VISION`). Default OpenRouter Qwen 3.5
+  slugs are floating (no dated pin as of 2026-07-23); env override is the pin lever.
 - All formats return **structured JSON** validated by Zod (`types/index.ts` →
   `RepurposeOutputSchema`) before save. `response_format: { type: "json_object" }`
   is set on the API call.
