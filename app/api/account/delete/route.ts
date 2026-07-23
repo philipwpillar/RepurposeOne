@@ -93,6 +93,7 @@ export async function POST(request: Request) {
   // Cancel Stripe subscriptions before deleting the user
   const customerId = profile?.stripe_customer_id ?? null;
   const subscriptionId = profile?.stripe_subscription_id ?? null;
+  let cleanupStarted = false;
 
   try {
     if (subscriptionId) {
@@ -100,6 +101,7 @@ export async function POST(request: Request) {
         const sub = await stripe.subscriptions.retrieve(subscriptionId);
         if (sub.status === "active" || sub.status === "trialing" || sub.status === "past_due") {
           await stripe.subscriptions.cancel(subscriptionId);
+          cleanupStarted = true;
         }
       } catch (err) {
         console.error("Failed to cancel profile subscription:", err);
@@ -120,6 +122,7 @@ export async function POST(request: Request) {
         ) {
           try {
             await stripe.subscriptions.cancel(sub.id);
+            cleanupStarted = true;
           } catch (err) {
             console.error(`Failed to cancel subscription ${sub.id}:`, err);
           }
@@ -133,6 +136,7 @@ export async function POST(request: Request) {
 
   // Delete private media before auth user (paths live on DB rows)
   if (storagePaths.length > 0) {
+    cleanupStarted = true;
     const chunkSize = 100;
     for (let i = 0; i < storagePaths.length; i += chunkSize) {
       const chunk = storagePaths.slice(i, i + chunkSize);
@@ -148,6 +152,16 @@ export async function POST(request: Request) {
   const { error: deleteUserError } = await admin.auth.admin.deleteUser(user.id);
   if (deleteUserError) {
     console.error("auth.admin.deleteUser failed:", deleteUserError);
+    if (cleanupStarted) {
+      return NextResponse.json(
+        {
+          error:
+            "Billing and media cleanup may already have run, but we couldn't finish deleting your login. Retry deletion — if it keeps failing, contact support@voiceora.io.",
+          code: "deletion_incomplete",
+        },
+        { status: 500 }
+      );
+    }
     return NextResponse.json(
       { error: "Failed to delete account", code: "internal_error" },
       { status: 500 }
