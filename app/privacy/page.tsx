@@ -104,8 +104,16 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold">Data retention</h2>
             <p className="mt-3 leading-relaxed text-muted-foreground">
               We retain your account and content data while your account is
-              active. If you request account deletion, we will delete your data.
-              To request deletion, email{" "}
+              active. You can delete your account in-app from{" "}
+              <a
+                href="/settings/account"
+                className="text-foreground underline underline-offset-4"
+              >
+                Account settings
+              </a>
+              . That cancels any active subscription, deletes your app data, and
+              removes your login. Stripe may retain payment records required by
+              law. If you cannot access your account, email{" "}
               <a
                 href="mailto:support@voiceora.io"
                 className="text-foreground underline underline-offset-4"

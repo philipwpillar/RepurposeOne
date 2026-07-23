@@ -32,11 +32,21 @@ async function updateProfileByUserId(
   updates: ProfileBillingUpdates
 ) {
   const admin = createAdminClient();
-  const { error } = await admin.from("profiles").update(updates).eq("id", userId);
+  const { data, error } = await admin
+    .from("profiles")
+    .update(updates)
+    .eq("id", userId)
+    .select("id");
 
   if (error) {
     console.error(`Failed to update profile for user ${userId}:`, error);
     throw error;
+  }
+
+  if (!data?.length) {
+    console.info(
+      `updateProfileByUserId: no profile for user ${userId} (already deleted?)`
+    );
   }
 }
 
@@ -45,14 +55,21 @@ async function updateProfileByCustomerId(
   updates: ProfileBillingUpdates
 ) {
   const admin = createAdminClient();
-  const { error } = await admin
+  const { data, error } = await admin
     .from("profiles")
     .update(updates)
-    .eq("stripe_customer_id", customerId);
+    .eq("stripe_customer_id", customerId)
+    .select("id");
 
   if (error) {
     console.error(`Failed to update profile for customer ${customerId}:`, error);
     throw error;
+  }
+
+  if (!data?.length) {
+    console.info(
+      `updateProfileByCustomerId: no profile for customer ${customerId} (already deleted?)`
+    );
   }
 }
 
