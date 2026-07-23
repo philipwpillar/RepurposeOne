@@ -8,6 +8,14 @@ import {
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Plan } from "@/types";
 
+type ProfileBillingUpdates = {
+  stripe_customer_id?: string;
+  stripe_subscription_id?: string | null;
+  plan?: Plan;
+  payment_failed_at?: string | null;
+  payment_failed_invoice_id?: string | null;
+};
+
 function getSupabaseUserId(session: Stripe.Checkout.Session): string | null {
   return session.client_reference_id ?? session.metadata?.supabase_user_id ?? null;
 }
@@ -21,11 +29,7 @@ function getStripeCustomerId(
 
 async function updateProfileByUserId(
   userId: string,
-  updates: {
-    stripe_customer_id?: string;
-    stripe_subscription_id?: string | null;
-    plan?: Plan;
-  }
+  updates: ProfileBillingUpdates
 ) {
   const admin = createAdminClient();
   const { error } = await admin.from("profiles").update(updates).eq("id", userId);
@@ -38,10 +42,7 @@ async function updateProfileByUserId(
 
 async function updateProfileByCustomerId(
   customerId: string,
-  updates: {
-    stripe_subscription_id?: string | null;
-    plan?: Plan;
-  }
+  updates: ProfileBillingUpdates
 ) {
   const admin = createAdminClient();
   const { error } = await admin
@@ -51,6 +52,29 @@ async function updateProfileByCustomerId(
 
   if (error) {
     console.error(`Failed to update profile for customer ${customerId}:`, error);
+    throw error;
+  }
+}
+
+async function clearPaymentFailedIfInvoiceMatches(
+  customerId: string,
+  invoiceId: string
+) {
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("profiles")
+    .update({
+      payment_failed_at: null,
+      payment_failed_invoice_id: null,
+    })
+    .eq("stripe_customer_id", customerId)
+    .eq("payment_failed_invoice_id", invoiceId);
+
+  if (error) {
+    console.error(
+      `Failed to clear payment failure for customer ${customerId}:`,
+      error
+    );
     throw error;
   }
 }
@@ -88,6 +112,8 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     ...(customerId ? { stripe_customer_id: customerId } : {}),
     stripe_subscription_id: subscriptionId,
     plan,
+    payment_failed_at: null,
+    payment_failed_invoice_id: null,
   });
 }
 
@@ -108,6 +134,8 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     await updateProfileByCustomerId(customerId, {
       stripe_subscription_id: subscription.id,
       plan,
+      payment_failed_at: null,
+      payment_failed_invoice_id: null,
     });
     return;
   }
@@ -131,6 +159,28 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     plan: "free",
     stripe_subscription_id: null,
   });
+}
+
+async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
+  const customerId = getStripeCustomerId(invoice.customer);
+  if (!customerId) {
+    console.error("invoice.payment_failed: missing customer id", invoice.id);
+    return;
+  }
+
+  console.error("invoice.payment_failed:", customerId, invoice.id);
+
+  await updateProfileByCustomerId(customerId, {
+    payment_failed_at: new Date().toISOString(),
+    payment_failed_invoice_id: invoice.id,
+  });
+}
+
+async function handleInvoicePaid(invoice: Stripe.Invoice) {
+  const customerId = getStripeCustomerId(invoice.customer);
+  if (!customerId) return;
+
+  await clearPaymentFailedIfInvoiceMatches(customerId, invoice.id);
 }
 
 export async function POST(request: Request) {
@@ -166,15 +216,12 @@ export async function POST(request: Request) {
       case "customer.subscription.deleted":
         await handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
         break;
-      case "invoice.payment_failed": {
-        const invoice = event.data.object as Stripe.Invoice;
-        console.error(
-          "invoice.payment_failed:",
-          getStripeCustomerId(invoice.customer),
-          invoice.id
-        );
+      case "invoice.payment_failed":
+        await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
         break;
-      }
+      case "invoice.paid":
+        await handleInvoicePaid(event.data.object as Stripe.Invoice);
+        break;
     }
   } catch (err) {
     console.error(`Webhook handler failed for ${event.type}:`, err);

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { SignOutButton } from "@/components/app/sign-out-button";
+import { PaymentFailedBanner } from "@/components/billing/payment-failed-banner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -108,6 +109,7 @@ interface DashboardShellProps {
   children: React.ReactNode;
   user: DashboardUser;
   usage: UsageInfo;
+  paymentFailed?: boolean;
 }
 
 function UsageIndicator({ usage, compact = false }: { usage: UsageInfo; compact?: boolean }) {
@@ -160,7 +162,12 @@ function UsageIndicator({ usage, compact = false }: { usage: UsageInfo; compact?
   );
 }
 
-export function DashboardShell({ children, user, usage }: DashboardShellProps) {
+export function DashboardShell({
+  children,
+  user,
+  usage,
+  paymentFailed = false,
+}: DashboardShellProps) {
   const pathname = usePathname();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
@@ -238,7 +245,10 @@ export function DashboardShell({ children, user, usage }: DashboardShellProps) {
           </div>
         </header>
 
-        <main className="flex-1 p-4 md:p-8 [&:has(.max-w-screen-md)]:p-0">{children}</main>
+        <main className="flex-1 p-4 md:p-8 [&:has(.max-w-screen-md)]:p-0">
+          {paymentFailed ? <PaymentFailedBanner /> : null}
+          {children}
+        </main>
       </div>
 
       {/* Mobile sidebar overlay */}
