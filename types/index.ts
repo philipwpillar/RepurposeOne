@@ -22,6 +22,8 @@ export const ProfileSchema = z.object({
   stripe_customer_id: z.string().nullable(),
   stripe_subscription_id: z.string().nullable(),
   plan: PlanSchema,
+  payment_failed_at: z.string().nullable().optional(),
+  payment_failed_invoice_id: z.string().nullable().optional(),
   created_at: z.string(),
 });
 export type Profile = z.infer<typeof ProfileSchema>;

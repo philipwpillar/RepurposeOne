@@ -36,7 +36,7 @@ export default async function DashboardLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("onboarding_completed_at")
+    .select("onboarding_completed_at, payment_failed_at")
     .eq("id", user.id)
     .single();
 
@@ -55,8 +55,14 @@ export default async function DashboardLayout({
         : undefined,
   };
 
+  const paymentFailed = Boolean(profile?.payment_failed_at);
+
   return (
-    <DashboardShell user={dashboardUser} usage={usage}>
+    <DashboardShell
+      user={dashboardUser}
+      usage={usage}
+      paymentFailed={paymentFailed}
+    >
       {children}
     </DashboardShell>
   );
