@@ -60,11 +60,10 @@ Text inputs are plain text at the prompt layer. Photo inputs use a vision model 
 | Studio | `app/(dashboard)/studio` | Paste + photo create flow → `/api/generate` |
 | Library | `app/(dashboard)/library` | Grouped by `source_hash`; detail at `/library/[hash]/[id]` |
 | Brand voice | `app/(dashboard)/brand-voice` | Samples + description; `is_default` |
-| Billing | `app/(dashboard)/billing` | Stripe Checkout + Customer Portal |
+| Account | `app/(dashboard)/account` | Profile, plan/usage, Stripe upgrade + portal, brand-voice summary, delete |
 | Bundles | `app/(dashboard)/bundles` | Moment Bundle photo (+ video when flagged) |
-| Account | `app/(dashboard)/settings/account` | In-app account deletion |
 
-Permanent redirects (bookmarks / old Stripe cancel URLs): `/history` → `/library`, `/upgrade` → `/billing`, `/new` → `/studio`.
+Permanent redirects (bookmarks / old Stripe cancel URLs): `/history` → `/library`, `/upgrade` → `/account`, `/billing` → `/account`, `/settings/account` → `/account#danger`, `/new` → `/studio`.
 
 ---
 
@@ -79,8 +78,7 @@ Permanent redirects (bookmarks / old Stripe cancel URLs): `/history` → `/libra
     /bundles          # Moment Bundles
     /library          # history (by source_hash)
     /brand-voice
-    /billing
-    /settings/account # delete account
+    /account          # profile, plan, billing, delete
   /onboarding
   /account-deleted
   /api
@@ -224,6 +222,7 @@ Newest first.
 
 | Date | Decision | Notes |
 | --- | --- | --- |
+| 2026-07-23 | Unified `/account` (profile, usage, upgrade, portal, delete); `/billing` + `/settings/account` redirect | Checkout success/cancel land on `/account` |
 | 2026-07-14 | Routes rename: `/history` → `/library`, `/upgrade` → `/billing`; drop legacy `(app)` shell | Permanent redirects retained for bookmarks + pre-deploy Stripe cancel URLs |
 | 2026-07-14 | OpenRouter-only AI client; no silent OpenAI fallback | Mis-set `AI_PROVIDER` throws |
 | 2026-06-16 | Billing unit = generation, not row: `generation_id` + `count_monthly_generations` DISTINCT RPC; rate limit still counts rows | Supersedes the 2026-06-15 "one row = one unit" assumption. See §4a |

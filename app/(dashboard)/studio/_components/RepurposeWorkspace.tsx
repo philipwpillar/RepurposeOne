@@ -631,7 +631,7 @@ export default function RepurposeWorkspace({
         </div>
         {!atLimit && (
           <Link
-            href="/billing"
+            href="/account"
             className="text-primary hover:text-primary text-xs font-medium"
           >
             Upgrade →

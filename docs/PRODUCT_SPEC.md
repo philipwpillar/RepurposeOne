@@ -56,7 +56,7 @@ Primary objective: **speed to first revenue.** Every decision is weighed against
 - **History / library:** List of past repurposes, re-openable (`/library`).
 - **Export:** One-click copy + export to Markdown / plain text. (Carousel *images* are later.)
 - **Dashboard:** Basic usage view + upgrade prompts.
-- **Monetisation:** Free tier (hard limits), Creator £19/mo, Pro £44/mo, Pro Plus £59/mo. Stripe Checkout + customer portal (`/billing`).
+- **Monetisation:** Free tier (hard limits), Creator £19/mo, Pro £44/mo, Pro Plus £59/mo. Stripe Checkout + customer portal (`/account`).
 - **Moment Bundles (Pro Plus):** photo packs shipped; video/rendered clips behind `NEXT_PUBLIC_VIDEO_BUNDLES_DEV` until prod smoke.
 
 ### Explicitly OUT of MVP (parking lot — needs approval to pull in)
@@ -128,6 +128,7 @@ Append decisions here with date + who made the call. Newest at top.
 
 | Date | Decision | Owner | Notes |
 | --- | --- | --- | --- |
+| 2026-07-23 | Unified `/account` merges billing + profile + delete | User | `/billing` and `/settings/account` redirect to `/account` |
 | 2026-07-14 | Library/billing URL renames; docs synced to shipped reality | User | `/library`, `/billing`; paste + photo; txt/pdf/audio deferred |
 | 2026-06-16 | Billing unit = one generation, not per-format row | User | Implemented: `generation_id` + DISTINCT-count RPC. Resolves former open question #1. See ARCHITECTURE.md §4a |
 | 2026-06-15 | Start with shared docs before any code | User | Repo was empty; docs are highest-leverage first step |

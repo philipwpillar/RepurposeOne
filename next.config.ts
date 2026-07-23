@@ -7,7 +7,13 @@ const nextConfig: NextConfig = {
     return [
       { source: "/history", destination: "/library", permanent: true },
       { source: "/history/:path*", destination: "/library/:path*", permanent: true },
-      { source: "/upgrade", destination: "/billing", permanent: true },
+      { source: "/upgrade", destination: "/account", permanent: true },
+      { source: "/billing", destination: "/account", permanent: true },
+      {
+        source: "/settings/account",
+        destination: "/account#danger",
+        permanent: true,
+      },
       { source: "/new", destination: "/studio", permanent: true },
     ];
   },

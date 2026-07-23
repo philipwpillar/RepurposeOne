@@ -24,7 +24,7 @@ export default function BundleUpgradeGate() {
             month. Rendered clips are coming soon.
           </p>
           <Link
-            href="/billing"
+            href="/account"
             className="mt-3 inline-block text-xs font-medium text-amber-900 underline underline-offset-2"
           >
             Upgrade to Pro Plus →
