@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -11,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 import { formatLabel, getOutputPreview } from "@/lib/format-output";
 import { deriveSourceTitle } from "@/lib/source-title";
 import {
@@ -25,6 +27,7 @@ import type { RepurposeOutput, TargetFormat, UserWorkflowStatus } from "@/types"
 interface SourceGroup {
   sourceHash: string;
   title: string;
+  preview: string;
   latestCreatedAt: string;
   formats: TargetFormat[];
   repurposeCount: number;
@@ -39,6 +42,12 @@ type LibraryRow = {
   output: unknown;
   user_workflow_status: UserWorkflowStatus | null;
 };
+
+function sourcePreview(content: string): string {
+  const trimmed = content.trim().replace(/\s+/g, " ");
+  if (!trimmed) return "No preview";
+  return trimmed.length > 140 ? `${trimmed.slice(0, 140).trimEnd()}…` : trimmed;
+}
 
 export default async function LibraryPage({
   searchParams,
@@ -93,6 +102,7 @@ export default async function LibraryPage({
         groups.set(hash, {
           sourceHash: hash,
           title: deriveSourceTitle(item.input_content),
+          preview: sourcePreview(item.input_content),
           latestCreatedAt: item.created_at,
           formats: [item.target_format],
           repurposeCount: 1,
@@ -124,14 +134,15 @@ export default async function LibraryPage({
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-semibold tracking-tight">
-          Library
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Your source content — click into one to see everything generated from it.
-        </p>
-      </div>
+      <PageHeader
+        title="Library"
+        description="Your sources and platform outputs — open one to review, copy, or reuse in Studio."
+        actions={
+          <Button asChild size="sm" className="bg-primary hover:bg-primary/90">
+            <Link href="/studio">New in Studio</Link>
+          </Button>
+        }
+      />
 
       <Suspense fallback={null}>
         <div className="space-y-3">
@@ -147,6 +158,14 @@ export default async function LibraryPage({
               <CardTitle>{emptyFilterTitle}</CardTitle>
               <CardDescription>{emptyFilterDescription}</CardDescription>
             </CardHeader>
+            <CardContent className="flex flex-wrap gap-3">
+              <Button asChild variant="outline" size="sm">
+                <Link href="/library">Clear filters</Link>
+              </Button>
+              <Button asChild size="sm" className="bg-primary hover:bg-primary/90">
+                <Link href="/studio">Open Studio</Link>
+              </Button>
+            </CardContent>
           </Card>
         ) : (
           <div className="space-y-3">
@@ -154,6 +173,7 @@ export default async function LibraryPage({
               <Link
                 key={item.id}
                 href={`/library/${item.source_hash}/${item.id}`}
+                className="block"
               >
                 <Card className="transition-colors hover:bg-muted/30">
                   <CardContent className="flex items-start justify-between gap-4 py-4">
@@ -165,10 +185,10 @@ export default async function LibraryPage({
                         <WorkflowStatusBadge
                           status={item.user_workflow_status}
                         />
-                        <p className="text-sm font-medium">
-                          {deriveSourceTitle(item.input_content)}
-                        </p>
                       </div>
+                      <p className="text-sm font-semibold text-foreground">
+                        {deriveSourceTitle(item.input_content)}
+                      </p>
                       <p className="line-clamp-2 text-sm text-muted-foreground">
                         {item.output
                           ? getOutputPreview(item.output as RepurposeOutput)
@@ -181,7 +201,7 @@ export default async function LibraryPage({
                         )}
                       </p>
                     </div>
-                    <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
                   </CardContent>
                 </Card>
               </Link>
@@ -193,26 +213,33 @@ export default async function LibraryPage({
           <CardHeader>
             <CardTitle>No history yet</CardTitle>
             <CardDescription>
-              Completed repurposes will appear here.
+              When you generate in Studio, each source and its platform outputs
+              land here — ready to review, copy, or reuse.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Link
-              href="/studio"
-              className="text-sm font-medium text-foreground underline-offset-4 hover:underline"
-            >
-              Create your first repurpose →
-            </Link>
+            <Button asChild className="bg-primary hover:bg-primary/90">
+              <Link href="/studio">Create your first repurpose</Link>
+            </Button>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-3">
           {sourceGroups.map((group) => (
-            <Link key={group.sourceHash} href={`/library/${group.sourceHash}`}>
+            <Link
+              key={group.sourceHash}
+              href={`/library/${group.sourceHash}`}
+              className="block"
+            >
               <Card className="transition-colors hover:bg-muted/30">
                 <CardContent className="flex items-start justify-between gap-4 py-4">
                   <div className="min-w-0 flex-1 space-y-2">
-                    <p className="text-sm font-medium">{group.title}</p>
+                    <p className="text-sm font-semibold text-foreground">
+                      {group.title}
+                    </p>
+                    <p className="line-clamp-2 text-sm text-muted-foreground">
+                      {group.preview}
+                    </p>
                     <div className="flex flex-wrap items-center gap-2">
                       {group.formats.map((targetFormat) => (
                         <Badge key={targetFormat} variant="secondary">
@@ -222,7 +249,7 @@ export default async function LibraryPage({
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {group.repurposeCount}{" "}
-                      repurpose{group.repurposeCount === 1 ? "" : "s"} · last
+                      output{group.repurposeCount === 1 ? "" : "s"} · last
                       updated{" "}
                       {format(
                         new Date(group.latestCreatedAt),
@@ -230,7 +257,7 @@ export default async function LibraryPage({
                       )}
                     </p>
                   </div>
-                  <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
                 </CardContent>
               </Card>
             </Link>

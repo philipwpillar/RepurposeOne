@@ -34,17 +34,23 @@ export default function LibraryFormatFilter() {
   const active = searchParams.get("format") ?? "all";
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div
+      className="flex flex-wrap gap-2"
+      role="navigation"
+      aria-label="Filter by format"
+    >
       {FILTER_OPTIONS.map((option) => {
         const href = hrefForFormat(pathname, searchParams, option.value);
+        const isActive = active === option.value;
 
         return (
           <Link
             key={option.value}
             href={href}
+            aria-current={isActive ? "page" : undefined}
             className={cn(
-              "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
-              active === option.value
+              "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              isActive
                 ? "border-primary bg-primary/10 text-primary"
                 : "border-border bg-card text-muted-foreground hover:bg-muted/40"
             )}

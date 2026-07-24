@@ -20,7 +20,7 @@ export function VoiceAttributionBadge({ voice }: VoiceAttributionBadgeProps) {
       title={label}
     >
       <Badge variant="outline" className="max-w-full truncate font-normal">
-        Voice: {label}
+        Brand Voice: {label}
       </Badge>
     </Link>
   );

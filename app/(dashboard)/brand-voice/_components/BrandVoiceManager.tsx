@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
+import { format } from "date-fns";
 import { Mic, Pencil, Plus, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -22,13 +23,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { voiceDisplayName } from "@/lib/repurpose/voice-display-name";
 import { BrandVoiceInputSchema, type BrandVoice } from "@/types";
 
 const SAMPLE_FIELD_COUNT = 3;
 const EMPTY_SAMPLES = () => Array.from({ length: SAMPLE_FIELD_COUNT }, () => "");
+const VOICE_SELECT =
+  "id, user_id, name, samples, description, is_default, created_at, updated_at";
 
 interface BrandVoiceManagerProps {
   initialVoices: BrandVoice[];
@@ -55,15 +60,30 @@ function samplesToFields(samples: string[]): string[] {
   return fields;
 }
 
-function buildValidatedInput(description: string, sampleFields: string[]) {
+function buildValidatedInput(
+  name: string,
+  description: string,
+  sampleFields: string[]
+) {
+  const trimmedName = name.trim();
   const trimmedDescription = description.trim();
   const trimmedSamples = sampleFields
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
 
   return BrandVoiceInputSchema.parse({
+    name: trimmedName || undefined,
     description: trimmedDescription || undefined,
     samples: trimmedSamples.length > 0 ? trimmedSamples : undefined,
+  });
+}
+
+function sortVoices(list: BrandVoice[]): BrandVoice[] {
+  return [...list].sort((a, b) => {
+    if (a.is_default !== b.is_default) return a.is_default ? -1 : 1;
+    const aTime = new Date(a.updated_at ?? a.created_at).getTime();
+    const bTime = new Date(b.updated_at ?? b.created_at).getTime();
+    return bTime - aTime;
   });
 }
 
@@ -72,6 +92,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
   const [voices, setVoices] = useState(initialVoices);
   const [formMode, setFormMode] = useState<"create" | "edit" | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [sampleFields, setSampleFields] = useState<string[]>(EMPTY_SAMPLES);
   const [setAsDefault, setSetAsDefault] = useState(false);
@@ -84,6 +105,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
   const resetForm = useCallback(() => {
     setFormMode(null);
     setEditingId(null);
+    setName("");
     setDescription("");
     setSampleFields(EMPTY_SAMPLES());
     setSetAsDefault(false);
@@ -94,6 +116,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
     setActionError(null);
     setFormMode("create");
     setEditingId(null);
+    setName("");
     setDescription("");
     setSampleFields(EMPTY_SAMPLES());
     setSetAsDefault(voices.length === 0);
@@ -104,6 +127,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
     setActionError(null);
     setFormMode("edit");
     setEditingId(voice.id);
+    setName(voice.name ?? "");
     setDescription(voice.description ?? "");
     setSampleFields(samplesToFields(voice.samples ?? []));
     setSetAsDefault(voice.is_default);
@@ -130,8 +154,14 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
         return;
       }
 
-      const validated = buildValidatedInput(description, sampleFields);
+      const validated = buildValidatedInput(name, description, sampleFields);
+      if (!validated.name) {
+        setFormError("Give this voice a short name (at least 2 characters).");
+        return;
+      }
+
       const payload = {
+        name: validated.name,
         samples: validated.samples ?? [],
         description: validated.description ?? null,
       };
@@ -148,7 +178,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
             ...payload,
             is_default: setAsDefault,
           })
-          .select("id, user_id, samples, description, is_default, created_at")
+          .select(VOICE_SELECT)
           .single();
 
         if (error) throw error;
@@ -157,12 +187,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
           const next = setAsDefault
             ? prev.map((v) => ({ ...v, is_default: false }))
             : [...prev];
-          return [data as BrandVoice, ...next].sort((a, b) => {
-            if (a.is_default !== b.is_default) return a.is_default ? -1 : 1;
-            return (
-              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-            );
-          });
+          return sortVoices([data as BrandVoice, ...next]);
         });
       } else if (formMode === "edit" && editingId) {
         if (setAsDefault) {
@@ -177,26 +202,20 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
           })
           .eq("id", editingId)
           .eq("user_id", user.id)
-          .select("id, user_id, samples, description, is_default, created_at")
+          .select(VOICE_SELECT)
           .single();
 
         if (error) throw error;
 
         const updated = data as BrandVoice;
         setVoices((prev) =>
-          prev
-            .map((v) => {
+          sortVoices(
+            prev.map((v) => {
               if (v.id === updated.id) return updated;
               if (setAsDefault) return { ...v, is_default: false };
               return v;
             })
-            .sort((a, b) => {
-              if (a.is_default !== b.is_default) return a.is_default ? -1 : 1;
-              return (
-                new Date(b.created_at).getTime() -
-                new Date(a.created_at).getTime()
-              );
-            })
+          )
         );
       }
 
@@ -237,17 +256,12 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
       if (error) throw error;
 
       setVoices((prev) =>
-        prev
-          .map((v) => ({
+        sortVoices(
+          prev.map((v) => ({
             ...v,
             is_default: v.id === voiceId,
           }))
-          .sort((a, b) => {
-            if (a.is_default !== b.is_default) return a.is_default ? -1 : 1;
-            return (
-              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-            );
-          })
+        )
       );
       refreshList();
     } catch (err) {
@@ -341,13 +355,29 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
               {formMode === "create" ? "Create brand voice" : "Edit brand voice"}
             </CardTitle>
             <CardDescription>
-              Add a short description and/or 2–3 writing samples. At least one is
-              required.
+              Name the profile, then add a style note and/or writing samples.
+              Studio uses your default voice on every generate.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="voice-description">Description (optional)</Label>
+              <Label htmlFor="voice-name">Name</Label>
+              <Input
+                id="voice-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Founder LinkedIn"
+                maxLength={60}
+                disabled={isSaving}
+                autoComplete="off"
+              />
+              <p className="text-xs text-muted-foreground">
+                {name.trim().length}/60 — shown in Studio and Library
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="voice-description">Style note (optional)</Label>
               <Textarea
                 id="voice-description"
                 value={description}
@@ -369,6 +399,10 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
 
             <div className="space-y-4">
               <Label>Writing samples (optional)</Label>
+              <p className="text-xs text-muted-foreground">
+                Paste 2–3 posts or paragraphs that sound like you. These are the
+                evidence Studio steers from.
+              </p>
               {sampleFields.map((sample, index) => (
                 <div key={index} className="space-y-1.5">
                   <Label
@@ -409,7 +443,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
             <div className="flex gap-2">
               <Button
                 type="button"
-                onClick={handleSave}
+                onClick={() => void handleSave()}
                 disabled={isSaving}
                 className="bg-primary hover:bg-primary/90"
               >
@@ -433,9 +467,12 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
             <Mic className="h-6 w-6 text-primary" />
           </div>
-          <p className="mb-4 text-sm text-muted-foreground">
-            Your default voice is applied automatically in Studio when you generate
-            content.
+          <h2 className="mb-2 text-base font-semibold text-foreground">
+            Teach Voiceora how you write
+          </h2>
+          <p className="mx-auto mb-6 max-w-md text-sm text-muted-foreground">
+            Your default voice is applied automatically in Studio. Without one,
+            outputs fall back to a generic style.
           </p>
           <Button
             type="button"
@@ -450,30 +487,58 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
         <div className="space-y-3">
           {voices.map((voice) => {
             const sampleCount = (voice.samples ?? []).filter(Boolean).length;
-            const preview =
-              voice.description?.trim() ||
-              (voice.samples?.[0]
-                ? `${voice.samples[0].slice(0, 120)}${voice.samples[0].length > 120 ? "…" : ""}`
-                : "No description");
+            const title = voiceDisplayName(voice);
+            const styleNote = voice.description?.trim();
+            const evidence = (voice.samples ?? [])
+              .filter(Boolean)
+              .slice(0, 2);
+            const updatedAt = voice.updated_at ?? voice.created_at;
 
             return (
               <Card key={voice.id} className="border-border">
                 <CardContent className="py-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="min-w-0 flex-1 space-y-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        {voice.is_default && (
-                          <Badge className="border border-primary/30 bg-primary/10 text-primary hover:bg-primary/10">
-                            Default
-                          </Badge>
-                        )}
-                        <span className="text-xs text-muted-foreground">
+                    <div className="min-w-0 flex-1 space-y-3">
+                      <div className="space-y-1.5">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-base font-semibold text-foreground">
+                            {title}
+                          </p>
+                          {voice.is_default && (
+                            <Badge className="border border-primary/30 bg-primary/10 text-primary hover:bg-primary/10">
+                              Default
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
                           {sampleCount} sample{sampleCount === 1 ? "" : "s"}
-                        </span>
+                          {" · "}
+                          Updated{" "}
+                          {format(new Date(updatedAt), "MMM d, yyyy")}
+                        </p>
                       </div>
-                      <p className="text-sm font-medium text-foreground">
-                        {preview}
-                      </p>
+
+                      {styleNote ? (
+                        <p className="text-sm text-muted-foreground">
+                          {styleNote}
+                        </p>
+                      ) : null}
+
+                      {evidence.length > 0 ? (
+                        <div className="space-y-2">
+                          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            Sample evidence
+                          </p>
+                          {evidence.map((sample, index) => (
+                            <p
+                              key={`${voice.id}-sample-${index}`}
+                              className="line-clamp-2 rounded-lg border border-border/80 bg-muted/30 px-3 py-2 text-sm text-foreground/90"
+                            >
+                              {sample}
+                            </p>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
                     <div className="flex shrink-0 flex-wrap gap-2">
                       {!voice.is_default && (
@@ -481,7 +546,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => handleSetDefault(voice.id)}
+                          onClick={() => void handleSetDefault(voice.id)}
                           disabled={loadingId === voice.id}
                         >
                           Set as default
@@ -525,7 +590,10 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete brand voice?</DialogTitle>
+            <DialogTitle>
+              Delete{" "}
+              {deleteTarget ? voiceDisplayName(deleteTarget) : "brand voice"}?
+            </DialogTitle>
             <DialogDescription>
               This permanently removes the voice and cannot be undone. Studio
               will fall back to another default or a built-in style.

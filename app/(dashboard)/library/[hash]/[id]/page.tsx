@@ -5,6 +5,8 @@ import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
+import { ReuseInStudioButton } from "@/components/library/reuse-in-studio-button";
 import { XThreadOutputDisplay } from "@/components/repurpose/x-thread-output";
 import { LinkedInOutputPanel } from "@/components/repurpose/linkedin-output-panel";
 import { InstagramOutputPanel } from "@/components/repurpose/instagram-output-panel";
@@ -59,6 +61,7 @@ export default async function HistoryDetailPage({
   };
 
   let voiceAttribution: {
+    name: string | null;
     description: string | null;
     is_default: boolean;
     samples: string[] | null;
@@ -67,48 +70,62 @@ export default async function HistoryDetailPage({
   if (repurpose.brand_voice_id) {
     const { data: voice } = await supabase
       .from("brand_voices")
-      .select("description, is_default, samples")
+      .select("name, description, is_default, samples")
       .eq("id", repurpose.brand_voice_id)
       .eq("user_id", user.id)
       .maybeSingle();
     voiceAttribution = voice;
   }
 
+  const formatName = formatLabel(repurpose.target_format);
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <Button asChild variant="ghost" size="sm">
           <Link href={`/library/${hash}`}>
             <ArrowLeft className="h-4 w-4" />
             Back to source
           </Link>
         </Button>
+        <ReuseInStudioButton sourceHash={hash} />
+      </div>
+
+      <PageHeader
+        title={formatName}
+        description={`Saved ${format(
+          new Date(repurpose.created_at),
+          "MMM d, yyyy 'at' h:mm a"
+        )}. Preview, edit, and copy match Studio — edits save a draft on this row only.`}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary">{formatName}</Badge>
+            <VoiceAttributionBadge voice={voiceAttribution} />
+          </div>
+        }
+      />
+
+      <WorkflowStatusControls
+        repurposeId={repurpose.id as string}
+        initialStatus={initialWorkflowStatus}
+      />
+
+      <div className="rounded-xl border border-border bg-muted/20 p-4">
+        <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Source content
+        </p>
+        <p className="whitespace-pre-wrap text-sm text-foreground">
+          {repurpose.input_content}
+        </p>
       </div>
 
       <div className="space-y-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="font-display text-2xl font-semibold tracking-tight">
-            Repurpose detail
-          </h1>
-          <Badge variant="secondary">
-            {formatLabel(repurpose.target_format)}
-          </Badge>
-          <VoiceAttributionBadge voice={voiceAttribution} />
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Created {format(new Date(repurpose.created_at), "MMM d, yyyy 'at' h:mm a")}
+        <h2 className="text-sm font-semibold text-foreground">
+          Platform preview
+        </h2>
+        <p className="text-xs text-muted-foreground">
+          Same edit, save draft, and copy actions as Studio.
         </p>
-        <WorkflowStatusControls
-          repurposeId={repurpose.id as string}
-          initialStatus={initialWorkflowStatus}
-        />
-      </div>
-
-      <div className="rounded-lg border border-border bg-muted/20 p-4">
-        <p className="mb-1 text-xs font-medium text-muted-foreground">
-          Source content
-        </p>
-        <p className="whitespace-pre-wrap text-sm">{repurpose.input_content}</p>
       </div>
 
       {output?.format === "x_thread" && (
