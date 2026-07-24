@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AlertCircle, Lock } from "lucide-react";
 import { BUNDLE_MONTHLY_LIMIT } from "@/lib/config";
+import { planPriceLabel } from "@/lib/billing/plan-catalog";
 import { getUpgradeMessage } from "@/lib/usage";
 import type { Plan } from "@/types";
 
@@ -19,18 +20,20 @@ interface UpgradePromptProps {
   className?: string;
 }
 
+const ACCOUNT_PLANS_HREF = "/account#plans";
+
 const GATE_COPY: Record<
   Exclude<UpgradeGate, "monthly_limit" | "rate_limit">,
   { title: string; body: string; cta: string }
 > = {
   vision: {
-    title: "Photo repurpose is on Creator (£19/mo) and above",
+    title: `Photo repurpose is on Creator (${planPriceLabel("creator")}) and above`,
     body: "Upgrade to generate captions from your photos.",
     cta: "View plans →",
   },
   bundles: {
     title: "Moment Bundles are on Pro Plus",
-    body: `Pro Plus includes up to ${BUNDLE_MONTHLY_LIMIT} Moment Bundles per month.`,
+    body: `Pro Plus (${planPriceLabel("pro_plus")}) includes up to ${BUNDLE_MONTHLY_LIMIT} Moment Bundles per month. Rendered video clips coming soon.`,
     cta: "Upgrade to Pro Plus →",
   },
   bundle_monthly_cap: {
@@ -40,10 +43,13 @@ const GATE_COPY: Record<
   },
 };
 
-function promptCopy(gate: UpgradeGate, plan: Plan): { title: string; body: string; cta?: string } {
+function promptCopy(
+  gate: UpgradeGate,
+  plan: Plan
+): { title: string; body: string; cta?: string } {
   if (gate === "monthly_limit") {
     return {
-      title: "Monthly repurpose limit reached",
+      title: "Monthly generation limit reached",
       body: getUpgradeMessage(plan),
       cta: "Upgrade plan →",
     };
@@ -87,7 +93,7 @@ export function UpgradePrompt({
         ) : null}
         {copy.cta ? (
           <Link
-            href="/account"
+            href={ACCOUNT_PLANS_HREF}
             className="mt-2 inline-block text-xs font-medium text-amber-900 underline underline-offset-2"
           >
             {copy.cta}

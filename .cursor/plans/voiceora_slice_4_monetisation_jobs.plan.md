@@ -4,19 +4,19 @@ overview: Clarify Dashboard next actions, Bundles as durable jobs with recoverab
 todos:
   - id: s4-dashboard
     content: Redesign Dashboard around next-best actions (continue, create, review, voice setup, limit/payment) instead of decorative metrics only.
-    status: pending
+    status: completed
   - id: s4-bundles
     content: Polish BundleWorkspace job states, progress copy, failure/retry, past-bundle list, and Library handoff; keep video behind existing feature flag.
-    status: pending
+    status: completed
   - id: s4-account
     content: Structure Account sections (Profile, Usage, Plans, Billing, Voice summary, Danger) with human plan names, remaining/reset clarity, contextual upgrade prompts.
-    status: pending
+    status: completed
   - id: s4-gates-upgrade
     content: Align UpgradePrompt / PhotoUpgradeGate / BundleUpgradeGate with one comparison language; payment-failed banner consistency.
-    status: pending
+    status: completed
   - id: s4-gates
     content: Desktop/mobile screenshots for dashboard, bundles, account, upgrade gates; open PR.
-    status: pending
+    status: completed
 isProject: false
 ---
 
