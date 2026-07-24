@@ -4,19 +4,19 @@ overview: Make Brand Voice and Library feel like durable, trusted product object
 todos:
   - id: s3-brand-voice
     content: Redesign Brand Voice list/create/edit with names, samples evidence, default state, last-updated, and Dialog confirm for delete (no window.confirm).
-    status: pending
+    status: completed
   - id: s3-voice-attribution
     content: Surface active voice in Studio and voice used on Library detail outputs consistently.
-    status: pending
+    status: completed
   - id: s3-library
     content: Strengthen Library grouping, search/filter hierarchy, empty states, and “reuse as new” without mutating history.
-    status: pending
+    status: completed
   - id: s3-output-parity
     content: Align Library detail panels with Studio preview/edit/copy language and Slice 1 components.
-    status: pending
+    status: completed
   - id: s3-gates
     content: Desktop/mobile screenshots of Brand Voice + Library flows; open PR.
-    status: pending
+    status: completed
 isProject: false
 ---
 
