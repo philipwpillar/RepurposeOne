@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { formatISO } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
 import { planAllowsBundles } from "@/lib/config";
@@ -6,8 +7,10 @@ import {
   checkUsageLimit,
   getCurrentBillingPeriod,
 } from "@/lib/usage";
+import { formatUsageReset } from "@/lib/billing/format-usage-period";
 import { CheckoutBanner } from "@/components/billing/checkout-banner";
 import { UpgradePlans } from "@/components/billing/UpgradePlans";
+import { PageHeader } from "@/components/ui/page-header";
 import { planLabel } from "@/lib/plan-label";
 import { ProfileSection } from "./_components/ProfileSection";
 import { UsageSection } from "./_components/UsageSection";
@@ -32,6 +35,15 @@ function signedInViaLabel(
   if (providers.size > 1) return "linked accounts";
   return "your account";
 }
+
+const SECTION_NAV = [
+  { href: "#profile", label: "Profile" },
+  { href: "#usage", label: "Usage" },
+  { href: "#plans", label: "Plans" },
+  { href: "#billing", label: "Billing" },
+  { href: "#voice", label: "Voice" },
+  { href: "#danger", label: "Delete" },
+] as const;
 
 export default async function AccountPage() {
   const supabase = await createClient();
@@ -88,20 +100,54 @@ export default async function AccountPage() {
   const defaultVoice =
     voices?.find((voice) => voice.is_default) ?? voices?.[0] ?? null;
 
+  const remaining = Math.max(0, usage.limit - usage.used);
+  const resetsOn = formatUsageReset(usage.period_end);
+  const paymentFailed = Boolean(profile?.payment_failed_at);
+
   return (
     <div className="mx-auto max-w-lg space-y-10">
       <Suspense fallback={null}>
         <CheckoutBanner />
       </Suspense>
 
-      <div>
-        <h1 className="font-display text-2xl font-semibold tracking-tight">
-          Account
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Profile, plan, billing, and account controls in one place.
+      <PageHeader
+        title="Account"
+        description="Profile, plan, billing, and account controls in one place."
+      />
+
+      <div className="rounded-2xl border border-border bg-card px-4 py-3">
+        <p className="text-sm text-foreground">
+          <span className="font-semibold">{planLabel(usage.plan)}</span>
+          <span className="text-muted-foreground">
+            {" "}
+            · {usage.used}/{usage.limit} generations · {remaining} left · resets{" "}
+            {resetsOn}
+          </span>
         </p>
+        {paymentFailed ? (
+          <p className="mt-1 text-xs text-destructive">
+            Payment failed —{" "}
+            <Link href="#billing" className="underline underline-offset-2">
+              update payment method
+            </Link>
+          </p>
+        ) : null}
       </div>
+
+      <nav
+        aria-label="Account sections"
+        className="flex flex-wrap gap-2 border-b border-border pb-3"
+      >
+        {SECTION_NAV.map((item) => (
+          <a
+            key={item.href}
+            href={item.href}
+            className="rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+          >
+            {item.label}
+          </a>
+        ))}
+      </nav>
 
       <ProfileSection
         email={user.email}
@@ -114,11 +160,11 @@ export default async function AccountPage() {
 
       <section id="plans" className="space-y-4 scroll-mt-20">
         <div>
-          <h2 className="text-lg font-semibold">Upgrade</h2>
+          <h2 className="text-lg font-semibold">Plans</h2>
           <p className="text-sm text-muted-foreground">
             {usage.plan === "free"
               ? "Choose a plan to unlock more generations each month."
-              : `You're on the ${planLabel(usage.plan)} plan.`}
+              : `You're on ${planLabel(usage.plan)}. Upgrade for more capacity or Moment Bundles.`}
           </p>
         </div>
         <UpgradePlans currentPlan={usage.plan} />
@@ -126,7 +172,7 @@ export default async function AccountPage() {
 
       <BillingSection
         currentPlan={usage.plan}
-        paymentFailed={Boolean(profile?.payment_failed_at)}
+        paymentFailed={paymentFailed}
       />
 
       <BrandVoiceSummary
@@ -138,7 +184,7 @@ export default async function AccountPage() {
 
       <section
         id="danger"
-        className="space-y-4 scroll-mt-20 rounded-2xl border border-destructive/30 bg-destructive/5 p-5"
+        className="space-y-4 scroll-mt-20 rounded-2xl border-2 border-destructive/40 bg-destructive/5 p-5"
       >
         <div>
           <h2 className="text-lg font-semibold text-destructive">

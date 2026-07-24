@@ -51,17 +51,29 @@ export function BillingSection({
       </div>
 
       {paymentFailed ? (
-        <p className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          Your latest payment failed. Update your payment method in the portal
-          to avoid interruption.
-        </p>
+        <div className="space-y-3 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3">
+          <p className="text-sm text-destructive">
+            Your latest payment failed. Update your payment method to avoid
+            interruption.
+          </p>
+          {hasPaidPlan ? (
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={loading}
+              onClick={() => void openPortal()}
+            >
+              {loading ? "Opening portal…" : "Update payment method"}
+            </Button>
+          ) : null}
+        </div>
       ) : null}
 
       {hasPaidPlan ? (
         <Button
           variant="outline"
           disabled={loading}
-          onClick={openPortal}
+          onClick={() => void openPortal()}
         >
           {loading ? "Opening portal…" : "Manage billing"}
         </Button>

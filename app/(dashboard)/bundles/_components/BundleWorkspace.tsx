@@ -6,6 +6,8 @@ import { ArrowRight, Loader2 } from "lucide-react";
 import { CopyActionButton } from "@/components/repurpose/copy-action-button";
 import { UpgradePrompt, type UpgradeGate } from "@/components/repurpose/upgrade-prompt";
 import { useCopyToClipboard } from "@/components/repurpose/use-copy-to-clipboard";
+import { PageHeader } from "@/components/ui/page-header";
+import { Button } from "@/components/ui/button";
 import {
   BUNDLE_MAX_PHOTOS,
   HEIC_DECODE_ERROR,
@@ -467,18 +469,37 @@ export default function BundleWorkspace({
 
   return (
     <div className="mx-auto max-w-3xl space-y-10">
-      <div>
-        <h1 className="font-display text-2xl font-semibold tracking-tight">
-          {VIDEO_BUNDLES_DEV ? "Moment pack" : "Photo pack"}
-        </h1>
-        <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-          Upload up to {BUNDLE_MAX_PHOTOS} photos
-          {VIDEO_BUNDLES_DEV ? " and 2 short videos" : ""}, add context, and get
-          captions, a posting order, and four platform posts in one run.
-        </p>
-      </div>
+      <PageHeader
+        title={VIDEO_BUNDLES_DEV ? "Moment pack" : "Photo pack"}
+        description={`Upload up to ${BUNDLE_MAX_PHOTOS} photos${
+          VIDEO_BUNDLES_DEV ? " and 2 short videos" : ""
+        }, add context, and get captions, a posting order, and four platform posts in one run.`}
+      />
+
+      <ol className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+        <li className="rounded-full border border-border bg-card px-2.5 py-1">
+          1. Assets
+        </li>
+        <li className="rounded-full border border-border bg-card px-2.5 py-1">
+          2. Context
+        </li>
+        <li className="rounded-full border border-border bg-card px-2.5 py-1">
+          3. Generate
+        </li>
+        <li className="rounded-full border border-border bg-card px-2.5 py-1">
+          4. Library
+        </li>
+      </ol>
 
       <section className="space-y-5 rounded-3xl border border-border bg-card p-5 sm:p-6">
+        <div>
+          <h2 className="text-sm font-semibold text-foreground">New pack</h2>
+          <p className="text-xs text-muted-foreground">
+            Assets → context → generate. Long runs keep a job row in Past bundles
+            if you leave this page.
+          </p>
+        </div>
+
         <BundlePhotoPicker
           photos={photos}
           processing={processingFiles}
@@ -576,14 +597,34 @@ export default function BundleWorkspace({
             className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-3"
           />
         ) : error ? (
-          <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+          <div className="space-y-2 rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
             <p>{error.message}</p>
             {error.billingHint && (
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 This attempt wasn’t billed — you can retry safely.
               </p>
             )}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setError(null)}
+            >
+              Dismiss and retry
+            </Button>
           </div>
+        ) : null}
+
+        {generating ? (
+          <p
+            className="rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-muted-foreground"
+            role="status"
+            aria-live="polite"
+          >
+            Generating your pack… You can leave this page — check{" "}
+            <span className="font-medium text-foreground">Past bundles</span>{" "}
+            when you return for status and Library links.
+          </p>
         ) : null}
 
         <button
@@ -609,7 +650,7 @@ export default function BundleWorkspace({
             <h2 className="text-lg font-semibold text-foreground">Your pack</h2>
             <p className="text-sm text-muted-foreground">
               Captions in recommended posting order. Platform posts live in the
-              Library.
+              Library — this page keeps the pack preview for this session.
             </p>
           </div>
 

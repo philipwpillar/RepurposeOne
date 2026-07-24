@@ -50,7 +50,7 @@ Core differentiators the review should protect, not just "clean code" in the abs
 ### Billing / Stripe (code)
 - Checkout, Customer Portal, `/billing`, Pro Plus price mapping, and webhooks for `checkout.session.completed` + `customer.subscription.updated` / `.deleted` are in code.
 - `invoice.payment_failed` is **log-only** — no `payment_failed_at` column, no non-dismissible banner.
-- Display prices in product UI/docs (GBP settlement): Creator **£19**, Pro **£45**, Pro Plus **£59**. Multi-currency notes in `docs/PRODUCT_SPEC.md` (USD/EUR additional price points + Adaptive Pricing). **Ops:** confirm live Stripe smoke (billing reflects plan, portal opens, cancellation webhook) still outstanding from earlier pass.
+- Display prices in product UI/docs (GBP settlement): Creator **£19**, Pro **£44**, Pro Plus **£59**. Multi-currency notes in `docs/PRODUCT_SPEC.md` (USD/EUR additional price points + Adaptive Pricing). **Ops:** confirm live Stripe smoke (billing reflects plan, portal opens, cancellation webhook) still outstanding from earlier pass.
 
 ### AI / GDPR routing
 - OpenRouter calls use `provider: { only: [...OPENROUTER_ALLOWED_PROVIDERS] }` in `lib/ai/generate.ts` (text, vision, bundle JSON).
@@ -104,7 +104,7 @@ Check each explicitly, in priority order:
 4. **AI cost & model selection** — token usage, timeouts/retries, right-sized models per tier, bundle two-stage spend.
 5. **Brand-voice / quality mechanisms (code-side)** — prompt injection of voice, format schemas, progressive reveal, attribution honesty. Full output-quality eval needs live samples; do not invent quality scores from static reading alone.
 6. **User value & conversion** — speed to first result, upgrade gates clarity, Moment Bundle vs Studio surfaces.
-7. **Doc sync** — do `PRODUCT_SPEC.md`, `ARCHITECTURE.md`, `AI_PROMPTS.md`, decisions register reflect HEAD? (Known drift: ARCHITECTURE still may say transcription unwired; PRODUCT_SPEC monetisation lines may lag Pro £45 / Pro Plus.)
+7. **Doc sync** — do `PRODUCT_SPEC.md`, `ARCHITECTURE.md`, `AI_PROMPTS.md`, decisions register reflect HEAD? (Known drift: ARCHITECTURE still may say transcription unwired; PRODUCT_SPEC monetisation lines should match UI: Pro **£44** / Pro Plus **£59**.)
 8. **Deploy prerequisites** — pending migrations, env vars (`STRIPE_PRICE_ID_*`, AI models, Railway/worker secrets), provider credits, feature flags.
 
 ---
