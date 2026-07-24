@@ -31,6 +31,20 @@ isProject: false
 
 # Voiceora Product-Quality Redesign
 
+## Execution: five vertical slices (do not run all at once)
+
+Walk through and ship one slice at a time. Do not start the next until the previous PR is reviewed on desktop + mobile.
+
+| Slice | Plan | Branch |
+|---|---|---|
+| 1. Foundation | [voiceora_slice_1_foundation.plan.md](voiceora_slice_1_foundation.plan.md) | `feat/ui-slice-1-foundation` |
+| 2. Studio core loop | [voiceora_slice_2_studio.plan.md](voiceora_slice_2_studio.plan.md) | `feat/ui-slice-2-studio` |
+| 3. Durable work | [voiceora_slice_3_durable_work.plan.md](voiceora_slice_3_durable_work.plan.md) | `feat/ui-slice-3-durable-work` |
+| 4. Monetisation & jobs | [voiceora_slice_4_monetisation_jobs.plan.md](voiceora_slice_4_monetisation_jobs.plan.md) | `feat/ui-slice-4-monetisation-jobs` |
+| 5. Acquisition | [voiceora_slice_5_acquisition.plan.md](voiceora_slice_5_acquisition.plan.md) | `feat/ui-slice-5-acquisition` |
+
+Quality gates (a11y, CWV, screenshots) attach to **every** slice — they are not a sixth delayed phase.
+
 ## Product direction
 Voiceora should feel like a focused creator studio—not an AI chat box or a dense enterprise dashboard. Preserve the navy, pale canvas, aurora gradient, Space Grotesk/Inter typography, and honest tone, but express them through one system across marketing, auth, onboarding, web app, and Capacitor mobile.
 

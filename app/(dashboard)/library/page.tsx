@@ -40,7 +40,7 @@ type LibraryRow = {
   user_workflow_status: UserWorkflowStatus | null;
 };
 
-export default async function HistoryPage({
+export default async function LibraryPage({
   searchParams,
 }: {
   searchParams: Promise<{ format?: string; q?: string }>;
@@ -125,8 +125,10 @@ export default async function HistoryPage({
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">History</h1>
-        <p className="text-muted-foreground">
+        <h1 className="font-display text-2xl font-semibold tracking-tight">
+          Library
+        </h1>
+        <p className="text-sm text-muted-foreground">
           Your source content — click into one to see everything generated from it.
         </p>
       </div>

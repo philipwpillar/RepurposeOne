@@ -87,7 +87,9 @@ export default async function HistoryDetailPage({
 
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-bold">Repurpose detail</h1>
+          <h1 className="font-display text-2xl font-semibold tracking-tight">
+            Repurpose detail
+          </h1>
           <Badge variant="secondary">
             {formatLabel(repurpose.target_format)}
           </Badge>

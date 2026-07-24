@@ -128,6 +128,7 @@ Append decisions here with date + who made the call. Newest at top.
 
 | Date | Decision | Owner | Notes |
 | --- | --- | --- | --- |
+| 2026-07-24 | UI redesign executes in 5 vertical slices; Slice 1 = design system + shell | User | Contract: `docs/UI_REDESIGN_CONTRACT.md`. Preserve MVP scope (no scheduling/publishing/teams/analytics). |
 | 2026-07-23 | Unified `/account` merges billing + profile + delete | User | `/billing` and `/settings/account` redirect to `/account` |
 | 2026-07-14 | Library/billing URL renames; docs synced to shipped reality | User | `/library`, `/billing`; paste + photo; txt/pdf/audio deferred |
 | 2026-06-16 | Billing unit = one generation, not per-format row | User | Implemented: `generation_id` + DISTINCT-count RPC. Resolves former open question #1. See ARCHITECTURE.md §4a |

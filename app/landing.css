@@ -1,13 +1,22 @@
 .vo-landing {
-  --ink:#0B0D14; --ink-2:#121522; --line-dark:rgba(255,255,255,0.09);
-  /* Light zones are literal ink tints (art direction 2026-07-15):
-     --paper = 10% ink over white · --paper-2 = 5% · --line-light = 18% (borders need extra depth) */
-  --paper:#E7E7E8; --paper-2:#F3F3F3; --line-light:#D3D3D5;
-  --text-hi:#F1F2F7; --text-lo:#9AA1B2; --ink-text:#13151D; --ink-muted:#5A6070;
-  --aur-1:#2DD4BF; --aur-2:#6366F1; --aur-3:#E24BC4;
-  --aurora:linear-gradient(100deg,#2DD4BF 0%,#6366F1 52%,#E24BC4 100%);
+  /* Aligned with app/globals.css brand primitives (Slice 1) */
+  --ink: #0B0D14;
+  --ink-2: #121522;
+  --line-dark: rgba(255, 255, 255, 0.09);
+  --paper: #F5F6FA;
+  --paper-2: #FAFBFC;
+  --line-light: #E6E8F0;
+  --text-hi: #F1F2F7;
+  --text-lo: #9AA1B2;
+  --ink-text: #0E1230;
+  --ink-muted: #5B6178;
+  --aur-1: #2DD4BF;
+  --aur-2: #6366F1;
+  --aur-3: #E24BC4;
+  --aurora: linear-gradient(100deg, #2DD4BF 0%, #6366F1 52%, #E24BC4 100%);
   font-family: var(--font-body), system-ui, sans-serif;
-  background: var(--paper); color: var(--ink-text);
+  background: var(--paper);
+  color: var(--ink-text);
 }
 .vo-landing .wrap { max-width:1180px; margin:0 auto; padding:0 32px; }
 .vo-landing a { text-decoration:none; }
