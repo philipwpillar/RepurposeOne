@@ -35,7 +35,7 @@ export async function callPhotoGenerateApi(params: {
   brandVoice?: BrandVoiceRef | null;
   targetTweets?: number;
   generationId?: string;
-}): Promise<{ output: RepurposeOutput; usage: UsageInfo }> {
+}): Promise<{ output: RepurposeOutput; usage: UsageInfo; repurposeId: string }> {
   const body: Record<string, unknown> = {
     input_type: "image",
     image_base64: params.photo.imageBase64,
@@ -99,5 +99,9 @@ export async function callPhotoGenerateApi(params: {
     throw new Error("Unexpected response from generation API");
   }
 
-  return { output: data.output, usage: data.usage };
+  return {
+    output: data.output,
+    usage: data.usage,
+    repurposeId: data.repurpose_id,
+  };
 }
