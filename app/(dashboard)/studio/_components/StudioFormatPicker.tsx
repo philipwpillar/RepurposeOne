@@ -64,7 +64,8 @@ export default function StudioFormatPicker({
         })}
       </div>
       <p className="mt-1.5 text-[11px] text-muted-foreground">
-        Regenerate All only runs selected formats. Per-format Regenerate still works for any card.
+        Selected formats run together. You can still regenerate one card at a
+        time after results appear.
       </p>
     </div>
   );
