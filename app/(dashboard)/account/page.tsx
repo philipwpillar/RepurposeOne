@@ -53,7 +53,7 @@ export default async function AccountPage() {
       .single(),
     supabase
       .from("brand_voices")
-      .select("id, samples, description, is_default")
+      .select("id, name, samples, description, is_default")
       .eq("user_id", user.id)
       .order("is_default", { ascending: false })
       .order("created_at", { ascending: false }),
@@ -130,6 +130,7 @@ export default async function AccountPage() {
       />
 
       <BrandVoiceSummary
+        name={defaultVoice?.name ?? null}
         description={defaultVoice?.description ?? null}
         sampleCount={defaultVoice?.samples?.length ?? 0}
         voiceCount={voices?.length ?? 0}

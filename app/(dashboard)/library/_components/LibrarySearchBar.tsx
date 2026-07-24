@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export default function LibrarySearchBar() {
   const pathname = usePathname();
@@ -42,7 +44,7 @@ export default function LibrarySearchBar() {
       }}
     >
       <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-      <input
+      <Input
         type="search"
         name="q"
         value={value}
@@ -52,9 +54,24 @@ export default function LibrarySearchBar() {
         }}
         placeholder="Search source content…"
         aria-label="Search source content"
-        className="w-full rounded-md border border-border bg-card py-2 pl-9 pr-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="bg-card pl-9 pr-10"
         disabled={isPending}
       />
+      {urlQ || value.trim() ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 p-0"
+          aria-label="Clear search"
+          onClick={() => {
+            setValue("");
+            commit("");
+          }}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      ) : null}
     </form>
   );
 }

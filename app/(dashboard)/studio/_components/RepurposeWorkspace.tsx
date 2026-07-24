@@ -40,6 +40,7 @@ import {
   formatLinkedInForCopy,
   formatXThreadForCopy,
 } from "@/lib/format-output";
+import { voiceDisplayName } from "@/lib/repurpose/voice-display-name";
 import type {
   BrandVoiceInput,
   EmailOutput,
@@ -127,8 +128,10 @@ class GenerateApiError extends Error {
 
 interface BrandVoiceProp {
   id: string;
+  name?: string | null;
   samples: string[] | null;
   description: string | null;
+  is_default?: boolean | null;
 }
 
 interface RepurposeWorkspaceProps {
@@ -710,14 +713,20 @@ export default function RepurposeWorkspace({
       <div className="mb-6">
         <Link
           href="/brand-voice"
-          className="inline-flex max-w-full items-center gap-2 rounded-2xl border border-border bg-card px-3 py-2 text-sm"
+          className="inline-flex max-w-full items-center gap-2 rounded-2xl border border-border bg-card px-3 py-2 text-sm transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          title={
+            brandVoice
+              ? voiceDisplayName(brandVoice)
+              : "Set up Brand Voice"
+          }
         >
           <Sparkles className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
           <span className="truncate">
             Brand Voice:{" "}
             <span className="font-medium">
-              {brandVoice?.description?.trim() ||
-                (brandVoice ? "Custom voice" : "No voice set — using default")}
+              {brandVoice
+                ? voiceDisplayName(brandVoice)
+                : "No voice set — using built-in style"}
             </span>
           </span>
         </Link>

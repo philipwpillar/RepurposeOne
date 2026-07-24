@@ -35,19 +35,22 @@ export type Profile = z.infer<typeof ProfileSchema>;
 export const BrandVoiceSchema = z.object({
   id: z.string().uuid(),
   user_id: z.string().uuid(),
+  name: z.string().nullable().optional(),
   samples: z.array(z.string()),
   description: z.string().nullable(),
   is_default: z.boolean(),
   created_at: z.string(),
+  updated_at: z.string().optional(),
 });
 export type BrandVoice = z.infer<typeof BrandVoiceSchema>;
 
 export const BrandVoiceInputSchema = z.object({
+  name: z.string().trim().min(2).max(60).optional(),
   samples: z.array(z.string().min(1)).max(5).optional(),
   description: z.string().min(10).max(2000).optional(),
 }).refine(
   (data) =>
-  (data.samples && data.samples.length > 0) || Boolean(data.description),
+    (data.samples && data.samples.length > 0) || Boolean(data.description),
   { message: "Provide at least one sample or a description" }
 );
 export type BrandVoiceInput = z.infer<typeof BrandVoiceInputSchema>;
