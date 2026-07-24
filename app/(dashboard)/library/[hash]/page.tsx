@@ -56,7 +56,9 @@ export default async function SourceGroupPage({
       </Button>
 
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold">{title}</h1>
+        <h1 className="font-display text-2xl font-semibold tracking-tight">
+          {title}
+        </h1>
         <p className="text-sm text-muted-foreground">
           {repurposes.length} repurpose{repurposes.length === 1 ? "" : "s"} from this source
         </p>

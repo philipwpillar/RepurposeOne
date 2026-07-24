@@ -1,60 +1,82 @@
 @import "tailwindcss";
 
 :root {
-  /* --- Aurora brand primitives (kept; used by .dark + .aurora utilities) --- */
-  --ink: #0A0F2E;
-  --panel: #141A3E;
-  --paper: #F1F2F7;
-  --teal: #2DD4BF;
-  --indigo: #6366F1;
-  --magenta: #E24BC4;
+  /* --- Canonical brand primitives (shared with marketing) --- */
+  --ink: #0b0d14;
+  --panel: #121522;
+  --paper: #f5f6fa;
+  --paper-elevated: #ffffff;
+  --teal: #2dd4bf;
+  --indigo: #6366f1;
+  --magenta: #e24bc4;
   --hair: rgba(255, 255, 255, 0.08);
-  --aurora: linear-gradient(100deg, #2DD4BF 0%, #6366F1 52%, #E24BC4 100%);
+  --aurora: linear-gradient(100deg, #2dd4bf 0%, #6366f1 52%, #e24bc4 100%);
 
   /* --- LIGHT content zone (default) --- */
-  --background: #F5F6FA;
-  --foreground: #0E1230;
-  --card: #FFFFFF;
-  --card-foreground: #0E1230;
+  --background: var(--paper);
+  --foreground: #0e1230;
+  --card: var(--paper-elevated);
+  --card-foreground: #0e1230;
 
   --primary: var(--indigo);
-  --primary-foreground: #FFFFFF;
+  --primary-foreground: #ffffff;
 
-  --secondary: #EDEFF5;
-  --secondary-foreground: #0E1230;
-  --muted: #EDEFF5;
-  --muted-foreground: #5B6178;         /* readable muted on light */
-  --accent: #EDEFF5;
-  --accent-foreground: #0E1230;
-  --destructive: #DC2626;
-  --destructive-foreground: #FFFFFF;
+  --secondary: #edeff5;
+  --secondary-foreground: #0e1230;
+  --muted: #edeff5;
+  --muted-foreground: #5b6178;
+  --accent: #edeff5;
+  --accent-foreground: #0e1230;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
 
-  --border: #E6E8F0;
-  --input: #E6E8F0;
+  --success: #0f766e;
+  --success-foreground: #ffffff;
+  --warning: #b45309;
+  --warning-foreground: #ffffff;
+
+  --border: #e6e8f0;
+  --input: #e6e8f0;
   --ring: var(--indigo);
 
   --radius: 0.625rem;
+
+  /* Platform accents (referential UI only) */
+  --platform-x: #e7e7ec;
+  --platform-linkedin: #0a66c2;
+  --platform-instagram: #e24bc4;
+  --platform-email: var(--teal);
+
+  /* Motion */
+  --motion-fast: 100ms;
+  --motion-base: 200ms;
+  --motion-slow: 300ms;
 }
 
 /* DARK navigation chrome -- applied via className="dark" on the sidebar,
    top bar, and mobile drawer only. */
 .dark {
   --background: var(--ink);
-  --foreground: var(--paper);
+  --foreground: #f1f2f7;
   --card: var(--panel);
-  --card-foreground: var(--paper);
+  --card-foreground: #f1f2f7;
 
   --primary: var(--indigo);
-  --primary-foreground: var(--paper);
+  --primary-foreground: #f1f2f7;
 
-  --secondary: #1B2350;
-  --secondary-foreground: var(--paper);
-  --muted: #141A3E;
-  --muted-foreground: rgba(241, 242, 247, 0.72);   /* contrast bump */
-  --accent: #202A5C;
-  --accent-foreground: var(--paper);
-  --destructive: #F0506E;
-  --destructive-foreground: var(--paper);
+  --secondary: #1b2350;
+  --secondary-foreground: #f1f2f7;
+  --muted: #141a3e;
+  --muted-foreground: rgba(241, 242, 247, 0.72);
+  --accent: #202a5c;
+  --accent-foreground: #f1f2f7;
+  --destructive: #f0506e;
+  --destructive-foreground: #f1f2f7;
+
+  --success: #2dd4bf;
+  --success-foreground: #0b0d14;
+  --warning: #f59e0b;
+  --warning-foreground: #0b0d14;
 
   --border: var(--hair);
   --input: rgba(255, 255, 255, 0.12);
@@ -76,6 +98,10 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -120,4 +146,41 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.14em;
   font-size: 0.6875rem; /* ~11px */
+}
+
+/* Skip link — first focusable control in the app shell */
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: 0;
+  z-index: 100;
+  transform: translateY(-120%);
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: transform var(--motion-fast) ease;
+}
+
+.skip-link:focus {
+  transform: translateY(0.75rem);
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .skip-link {
+    transition: none;
+  }
 }

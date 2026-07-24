@@ -8,6 +8,7 @@ import {
 } from "@/lib/usage";
 import { CheckoutBanner } from "@/components/billing/checkout-banner";
 import { UpgradePlans } from "@/components/billing/UpgradePlans";
+import { planLabel } from "@/lib/plan-label";
 import { ProfileSection } from "./_components/ProfileSection";
 import { UsageSection } from "./_components/UsageSection";
 import { BillingSection } from "./_components/BillingSection";
@@ -94,8 +95,10 @@ export default async function AccountPage() {
       </Suspense>
 
       <div>
-        <h1 className="text-2xl font-bold">Account</h1>
-        <p className="text-muted-foreground">
+        <h1 className="font-display text-2xl font-semibold tracking-tight">
+          Account
+        </h1>
+        <p className="text-sm text-muted-foreground">
           Profile, plan, billing, and account controls in one place.
         </p>
       </div>
@@ -114,8 +117,8 @@ export default async function AccountPage() {
           <h2 className="text-lg font-semibold">Upgrade</h2>
           <p className="text-sm text-muted-foreground">
             {usage.plan === "free"
-              ? "Choose a plan to unlock more repurposes each month."
-              : `You're on the ${usage.plan === "pro_plus" ? "Pro Plus" : usage.plan} plan.`}
+              ? "Choose a plan to unlock more generations each month."
+              : `You're on the ${planLabel(usage.plan)} plan.`}
           </p>
         </div>
         <UpgradePlans currentPlan={usage.plan} />

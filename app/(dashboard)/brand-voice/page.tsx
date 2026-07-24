@@ -20,8 +20,10 @@ export default async function BrandVoicePage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Brand Voice</h1>
-        <p className="text-muted-foreground">
+        <h1 className="font-display text-2xl font-semibold tracking-tight">
+          Brand Voice
+        </h1>
+        <p className="text-sm text-muted-foreground">
           Learn your writing style from 2–3 samples and apply it consistently
           across every output.
         </p>

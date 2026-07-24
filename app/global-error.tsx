@@ -24,15 +24,15 @@ export default function GlobalError({
           justifyContent: "center",
           fontFamily:
             '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-          backgroundColor: "#0a0a0f",
-          color: "#e7e7ec",
+          backgroundColor: "#0B0D14",
+          color: "#F1F2F7",
         }}
       >
         <div style={{ textAlign: "center", padding: "1.5rem" }}>
           <h1 style={{ fontSize: "1.25rem", fontWeight: 600, marginBottom: "0.5rem" }}>
             Something went wrong
           </h1>
-          <p style={{ fontSize: "0.875rem", color: "#9ca3af", marginBottom: "1.5rem" }}>
+          <p style={{ fontSize: "0.875rem", color: "#9AA1B2", marginBottom: "1.5rem" }}>
             The app hit an unexpected error. Try reloading the page.
           </p>
           <button
@@ -43,8 +43,8 @@ export default function GlobalError({
               fontSize: "0.875rem",
               fontWeight: 500,
               border: "none",
-              borderRadius: "0.375rem",
-              backgroundColor: "#6366f1",
+              borderRadius: "0.625rem",
+              backgroundColor: "#6366F1",
               color: "#fff",
               cursor: "pointer",
             }}

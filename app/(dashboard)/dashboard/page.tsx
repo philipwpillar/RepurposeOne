@@ -14,8 +14,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/ui/page-header";
 import DashboardRecentEmpty from "./_components/DashboardRecentEmpty";
 import { formatLabel, getOutputPreview } from "@/lib/format-output";
+import { planLabel } from "@/lib/plan-label";
 import type { RepurposeOutput } from "@/types";
 
 function getPreview(output: RepurposeOutput | null): string {
@@ -57,26 +59,24 @@ export default async function DashboardPage() {
         <CheckoutBanner />
       </Suspense>
 
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Turn one piece of content into platform-native outputs.
-          </p>
-        </div>
-        <Button asChild size="lg" disabled={atLimit}>
-          <Link href={atLimit ? "/account" : "/studio"}>
-            <Plus />
-            New Repurpose
-          </Link>
-        </Button>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        description="Turn one piece of content into platform-native outputs."
+        actions={
+          <Button asChild size="lg" disabled={atLimit}>
+            <Link href={atLimit ? "/account" : "/studio"}>
+              <Plus />
+              New Repurpose
+            </Link>
+          </Button>
+        }
+      />
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Plan</CardDescription>
-            <CardTitle className="capitalize">{usage.plan}</CardTitle>
+            <CardTitle>{planLabel(usage.plan)}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
@@ -96,14 +96,14 @@ export default async function DashboardPage() {
       </div>
 
       {atLimit && (
-        <Card className="border-amber-500/30 bg-amber-500/10">
+        <Card className="border-warning/30 bg-warning/10">
           <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-6">
-            <p className="text-sm text-amber-800">
-              You&apos;ve used all your repurposes this month. Upgrade to keep
+            <p className="text-sm text-warning">
+              You&apos;ve used all your generations this month. Upgrade to keep
               creating.
             </p>
             <Button asChild>
-              <Link href="/account">Upgrade plan</Link>
+              <Link href="/account#plans">Upgrade plan</Link>
             </Button>
           </CardContent>
         </Card>

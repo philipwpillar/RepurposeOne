@@ -2,7 +2,7 @@
 
 import React, { useCallback, useState } from 'react';
 import Link from 'next/link';
-import { Loader2 } from 'lucide-react';
+import { AlertCircle, Clock, Loader2, Sparkles } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { INPUT_CONTENT_MIN_LENGTH, planAllowsVision } from '@/lib/config';
 import {
@@ -22,6 +22,12 @@ import { LinkedInOutputPanel } from '@/components/repurpose/linkedin-output-pane
 import { UpgradePrompt, type UpgradeGate } from '@/components/repurpose/upgrade-prompt';
 import { ProcessingTrustNote } from '@/components/repurpose/processing-trust-note';
 import { XThreadTweetList } from '@/components/repurpose/x-thread-tweet-list';
+import {
+  EmailGlyph,
+  InstagramMark,
+  LinkedInMark,
+  XMark,
+} from '@/components/landing/platform-marks';
 import {
   formatEmailForCopy,
   formatInstagramForCopy,
@@ -556,7 +562,7 @@ export default function RepurposeWorkspace({
 
   const renderFormatError = (format: TargetFormat, message: string) => (
     <div className="mb-3 text-xs text-destructive bg-destructive/10 border border-destructive/30 rounded-2xl px-3 py-2 flex items-start gap-2">
-      <i className="fas fa-exclamation-circle mt-0.5"></i>
+      <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
       <div className="flex-1">
         <div>{message}</div>
         <button
@@ -574,7 +580,7 @@ export default function RepurposeWorkspace({
     <div className="max-w-screen-md mx-auto px-4 pt-6 pb-24 bg-background min-h-screen">
 
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Content Studio</h1>
+        <h1 className="font-display text-2xl font-semibold tracking-tight">Content Studio</h1>
         <p className="text-sm text-muted-foreground mt-1">One input → Multiple high-quality outputs</p>
       </div>
 
@@ -606,18 +612,18 @@ export default function RepurposeWorkspace({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <Link href="/brand-voice" className="flex items-center gap-x-2 cursor-pointer">
           <div className="bg-card border border-border rounded-2xl px-3 py-2 flex items-center gap-x-2">
-            <i className="fas fa-magic text-primary"></i>
+            <Sparkles className="h-4 w-4 text-primary" aria-hidden="true" />
             <span className="text-sm">Brand Voice: <span className="font-medium">{brandVoice?.description?.trim() || (brandVoice ? 'Custom voice' : 'No voice set — using default')}</span></span>
           </div>
         </Link>
 
-        <div className="bg-teal-500/10 border border-teal-500/30 rounded-2xl px-4 py-2 flex items-center gap-x-2">
-          <i className="fas fa-clock text-teal-600"></i>
+        <div className="bg-success/10 border border-success/30 rounded-2xl px-4 py-2 flex items-center gap-x-2">
+          <Clock className="h-4 w-4 text-success" aria-hidden="true" />
           <div className="text-sm">
-            <span className="font-medium text-teal-700">
+            <span className="font-medium text-success">
               ~{activeFormats.length * 10} min saved
             </span>
-            <span className="text-teal-600 text-xs ml-1">
+            <span className="text-success/80 text-xs ml-1">
               (~10 min × {activeFormats.length} format
               {activeFormats.length === 1 ? '' : 's'})
             </span>
@@ -672,7 +678,9 @@ export default function RepurposeWorkspace({
         >
           <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-border">
             <div className="flex items-center gap-x-3">
-              <i className="fab fa-x-twitter text-xl"></i>
+              <span className="text-foreground" aria-hidden="true">
+                <XMark size={20} />
+              </span>
               <div>
                 <div className="font-semibold">X / Twitter Thread</div>
                 <div className="text-xs text-muted-foreground">
@@ -744,7 +752,9 @@ export default function RepurposeWorkspace({
         >
           <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-border">
             <div className="flex items-center gap-x-3">
-              <i className="fab fa-linkedin text-xl text-blue-600"></i>
+              <span className="text-[color:var(--platform-linkedin)]" aria-hidden="true">
+                <LinkedInMark size={20} />
+              </span>
               <div>
                 <div className="font-semibold">LinkedIn Carousel</div>
                 <div className="text-xs text-muted-foreground">
@@ -794,7 +804,9 @@ export default function RepurposeWorkspace({
         >
           <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-border">
             <div className="flex items-center gap-x-3">
-              <i className="fab fa-instagram text-xl text-pink-600"></i>
+              <span className="text-[color:var(--platform-instagram)]" aria-hidden="true">
+                <InstagramMark size={20} />
+              </span>
               <div>
                 <div className="font-semibold">Instagram Caption</div>
                 <div className="text-xs text-muted-foreground">
@@ -844,7 +856,9 @@ export default function RepurposeWorkspace({
         >
           <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-border">
             <div className="flex items-center gap-x-3">
-              <i className="fas fa-envelope text-xl text-muted-foreground"></i>
+              <span className="text-[color:var(--platform-email)]" aria-hidden="true">
+                <EmailGlyph size={20} />
+              </span>
               <div>
                 <div className="font-semibold">Email Newsletter</div>
                 <div className="text-xs text-muted-foreground">

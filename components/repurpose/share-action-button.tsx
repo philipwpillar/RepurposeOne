@@ -10,6 +10,7 @@ import {
   linkedInFeedUrl,
 } from "@/lib/share/share-targets";
 import { useCopyToClipboard } from "./use-copy-to-clipboard";
+import { cn } from "@/lib/utils";
 
 type ShareTarget = "x" | "linkedin";
 
@@ -76,10 +77,13 @@ export function ShareActionButton({
         onClick={() => void handleShare()}
         disabled={busy}
         aria-label={isCopied ? "Copied" : isError ? "Share failed" : label}
-        className={`opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-50 ${className}`}
+        className={cn(
+          "opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-50",
+          className
+        )}
       >
         {isCopied ? (
-          <Check className="h-4 w-4 text-green-600" />
+          <Check className="h-4 w-4 text-success" />
         ) : isError ? (
           <X className="h-4 w-4 text-destructive" />
         ) : (
@@ -91,7 +95,7 @@ export function ShareActionButton({
 
   const baseClass =
     variant === "studio"
-      ? "text-xs px-3 py-1.5 rounded-2xl border border-border disabled:opacity-50"
+      ? "inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-2xl border border-border disabled:opacity-50"
       : "inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium disabled:opacity-50";
 
   return (
@@ -99,24 +103,16 @@ export function ShareActionButton({
       type="button"
       onClick={() => void handleShare()}
       disabled={busy}
-      className={`${baseClass} ${className}`}
+      className={cn(baseClass, className)}
     >
       {isError ? (
         <>
-          {variant === "studio" ? (
-            <i className="fas fa-times mr-1" />
-          ) : (
-            <X className="h-3 w-3" />
-          )}
+          <X className="h-3 w-3" aria-hidden="true" />
           Failed
         </>
       ) : isCopied ? (
         <>
-          {variant === "studio" ? (
-            <i className="fas fa-check mr-1" />
-          ) : (
-            <Check className="h-3 w-3" />
-          )}
+          <Check className="h-3 w-3" aria-hidden="true" />
           Copied!
         </>
       ) : (

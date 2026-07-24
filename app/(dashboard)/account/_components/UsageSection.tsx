@@ -1,17 +1,13 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { BUNDLE_MONTHLY_LIMIT } from "@/lib/config";
+import { planLabel } from "@/lib/plan-label";
 import type { UsageInfo } from "@/types";
 
 type UsageSectionProps = {
   usage: UsageInfo;
   bundleUsed: number | null;
 };
-
-function planLabel(plan: UsageInfo["plan"]) {
-  if (plan === "pro_plus") return "Pro Plus";
-  return plan.charAt(0).toUpperCase() + plan.slice(1);
-}
 
 export function UsageSection({ usage, bundleUsed }: UsageSectionProps) {
   const remaining = Math.max(0, usage.limit - usage.used);
@@ -25,7 +21,7 @@ export function UsageSection({ usage, bundleUsed }: UsageSectionProps) {
             Calendar-month usage for your current plan.
           </p>
         </div>
-        <Badge className="capitalize">{planLabel(usage.plan)}</Badge>
+        <Badge>{planLabel(usage.plan)}</Badge>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">

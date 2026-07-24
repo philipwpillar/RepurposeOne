@@ -468,7 +468,7 @@ export default function BundleWorkspace({
   return (
     <div className="mx-auto max-w-3xl space-y-10">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
+        <h1 className="font-display text-2xl font-semibold tracking-tight">
           {VIDEO_BUNDLES_DEV ? "Moment pack" : "Photo pack"}
         </h1>
         <p className="mt-1 max-w-xl text-sm text-muted-foreground">

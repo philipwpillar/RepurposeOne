@@ -6,6 +6,7 @@ import { Mic, Pencil, Plus, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Card,
   CardContent,
@@ -13,6 +14,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
@@ -70,6 +79,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
   const [actionError, setActionError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<BrandVoice | null>(null);
 
   const resetForm = useCallback(() => {
     setFormMode(null);
@@ -249,11 +259,10 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
     }
   };
 
-  const handleDelete = async (voiceId: string) => {
-    if (!window.confirm("Delete this brand voice? This cannot be undone.")) {
-      return;
-    }
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
 
+    const voiceId = deleteTarget.id;
     setActionError(null);
     setLoadingId(voiceId);
 
@@ -280,6 +289,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
       if (editingId === voiceId) {
         resetForm();
       }
+      setDeleteTarget(null);
       refreshList();
     } catch (err) {
       const message =
@@ -381,13 +391,11 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
             </div>
 
             <div className="flex items-center gap-2">
-              <input
+              <Checkbox
                 id="set-as-default"
-                type="checkbox"
                 checked={setAsDefault}
-                onChange={(e) => setSetAsDefault(e.target.checked)}
+                onCheckedChange={(checked) => setSetAsDefault(checked === true)}
                 disabled={isSaving}
-                className="h-4 w-4 rounded border-border text-primary focus:ring-ring"
               />
               <Label htmlFor="set-as-default" className="font-normal">
                 Set as default (used in Studio)
@@ -493,7 +501,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => handleDelete(voice.id)}
+                        onClick={() => setDeleteTarget(voice)}
                         disabled={loadingId === voice.id}
                         className="text-destructive hover:text-destructive/80"
                       >
@@ -508,6 +516,41 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
           })}
         </div>
       )}
+
+      <Dialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete brand voice?</DialogTitle>
+            <DialogDescription>
+              This permanently removes the voice and cannot be undone. Studio
+              will fall back to another default or a built-in style.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteTarget(null)}
+              disabled={loadingId === deleteTarget?.id}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => void handleDelete()}
+              disabled={loadingId === deleteTarget?.id}
+            >
+              {loadingId === deleteTarget?.id ? "Deleting…" : "Delete voice"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
