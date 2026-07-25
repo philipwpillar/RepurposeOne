@@ -61,7 +61,7 @@ run_0(){ echo "── PHASE 0 ──"
   assert "auth setup spec exists"           "$(f 'e2e/auth.setup.ts')" eq 1
   assert "storageState wired"               "$(n 'storageState' playwright.config.ts e2e)" ge 2
   assert "setup project + dependencies"     "$(n 'name:\s*.setup.|dependencies:\s*\[' playwright.config.ts)" ge 2
-  assert "authenticated critical paths"     "$(ls e2e/*.spec.ts 2>/dev/null | wc -l | tr -d ' ')" ge 4
+  assert "authenticated critical paths"     "$(ls e2e/*.spec.ts 2>/dev/null | grep -cv '\.anon\.spec\.ts')" ge 2
   assert "studio spec hits /studio"         "$(n 'goto\(./studio' e2e)" ge 1
   assert "library spec hits /library"       "$(n 'goto\(./library|/library' e2e)" ge 1
   assert "402 upgrade-gate covered"         "$(n '402|limit_exceeded' e2e)" ge 1

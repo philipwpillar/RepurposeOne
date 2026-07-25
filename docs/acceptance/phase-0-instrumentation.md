@@ -31,7 +31,7 @@ bash scripts/ac-check.sh 0
   PASS  auth setup spec exists                 1 eq 1
   PASS  storageState wired                     3 ge 2
   PASS  setup project + dependencies           2 ge 2
-  PASS  authenticated critical paths           6 ge 4
+  PASS  authenticated critical paths           3 ge 2
   PASS  studio spec hits /studio               2 ge 1
   PASS  library spec hits /library             2 ge 1
   PASS  402 upgrade-gate covered               2 ge 1
@@ -51,13 +51,15 @@ RESULT: PASS
 | AC harness | `scripts/ac-check.sh` (corrected `run_0()`; Phase 8 visual gates in `run_8()`) |
 | Vercel Analytics + Speed Insights | `app/layout.tsx` imports + `package.json` |
 | Playwright auth setup | `e2e/auth.setup.ts` + `storageState` / setup project in `playwright.config.ts` |
-| Critical paths | `e2e/studio-generate.spec.ts`, `e2e/upgrade-gate.spec.ts`, `e2e/auth-guard.anon.spec.ts` (+ strengthened `landing.spec.ts`, kept `legal.spec.ts`) |
+| Critical paths | `e2e/studio-generate.spec.ts`, `e2e/upgrade-gate.spec.ts`; public surfaces as `landing.anon.spec.ts`, `legal.anon.spec.ts`, `auth-guard.anon.spec.ts` |
 | AI stubbed | `page.route("**/api/generate")` in studio + upgrade-gate specs |
 | CI | build inlines `NEXT_PUBLIC_SUPABASE_*`; `npx playwright test` with secrets; AC harness floor + 0 |
 
 ## Notes / follow-ups (not Phase 0 blockers)
 
-- **Visual regression deliberately deferred to Phase 8** — snapshot tests would fail on nearly every PR during a redesign that changes pixels by design, and would be rubber-stamped rather than read. `e2e/visual.spec.ts` is committed and skipped; Phase 8 un-skips it, generates Linux baselines, and makes it a hard CI gate.
+- - **Anon vs auth rule:** `.anon.spec.ts` = public/signed-out surfaces; `.spec.ts` = authenticated. Landing/legal renamed so “Start free” is asserted as a visitor.
+- **Studio stub is format-aware:** `/api/generate` returns schema-valid output per `target_format` so LinkedIn/Instagram/Email no longer fail invisibly.
+**Visual regression deliberately deferred to Phase 8** — snapshot tests would fail on nearly every PR during a redesign that changes pixels by design, and would be rubber-stamped rather than read. `e2e/visual.spec.ts` is committed and skipped; Phase 8 un-skips it, generates Linux baselines, and makes it a hard CI gate.
 - **CWV numeric gates:** Analytics/Speed Insights must be live on Vercel after merge. No numeric LCP/INP/CLS gate until traffic exists.
 - **Later phases:** bump the CI line `bash scripts/ac-check.sh 0` to the active phase number when opening that phase’s PR.
 

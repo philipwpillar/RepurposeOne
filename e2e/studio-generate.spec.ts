@@ -13,20 +13,47 @@ test("generates a thread from pasted source and reaches the Library", async ({
 }) => {
   // Stub every generate call — deterministic, and zero AI spend in CI.
   await page.route("**/api/generate", async (route) => {
+    const body = route.request().postDataJSON() as { target_format?: string };
+    const format = body?.target_format ?? "x_thread";
+
+    const outputs: Record<string, unknown> = {
+      x_thread: {
+        format: "x_thread",
+        tweets: [
+          { number: 1, text: "E2E tweet one." },
+          { number: 2, text: "E2E tweet two." },
+          { number: 3, text: "E2E tweet three." },
+        ],
+      },
+      linkedin: {
+        format: "linkedin",
+        post: "E2E LinkedIn post body.",
+        carousel_slides: [
+          { number: 1, title: "E2E slide one" },
+          { number: 2, title: "E2E slide two" },
+          { number: 3, title: "E2E slide three" },
+        ],
+      },
+      instagram: {
+        format: "instagram",
+        caption: "E2E Instagram caption.",
+        hook_variations: ["E2E hook one", "E2E hook two"],
+        hashtags: ["#e2e"],
+      },
+      email: {
+        format: "email",
+        subject_line: "E2E subject line",
+        body: "E2E newsletter body.",
+      },
+    };
+
     await route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
-        repurpose_id: "00000000-0000-4000-8000-000000000001",
+        repurpose_id: `00000000-0000-4000-8000-00000000000${["x_thread", "linkedin", "instagram", "email"].indexOf(format) + 1}`,
         status: "complete",
-        output: {
-          format: "x_thread",
-          tweets: [
-            { number: 1, text: "E2E tweet one." },
-            { number: 2, text: "E2E tweet two." },
-            { number: 3, text: "E2E tweet three." },
-          ],
-        },
+        output: outputs[format] ?? outputs.x_thread,
         usage: USAGE,
         model: "e2e-stub",
         source_hash: "e2ehash",
@@ -49,10 +76,13 @@ test("generates a thread from pasted source and reaches the Library", async ({
   await page.locator("textarea").fill("E2E source content. ".repeat(20));
   await page.getByRole("button", { name: /Update & Regenerate All/ }).click();
 
-  // Progressive reveal: the X card reaches a ready state.
-  await expect(
-    page.locator('article[data-format="x_thread"]').getByText("E2E tweet one."),
-  ).toBeVisible({ timeout: 15_000 });
+  // All four formats succeed (desktop expands every card).
+  for (const f of ["x_thread", "linkedin", "instagram", "email"]) {
+    await expect(page.locator(`article[data-format="${f}"]`)).toContainText(
+      "E2E",
+      { timeout: 20_000 },
+    );
+  }
 
   // Export is enabled once there is output.
   await expect(page.getByRole("button", { name: /Export Bundle/ })).toBeEnabled();
