@@ -71,9 +71,9 @@
   --motion-slow: 300ms;
 }
 
-/* DARK navigation chrome -- applied via className="dark" on the sidebar,
-   top bar, and mobile drawer only. */
-.dark {
+/* Always-dark zone — sidebar, top bar, mobile drawer, auth/onboarding shell.
+   Applied via className="chrome-dark". Not the user theme (that is .dark on <html>). */
+.chrome-dark {
   --background: var(--ink);
   --foreground: #f1f2f7;
   --card: var(--panel);
