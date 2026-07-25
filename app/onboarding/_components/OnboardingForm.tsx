@@ -16,7 +16,6 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import "@/app/landing.css";
@@ -136,9 +135,9 @@ export function OnboardingForm() {
           <div className="mb-1 text-xs font-semibold tracking-wider text-[#A78BFA]">
             QUICK SETUP · 1 OF 1
           </div>
-          <CardTitle className="font-display text-2xl text-[#F4F4F5]">
+          <h1 className="font-display text-2xl text-[#F4F4F5]">
             Teach Voiceora how you write
-          </CardTitle>
+          </h1>
           <CardDescription>
             Paste a sample or a one-line style note. Next you’ll land in Studio
             with example content so you can generate your first drafts.

@@ -83,6 +83,8 @@ run_1(){ echo "── PHASE 1 ──"
   assert "skeleton animate-pulse removed"   "$(n 'animate-pulse' components/ui/skeleton.tsx)" eq 0
   assert "skeleton shimmer added"           "$(n 'shimmer' components/ui/skeleton.tsx app/globals.css)" ge 1
   assert "coarse-pointer targets added"     "$(n 'pointer:\s*coarse' app/globals.css components/ui/button.tsx)" ge 1
+  assert "auth pages expose a real h1"      "$(n '<h1' components/auth/auth-form.tsx app/onboarding/_components/OnboardingForm.tsx)" ge 2
+  assert "e2e asserts sign-up heading role" "$(n 'heading.*Create your account' e2e)" ge 1
   assert "acceptance note committed"        "$(f 'docs/acceptance/phase-1-*.md')" eq 1 ; }
 run_2(){ echo "── PHASE 2 ──"
   assert "Tailwind arbitrary hex"           "$(n '(text|bg|border|ring|fill|stroke|from|via|to|shadow|outline|placeholder|accent|caret|divide)-\[#' $A $C)" eq 0

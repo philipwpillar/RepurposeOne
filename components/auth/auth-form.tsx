@@ -14,7 +14,6 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
@@ -106,9 +105,9 @@ export function AuthForm({
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgba(45,212,191,0.15)]">
           <Mail className="h-5 w-5 text-[#2DD4BF]" aria-hidden />
         </div>
-        <h2 className="font-display text-xl font-semibold tracking-tight">
+        <h1 className="font-display text-xl font-semibold tracking-tight">
           Check your inbox
-        </h2>
+        </h1>
         <p className="text-sm text-[#A1A1AA]">
           We sent a confirmation link to{" "}
           <span className="font-medium text-[#F4F4F5]">{email}</span>. Open it,
@@ -129,9 +128,9 @@ export function AuthForm({
   return (
     <Card className="vo-auth-card w-full max-w-md border-0 shadow-none">
       <CardHeader className="text-center">
-        <CardTitle className="font-display text-2xl text-[#F4F4F5]">
+        <h1 className="font-display text-2xl text-[#F4F4F5]">
           {isSignUp ? "Create your account" : "Welcome back"}
-        </CardTitle>
+        </h1>
         <CardDescription>
           {isSignUp
             ? "Start free — teach your voice, then generate your first drafts."

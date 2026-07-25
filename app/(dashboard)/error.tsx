@@ -5,7 +5,6 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
@@ -33,7 +32,6 @@ export default function DashboardError({
             back to your dashboard.
           </CardDescription>
         </CardHeader>
-        <CardContent />
         <CardFooter className="flex flex-wrap gap-3">
           <Button onClick={() => reset()}>Retry</Button>
           <Button variant="outline" asChild>
