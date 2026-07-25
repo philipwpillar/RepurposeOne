@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { UsageInfo } from "@/types";
@@ -40,14 +41,16 @@ function isActivePath(pathname: string, href: string) {
 }
 
 function UserAvatar({ user, size = "md" }: { user: DashboardUser; size?: "sm" | "md" }) {
+  const px = size === "sm" ? 32 : 36;
   const sizeClass = size === "sm" ? "h-8 w-8 text-xs" : "h-9 w-9 text-sm";
 
   if (user.avatarUrl) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
+      <Image
         src={user.avatarUrl}
         alt=""
+        width={px}
+        height={px}
         className={cn(sizeClass, "rounded-full object-cover ring-2 ring-background")}
       />
     );
@@ -191,6 +194,7 @@ export function DashboardShell({
 }: DashboardShellProps) {
   const pathname = usePathname();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const isFullBleed = pathname.startsWith("/studio");
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -270,7 +274,10 @@ export function DashboardShell({
         <main
           id="main-content"
           tabIndex={-1}
-          className="flex-1 p-4 outline-none md:p-8 [&:has(.max-w-screen-md)]:p-0"
+          className={cn(
+            "flex-1 outline-none",
+            isFullBleed ? "p-0" : "p-4 md:p-8"
+          )}
         >
           {paymentFailed ? <PaymentFailedBanner /> : null}
           {children}

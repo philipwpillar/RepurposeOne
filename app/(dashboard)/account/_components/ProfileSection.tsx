@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { SignOutButton } from "@/components/app/sign-out-button";
@@ -78,9 +79,11 @@ export function ProfileSection({
 
       <div className="flex items-center gap-4">
         {avatarUrl ? (
-          <img
+          <Image
             src={avatarUrl}
             alt={name}
+            width={56}
+            height={56}
             className="h-14 w-14 rounded-full object-cover ring-2 ring-background"
           />
         ) : (

@@ -47,7 +47,10 @@ run_floor(){
   assert "no window.confirm / alert()"      "$(n 'window\.confirm|(^|[^.[:alnum:]_])alert\(' $A $C)" eq 0
   assert "live regions preserved"           "$(n 'aria-live|role="status"|role="alert"' $A $C)" ge 11
   assert "prefers-reduced-motion present"   "$(n 'prefers-reduced-motion' $A $C)" ge 4
-  assert "no Tailwind arbitrary hex ADDED"  "$(git diff --unified=0 origin/main...HEAD -- $A $C 2>/dev/null | rg -c '^\+.*(text|bg|border|ring|fill|stroke|from|via|to|shadow|outline|placeholder|accent|caret|divide)-\[#' || echo 0)" eq 0
+  # Net count vs origin/main — line-level diff false-positives on moved hex (e.g. CardTitle→h1).
+  BASE_HEX=$(git --no-pager grep -cE '(text|bg|border|ring|fill|stroke|from|via|to|shadow|outline|placeholder|accent|caret|divide)-\[#' origin/main -- app components 2>/dev/null | awk -F: '{s+=$NF} END {print s+0}')
+  NOW_HEX=$(n '(text|bg|border|ring|fill|stroke|from|via|to|shadow|outline|placeholder|accent|caret|divide)-\[#' $A $C)
+  assert "no NET Tailwind arbitrary hex added" "$NOW_HEX" le "$BASE_HEX"
   echo "── FENCE (assert only if the PR touches Studio) ──"
   assert "class GenerateApiError"           "$(n 'class GenerateApiError' "$W")" eq 1
   assert "callGenerateApi"                  "$(n 'callGenerateApi' "$W")" eq 3
@@ -83,6 +86,8 @@ run_1(){ echo "── PHASE 1 ──"
   assert "skeleton animate-pulse removed"   "$(n 'animate-pulse' components/ui/skeleton.tsx)" eq 0
   assert "skeleton shimmer added"           "$(n 'shimmer' components/ui/skeleton.tsx app/globals.css)" ge 1
   assert "coarse-pointer targets added"     "$(n 'pointer:\s*coarse' app/globals.css components/ui/button.tsx)" ge 1
+  assert "auth pages expose a real h1"      "$(n '<h1' components/auth/auth-form.tsx app/onboarding/_components/OnboardingForm.tsx)" ge 2
+  assert "e2e asserts sign-up heading role" "$(n 'heading.*Create your account' e2e)" ge 1
   assert "acceptance note committed"        "$(f 'docs/acceptance/phase-1-*.md')" eq 1 ; }
 run_2(){ echo "── PHASE 2 ──"
   assert "Tailwind arbitrary hex"           "$(n '(text|bg|border|ring|fill|stroke|from|via|to|shadow|outline|placeholder|accent|caret|divide)-\[#' $A $C)" eq 0

@@ -170,6 +170,23 @@ body {
   outline-offset: 2px;
 }
 
+@keyframes vo-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    #e4e7ef 0%,
+    #f2f4f8 40%,
+    #e4e7ef 80%
+  );
+  background-size: 200% 100%;
+  animation: vo-shimmer 1.4s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

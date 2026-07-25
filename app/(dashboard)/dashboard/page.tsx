@@ -101,10 +101,10 @@ export default async function DashboardPage() {
         title="Dashboard"
         description="What to do next — create, review, or fix billing and limits."
         actions={
-          <Button asChild size="lg" disabled={atLimit && !paymentFailed}>
+          <Button asChild size="lg">
             <Link href={atLimit ? "/account#plans" : "/studio"}>
               <Plus />
-              New Repurpose
+              {atLimit ? "Upgrade to continue" : "New Repurpose"}
             </Link>
           </Button>
         }
