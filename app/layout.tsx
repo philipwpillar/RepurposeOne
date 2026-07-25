@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { ThemeProvider } from "@/components/theme/theme-provider";
 import "./globals.css";
 
 const display = Space_Grotesk({
@@ -49,6 +50,8 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image" },
 };
 
+const themeBootScript = `(function(){try{var t=localStorage.getItem("vo-theme");var d=t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);if(d)document.documentElement.classList.add("dark");}catch(e){}})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -57,10 +60,18 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${display.variable} ${body.variable} ${mono.variable}`}
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{ __html: themeBootScript }}
+        />
+      </head>
       <body className="min-h-screen antialiased">
-        {children}
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
         <Analytics />
         <SpeedInsights />
       </body>

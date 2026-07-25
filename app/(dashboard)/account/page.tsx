@@ -13,6 +13,7 @@ import { UpgradePlans } from "@/components/billing/UpgradePlans";
 import { PageHeader } from "@/components/ui/page-header";
 import { planLabel } from "@/lib/plan-label";
 import { ProfileSection } from "./_components/ProfileSection";
+import { AppearanceSection } from "./_components/AppearanceSection";
 import { UsageSection } from "./_components/UsageSection";
 import { BillingSection } from "./_components/BillingSection";
 import { BrandVoiceSummary } from "./_components/BrandVoiceSummary";
@@ -37,6 +38,7 @@ function signedInViaLabel(
 }
 
 const SECTION_NAV = [
+  { href: "#appearance", label: "Appearance" },
   { href: "#profile", label: "Profile" },
   { href: "#usage", label: "Usage" },
   { href: "#plans", label: "Plans" },
@@ -148,6 +150,8 @@ export default async function AccountPage() {
           </a>
         ))}
       </nav>
+
+      <AppearanceSection />
 
       <ProfileSection
         email={user.email}

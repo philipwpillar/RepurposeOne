@@ -36,7 +36,7 @@
   --card: var(--surface-1);
   --card-foreground: var(--paper-foreground);
 
-  --primary: var(--indigo);
+  --primary: #5b5ff0; /* slightly darker than --indigo for AA on white text */
   --primary-foreground: #ffffff;
 
   --secondary: var(--surface-2);
@@ -69,6 +69,45 @@
   --motion-fast: 100ms;
   --motion-base: 200ms;
   --motion-slow: 300ms;
+}
+
+/* User-selected dark theme on <html>. Chrome zones keep .chrome-dark. */
+.dark {
+  --surface-0: #0f131c; /* canvas — deliberately lighter than --ink */
+  --surface-1: #161b28;
+  --surface-2: #1e2433;
+  --surface-3: #272e40;
+
+  --background: var(--surface-0);
+  --foreground: #e8eaf2;
+  --card: var(--surface-1);
+  --card-foreground: #e8eaf2;
+
+  --secondary: var(--surface-2);
+  --secondary-foreground: #e8eaf2;
+  --muted: var(--surface-2);
+  --muted-foreground: rgba(232, 234, 242, 0.68);
+  --accent: var(--surface-3);
+  --accent-foreground: #e8eaf2;
+
+  --primary: #818cf8; /* lifted from #6366f1 for contrast on dark */
+  --primary-foreground: #0b0d14;
+
+  --destructive: #f0506e;
+  --destructive-foreground: #0b0d14;
+  --success: var(--teal);
+  --success-foreground: #0b0d14;
+  --warning: #f59e0b;
+  --warning-foreground: #0b0d14;
+
+  --border: rgba(255, 255, 255, 0.10);
+  --input: rgba(255, 255, 255, 0.14);
+  --ring: #818cf8;
+
+  --platform-x: #e7e7ec;
+  --platform-linkedin: #4d9fff; /* #0a66c2 fails contrast on dark */
+  --platform-instagram: #f06fd4;
+  --platform-email: var(--teal);
 }
 
 /* Always-dark zone — sidebar, top bar, mobile drawer, auth/onboarding shell.
