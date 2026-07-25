@@ -24,3 +24,17 @@ jobs:
       - run: npm run lint
 
       - run: npm run build
+
+      - name: Acceptance criteria (floor)
+        run: bash scripts/ac-check.sh floor
+
+      - name: Acceptance criteria (phase)
+        run: bash scripts/ac-check.sh 0
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Playwright
+        run: npx playwright test e2e/landing.spec.ts e2e/legal.spec.ts
+        env:
+          CI: true
