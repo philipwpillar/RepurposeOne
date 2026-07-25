@@ -9,9 +9,13 @@ import { Button } from "@/components/ui/button";
 
 interface GoogleSignInButtonProps {
   redirectTo?: string;
+  onError?: (message: string) => void;
 }
 
-export function GoogleSignInButton({ redirectTo = "/dashboard" }: GoogleSignInButtonProps) {
+export function GoogleSignInButton({
+  redirectTo = "/dashboard",
+  onError,
+}: GoogleSignInButtonProps) {
   const [loading, setLoading] = useState(false);
   const googleEnabled = isGoogleAuthEnabled();
 
@@ -31,32 +35,21 @@ export function GoogleSignInButton({ redirectTo = "/dashboard" }: GoogleSignInBu
     });
 
     if (error) {
-      console.error("Google sign-in error:", error.message);
+      onError?.(error.message);
       setLoading(false);
     }
   }
 
   if (!googleEnabled) {
-    return (
-      <Button
-        type="button"
-        variant="outline"
-        className="w-full"
-        disabled
-        title="Google sign-in is not configured yet"
-      >
-        <GoogleIcon />
-        Google — not configured
-      </Button>
-    );
+    return null;
   }
 
   return (
     <Button
       type="button"
       variant="outline"
-      className="w-full"
-      onClick={handleGoogleSignIn}
+      className="w-full border-white/15 bg-transparent text-[#F4F4F5] hover:bg-white/5"
+      onClick={() => void handleGoogleSignIn()}
       disabled={loading}
     >
       {loading ? <Loader2 className="animate-spin" /> : <GoogleIcon />}

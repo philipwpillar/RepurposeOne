@@ -13,9 +13,12 @@ import {
   LinkedInMark,
   XMark,
 } from "@/components/landing/platform-marks";
+import { LandingPricing } from "@/components/landing/landing-pricing";
+import { ProofOutputs } from "@/components/landing/proof-outputs";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
 import { VoiceLab } from "@/components/landing/voice-lab";
 import { VoLogoMark, VoMarkDefs } from "@/components/landing/vo-logo-mark";
+import { PLAN_LIMITS } from "@/lib/config";
 import "./landing.css";
 
 export const metadata: Metadata = {
@@ -98,8 +101,8 @@ export default async function HomePage() {
                 </Link>
               </div>
               <p className="trust-line">
-                Free plan, no card · Four formats per run · Voice learned from
-                2–3 samples
+                Free plan · {PLAN_LIMITS.free} generations/month · no card ·
+                voice from 2–3 samples
               </p>
             </div>
 
@@ -204,7 +207,8 @@ export default async function HomePage() {
               </span>
               <div className="st">Generate everywhere</div>
               <p className="sd">
-                One click produces all four formats, ready to copy or export.
+                One generation produces all four formats, ready to copy or
+                export.
               </p>
             </div>
           </ScrollReveal>
@@ -240,33 +244,20 @@ export default async function HomePage() {
           <ScrollReveal>
             <p className="proof-sub">
               Voiceora is new, so you won&apos;t find invented user counts or
-              stock-photo testimonials here. What you will find: real outputs
-              from the live product — every post about Voiceora is written with
-              Voiceora, and we publish the results as they happen.
+              stock-photo testimonials here. What you will find: real Studio
+              outputs about the product itself — every post about Voiceora is
+              written with Voiceora.
             </p>
           </ScrollReveal>
-          <div className="proof-grid">
-            <ScrollReveal>
-              <div className="proof-card slot">
-                <p>
-                  REAL OUTPUT SLOT
-                  <br />— populated with a genuine generation from the live app
-                  after the launch smoke test —
-                </p>
-              </div>
-            </ScrollReveal>
-            <ScrollReveal>
-              <div className="proof-card slot">
-                <p>
-                  REAL OUTPUT SLOT
-                  <br />— second genuine output, different format, with a link
-                  to the published post —
-                </p>
-              </div>
-            </ScrollReveal>
-          </div>
+          <ScrollReveal>
+            <ProofOutputs />
+          </ScrollReveal>
         </div>
       </section>
+
+      <ScrollReveal>
+        <LandingPricing signedIn={Boolean(user)} />
+      </ScrollReveal>
 
       <section className="final-cta">
         <div className="aurora-glow" aria-hidden="true" />
@@ -276,8 +267,8 @@ export default async function HomePage() {
           </ScrollReveal>
           <ScrollReveal>
             <p>
-              The free plan takes about a minute to set up. No card, cancel
-              anytime.
+              Free plan includes {PLAN_LIMITS.free} generations a month. No
+              card, cancel anytime.
             </p>
           </ScrollReveal>
           <ScrollReveal>
@@ -301,9 +292,15 @@ export default async function HomePage() {
             <span className="name">Voiceora</span>
           </div>
           <div>
-            <Link href="/privacy">Privacy Policy</Link>
+            <Link href="#how">How it works</Link>
             <span className="sep">·</span>
-            <a href="mailto:support@voiceora.io">support@voiceora.io</a>
+            <Link href="#pricing">Pricing</Link>
+            <span className="sep">·</span>
+            <Link href="/privacy">Privacy</Link>
+            <span className="sep">·</span>
+            <Link href="/terms">Terms</Link>
+            <span className="sep">·</span>
+            <a href="mailto:support@voiceora.io">Support</a>
           </div>
         </div>
       </footer>

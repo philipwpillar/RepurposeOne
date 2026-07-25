@@ -4,19 +4,19 @@ overview: Bring marketing, auth, and onboarding to the same quality bar as the p
 todos:
   - id: s5-marketing
     content: Tighten landing hierarchy, CTA discipline, mobile layouts; replace REAL OUTPUT SLOT placeholders with real product proof.
-    status: pending
+    status: completed
   - id: s5-auth
     content: Bring sign-in/sign-up into Voiceora visual language with strong recovery/error/success states; keep accessible auth patterns.
-    status: pending
+    status: completed
   - id: s5-onboarding
     content: Learn-by-doing onboarding — intent/channels optional, voice save or skip with quality explanation, land in Studio with sample or own content.
-    status: pending
+    status: completed
   - id: s5-trust
     content: Align privacy/footer/support links and upload-retention messaging with honest brand voice.
-    status: pending
+    status: completed
   - id: s5-gates
     content: CWV-aware landing checks, desktop/mobile screenshots of marketing+auth+onboarding; open PR; optional second usability pass.
-    status: pending
+    status: completed
 isProject: false
 ---
 

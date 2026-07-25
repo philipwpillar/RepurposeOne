@@ -7,7 +7,8 @@ import Link from "next/link";
 export function ProcessingTrustNote() {
   return (
     <p className="mb-6 px-1 text-xs text-muted-foreground">
-      Content is processed by a third-party AI provider.{" "}
+      Content you submit (including photo uploads) is processed by a third-party
+      AI provider and stored in your Library while your account is active.{" "}
       <Link
         href="/privacy"
         className="underline underline-offset-2 hover:text-foreground"

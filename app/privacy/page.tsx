@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { VoLogoMark, VoMarkDefs } from "@/components/landing/vo-logo-mark";
 
 export const metadata: Metadata = {
   title: {
@@ -12,17 +13,26 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen bg-background">
+      <VoMarkDefs />
       <header className="border-b border-border px-6 py-4">
-        <Link href="/" className="text-lg font-bold tracking-tight">
-          Voiceora
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <VoLogoMark size={26} />
+          <span className="font-display text-lg font-semibold tracking-tight">
+            Voiceora
+          </span>
         </Link>
       </header>
 
       <article className="mx-auto max-w-3xl px-6 py-12">
-        <h1 className="text-3xl font-bold tracking-tight">Privacy Policy</h1>
+        <h1 className="font-display text-3xl font-bold tracking-tight">
+          Privacy Policy
+        </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Last updated: 5 July 2026
+          Last updated: 25 July 2026
         </p>
 
         <div className="mt-10 space-y-8 text-foreground">
@@ -104,7 +114,9 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold">Data retention</h2>
             <p className="mt-3 leading-relaxed text-muted-foreground">
               We retain your account and content data while your account is
-              active. You can delete your account in-app from{" "}
+              active, including text sources, brand-voice samples, generated
+              outputs in your Library, and photos or pack assets you upload for
+              generation. You can delete your account in-app from{" "}
               <a
                 href="/account#danger"
                 className="text-foreground underline underline-offset-4"

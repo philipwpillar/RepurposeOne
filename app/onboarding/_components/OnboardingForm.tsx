@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { BrandVoiceInputSchema } from "@/types";
+import { AuthShell } from "@/components/auth/auth-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +19,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import "@/app/landing.css";
+
+const STUDIO_LANDING = "/studio?example=1";
 
 export function OnboardingForm() {
   const router = useRouter();
@@ -46,6 +50,7 @@ export function OnboardingForm() {
     const trimmedDescription = description.trim();
 
     const parsed = BrandVoiceInputSchema.safeParse({
+      name: "Default voice",
       samples: trimmedSample ? [trimmedSample] : undefined,
       description: trimmedDescription || undefined,
     });
@@ -75,6 +80,7 @@ export function OnboardingForm() {
         .from("brand_voices")
         .insert({
           user_id: user.id,
+          name: parsed.data.name ?? "Default voice",
           samples: parsed.data.samples ?? [],
           description: parsed.data.description ?? null,
           is_default: true,
@@ -83,7 +89,7 @@ export function OnboardingForm() {
       if (insertError) throw insertError;
 
       await markComplete(supabase, user.id);
-      router.push("/dashboard");
+      router.push(STUDIO_LANDING);
       router.refresh();
     } catch (err) {
       setError(
@@ -110,7 +116,7 @@ export function OnboardingForm() {
       }
 
       await markComplete(supabase, user.id);
-      router.push("/dashboard");
+      router.push(STUDIO_LANDING);
       router.refresh();
     } catch (err) {
       setError(
@@ -124,19 +130,18 @@ export function OnboardingForm() {
   const busy = isSaving || isSkipping;
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-4">
-      <span className="text-xl font-bold tracking-tight">
-        Voice<span className="text-primary">ora</span>
-      </span>
-      <Card className="w-full max-w-md">
+    <AuthShell>
+      <Card className="vo-auth-card w-full max-w-md border-0 shadow-none">
         <CardHeader>
-          <div className="text-xs font-semibold tracking-wider text-primary mb-1">
-            QUICK SETUP
+          <div className="mb-1 text-xs font-semibold tracking-wider text-[#A78BFA]">
+            QUICK SETUP · 1 OF 1
           </div>
-          <CardTitle className="text-2xl">Give Voiceora your voice</CardTitle>
+          <CardTitle className="font-display text-2xl text-[#F4F4F5]">
+            Teach Voiceora how you write
+          </CardTitle>
           <CardDescription>
-            Paste a sample of your writing, or describe your style in a
-            line. Every output will match it.
+            Paste a sample or a one-line style note. Next you’ll land in Studio
+            with example content so you can generate your first drafts.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -149,6 +154,7 @@ export function OnboardingForm() {
               onChange={(e) => setSample(e.target.value)}
               rows={4}
               disabled={busy}
+              className="border-white/12 bg-[rgba(11,13,20,0.65)] text-[#F4F4F5] placeholder:text-[#71717A]"
             />
           </div>
 
@@ -173,26 +179,30 @@ export function OnboardingForm() {
             type="button"
             className="w-full"
             disabled={busy}
-            onClick={handleSave}
+            onClick={() => void handleSave()}
           >
             {isSaving && <Loader2 className="animate-spin" />}
-            Save &amp; continue
+            Save &amp; open Studio
           </Button>
           <Button
             type="button"
             variant="ghost"
-            className="w-full text-muted-foreground"
+            className="w-full text-[#A1A1AA] hover:bg-white/5 hover:text-[#F4F4F5]"
             disabled={busy}
-            onClick={handleSkip}
+            onClick={() => void handleSkip()}
           >
             {isSkipping && <Loader2 className="animate-spin" />}
-            Skip for now — use default voice
+            Skip for now
           </Button>
+          <p className="text-center text-xs leading-relaxed text-[#71717A]">
+            Skipping uses a built-in generic style until you add a Brand Voice —
+            outputs won’t sound as much like you.
+          </p>
         </CardContent>
-        <CardFooter className="justify-center text-xs text-muted-foreground">
+        <CardFooter className="justify-center text-xs text-[#71717A]">
           You can change this anytime in Brand Voice.
         </CardFooter>
       </Card>
-    </div>
+    </AuthShell>
   );
 }
