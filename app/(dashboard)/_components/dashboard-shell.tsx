@@ -204,7 +204,7 @@ export function DashboardShell({
 
       {/* Desktop sidebar */}
       <aside
-        className="dark hidden w-64 shrink-0 flex-col border-r border-border bg-card md:flex"
+        className="chrome-dark hidden w-64 shrink-0 flex-col border-r border-border bg-card md:flex"
         aria-label="Primary"
       >
         <div className="flex h-14 items-center border-b border-border px-5">
@@ -237,7 +237,7 @@ export function DashboardShell({
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Top bar */}
-        <header className="dark sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border bg-card px-4">
+        <header className="chrome-dark sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border bg-card px-4">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
@@ -294,7 +294,7 @@ export function DashboardShell({
             onClick={() => setMobileNavOpen(false)}
           />
           <aside
-            className="dark absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-card shadow-xl"
+            className="chrome-dark absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-card shadow-xl"
             aria-label="Primary"
           >
             <div className="flex h-14 items-center justify-between border-b border-border px-4">

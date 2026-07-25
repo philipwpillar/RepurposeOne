@@ -18,9 +18,11 @@ W='app/(dashboard)/studio/_components/RepurposeWorkspace.tsx'
 #  vo-logo-mark.tsx         — SVG gradient stopColor attributes
 #  google-sign-in-button    — Google brand marks, fixed by Google branding guidelines
 #  app/dev/**               — dev-only harness, never shipped
+#  opengraph-image / icon / apple-icon — Satori (no stylesheet; CSS vars unavailable)
 HEXALLOW=(-g '!**/globals.css' -g '!app/global-error.tsx' -g '!app/loading.tsx' \
           -g '!components/landing/vo-logo-mark.tsx' -g '!app/dev/**' \
-          -g '!components/auth/google-sign-in-button.tsx')
+          -g '!components/auth/google-sign-in-button.tsx' \
+          -g '!app/opengraph-image.tsx' -g '!app/icon.tsx' -g '!app/apple-icon.tsx')
 
 # Files where raw <img> is legitimate: local object-URL/blob previews that
 # next/image cannot optimise, plus the dev harness.
@@ -93,10 +95,18 @@ run_2(){ echo "── PHASE 2 ──"
   assert "Tailwind arbitrary hex"           "$(n '(text|bg|border|ring|fill|stroke|from|via|to|shadow|outline|placeholder|accent|caret|divide)-\[#' $A $C)" eq 0
   assert "raw hex outside allowlist"        "$(n '#[0-9A-Fa-f]{3,8}\b' $A $C "${HEXALLOW[@]}")" eq 0
   assert "orphan #A78BFA gone"              "$(n '#A78BFA' $A $C)" eq 0
-  assert "legacy className=\"dark\" gone"   "$(n 'className="[^"]*\bdark\b' $A $C)" eq 0
-  assert "chrome-dark scope introduced"     "$(n 'chrome-dark' app/globals.css 'app/(dashboard)/_components/dashboard-shell.tsx')" ge 4
-  assert "--surface-0..3 tokens"            "$(n -- '--surface-[0-3]' app/globals.css)" ge 4
-  assert "theme provider / toggle"          "$(n 'ThemeProvider|setTheme|useTheme' $A $C)" ge 1
+  # Space-delimited token match — \bdark\b would also match chrome-dark.
+  assert "legacy className=\"dark\" gone"   "$(n 'className=\"([^"]* )?dark( [^"]*)?\"' $A $C)" eq 0
+  assert "chrome-dark scope introduced"     "$(n 'chrome-dark' app/globals.css $A $C)" ge 4
+  assert "--surface-0..3 tokens"            "$(n -- '--surface-[0-3]' app/globals.css)" ge 8
+  assert "aurora-foreground token"          "$(n -- '--aurora-foreground' app/globals.css $A $C)" ge 2
+  assert "theme provider present"           "$(n 'ThemeProvider|setTheme|useTheme' $A $C)" ge 3
+  assert "no-flash script in layout"        "$(n 'dangerouslySetInnerHTML' app/layout.tsx)" ge 1
+  assert "theme toggle on Account"          "$(n 'Light|Dark|System' 'app/(dashboard)/account')" ge 3
+  assert "contrast script exists"           "$(f 'scripts/contrast-check.mjs')" eq 1
+  assert "CI runs contrast-check"           "$(n 'contrast-check' .github/workflows/ci.yml package.json)" ge 2
+  assert "og:description trimmed"           "$(n 'Instagram caption, and email draft' app/layout.tsx)" ge 1
+  assert "default title lengthened"         "$(n 'content repurposing in your brand voice' app/layout.tsx)" ge 1
   assert "acceptance note committed"        "$(f 'docs/acceptance/phase-2-*.md')" eq 1 ; }
 run_3(){ echo "── PHASE 3 ──"
   assert "sonner / Toaster wired"           "$(n 'sonner|<Toaster' $A $C package.json)" ge 3

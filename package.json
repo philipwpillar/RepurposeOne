@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
     "test:e2e:update": "playwright test --update-snapshots",
-    "ac-check": "bash scripts/ac-check.sh"
+    "ac-check": "bash scripts/ac-check.sh",
+    "contrast-check": "node scripts/contrast-check.mjs"
   },
   "dependencies": {
     "@capacitor/cli": "^8.4.1",

@@ -631,7 +631,7 @@ export default function BundleWorkspace({
           type="button"
           disabled={inputsDisabled || !canGenerate}
           onClick={handleGenerate}
-          className="aurora inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-[#0B0D14] disabled:opacity-50 sm:w-auto"
+          className="aurora inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-[color:var(--aurora-foreground)] disabled:opacity-50 sm:w-auto"
         >
           {generating ? (
             <>

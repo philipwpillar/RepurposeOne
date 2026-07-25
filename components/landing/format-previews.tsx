@@ -8,7 +8,7 @@ import {
 export function FormatPreviews() {
   return (
     <div className="format-grid">
-      <article className="format-card" style={{ ["--fc" as string]: "#E7E7EC" }}>
+      <article className="format-card" style={{ ["--fc" as string]: "var(--platform-x)" }}>
         <div className="preview thread-prev" aria-hidden="true">
           <div className="thread-line" />
           <div className="tweet">
@@ -46,7 +46,7 @@ export function FormatPreviews() {
         </div>
       </article>
 
-      <article className="format-card" style={{ ["--fc" as string]: "#3B82F6" }}>
+      <article className="format-card" style={{ ["--fc" as string]: "var(--platform-linkedin)" }}>
         <div className="preview li-prev" aria-hidden="true">
           <div className="bars post-bars">
             <i className="hook" style={{ width: "90%" }} />
@@ -70,7 +70,7 @@ export function FormatPreviews() {
         </div>
       </article>
 
-      <article className="format-card" style={{ ["--fc" as string]: "#E24BC4" }}>
+      <article className="format-card" style={{ ["--fc" as string]: "var(--platform-instagram)" }}>
         <div className="preview ig-prev" aria-hidden="true">
           <div className="frame" />
           <div className="cap-side">
@@ -97,7 +97,7 @@ export function FormatPreviews() {
         </div>
       </article>
 
-      <article className="format-card" style={{ ["--fc" as string]: "#2DD4BF" }}>
+      <article className="format-card" style={{ ["--fc" as string]: "var(--platform-email)" }}>
         <div className="preview em-prev" aria-hidden="true">
           <div className="subject">
             <i className="hook" style={{ width: "54%" }} />

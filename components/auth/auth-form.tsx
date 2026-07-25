@@ -103,22 +103,22 @@ export function AuthForm({
     return (
       <div className="vo-auth-confirm space-y-4">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgba(45,212,191,0.15)]">
-          <Mail className="h-5 w-5 text-[#2DD4BF]" aria-hidden />
+          <Mail className="h-5 w-5 text-[color:var(--teal)]" aria-hidden />
         </div>
         <h1 className="font-display text-xl font-semibold tracking-tight">
           Check your inbox
         </h1>
-        <p className="text-sm text-[#A1A1AA]">
+        <p className="text-sm text-muted-foreground">
           We sent a confirmation link to{" "}
-          <span className="font-medium text-[#F4F4F5]">{email}</span>. Open it,
+          <span className="font-medium text-foreground">{email}</span>. Open it,
           then sign in to finish setup.
         </p>
         {message ? (
-          <p className="text-xs text-[#A1A1AA]" role="status">
+          <p className="text-xs text-muted-foreground" role="status">
             {message}
           </p>
         ) : null}
-        <Button asChild variant="outline" className="w-full border-white/15 bg-transparent text-[#F4F4F5] hover:bg-white/5">
+        <Button asChild variant="outline" className="w-full border-white/15 bg-transparent text-foreground hover:bg-white/5">
           <Link href="/sign-in">Back to sign in</Link>
         </Button>
       </div>
@@ -128,7 +128,7 @@ export function AuthForm({
   return (
     <Card className="vo-auth-card w-full max-w-md border-0 shadow-none">
       <CardHeader className="text-center">
-        <h1 className="font-display text-2xl text-[#F4F4F5]">
+        <h1 className="font-display text-2xl text-foreground">
           {isSignUp ? "Create your account" : "Welcome back"}
         </h1>
         <CardDescription>
@@ -151,7 +151,7 @@ export function AuthForm({
               <Separator />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-[rgba(18,21,34,0.92)] px-2 text-[#A1A1AA]">
+              <span className="bg-[color:var(--panel-translucent)] px-2 text-muted-foreground">
                 or continue with email
               </span>
             </div>
@@ -198,13 +198,13 @@ export function AuthForm({
           </Button>
         </form>
       </CardContent>
-      <CardFooter className="justify-center text-sm text-[#A1A1AA]">
+      <CardFooter className="justify-center text-sm text-muted-foreground">
         {isSignUp ? (
           <>
             Already have an account?{" "}
             <Link
               href={`/sign-in${redirectTo !== "/dashboard" ? `?redirect=${encodeURIComponent(redirectTo)}` : ""}`}
-              className="ml-1 font-medium text-[#F4F4F5] underline-offset-4 hover:underline"
+              className="ml-1 font-medium text-foreground underline-offset-4 hover:underline"
             >
               Sign in
             </Link>
@@ -214,7 +214,7 @@ export function AuthForm({
             Don&apos;t have an account?{" "}
             <Link
               href={`/sign-up${redirectTo !== "/dashboard" ? `?redirect=${encodeURIComponent(redirectTo)}` : ""}`}
-              className="ml-1 font-medium text-[#F4F4F5] underline-offset-4 hover:underline"
+              className="ml-1 font-medium text-foreground underline-offset-4 hover:underline"
             >
               Sign up
             </Link>

@@ -1,19 +1,18 @@
 .vo-landing {
-  /* Aligned with app/globals.css brand primitives (Slice 1) */
-  --ink: #0B0D14;
-  --ink-2: #121522;
+  /* Alias to :root brand primitives — never redeclare colour values.
+     --ink / --paper / --aurora inherit from :root (self-ref would be invalid).
+     Theme-invariant names only; do not alias to --foreground/--border. */
+  --ink-2: var(--panel);
   --line-dark: rgba(255, 255, 255, 0.09);
-  --paper: #F5F6FA;
-  --paper-2: #FAFBFC;
-  --line-light: #E6E8F0;
-  --text-hi: #F1F2F7;
-  --text-lo: #9AA1B2;
-  --ink-text: #0E1230;
-  --ink-muted: #5B6178;
-  --aur-1: #2DD4BF;
-  --aur-2: #6366F1;
-  --aur-3: #E24BC4;
-  --aurora: linear-gradient(100deg, #2DD4BF 0%, #6366F1 52%, #E24BC4 100%);
+  --paper-2: var(--paper-elevated-2);
+  --line-light: var(--hair-light);
+  --text-hi: var(--ink-foreground);
+  --text-lo: var(--ink-foreground-muted);
+  --ink-text: var(--paper-foreground);
+  --ink-muted: var(--paper-foreground-muted);
+  --aur-1: var(--teal);
+  --aur-2: var(--indigo);
+  --aur-3: var(--magenta);
   font-family: var(--font-body), system-ui, sans-serif;
   background: var(--paper);
   color: var(--ink-text);
@@ -52,7 +51,7 @@
 .vo-landing .brand .name { font-family:var(--font-display); font-weight:700; font-size:21px; letter-spacing:-0.02em; color:var(--text-hi); }
 .vo-landing .navbtn { font-size:14px; font-weight:500; color:var(--text-hi); border:1px solid var(--line-dark); border-radius:10px; padding:9px 16px; transition:border-color .2s, background .2s; }
 .vo-landing .navbtn:hover { border-color:rgba(255,255,255,0.25); background:rgba(255,255,255,0.06); }
-.vo-landing .navbtn.solid { background:var(--aurora); color:#0B0D14; border:0; font-weight:600; }
+.vo-landing .navbtn.solid { background:var(--aurora); color:var(--ink); border:0; font-weight:600; }
 
 .vo-landing .hero-grid { position:relative; z-index:2; display:grid; grid-template-columns:1.05fr 0.95fr; gap:56px; align-items:center; padding:56px 0 92px; }
 .vo-landing .eyebrow { display:inline-flex; align-items:center; gap:8px; font-family:var(--font-mono); font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-lo); margin-bottom:22px; }
@@ -61,7 +60,7 @@
 .vo-landing h1.head .grad { background:var(--aurora); -webkit-background-clip:text; background-clip:text; color:transparent; }
 .vo-landing .sub { color:var(--text-lo); font-size:18px; max-width:30em; margin:22px 0 30px; line-height:1.6; }
 .vo-landing .cta-row { display:flex; flex-wrap:wrap; gap:14px; align-items:center; }
-.vo-landing .btn-primary { border:0; cursor:pointer; font-weight:600; font-size:15px; color:#0B0D14; padding:14px 24px; border-radius:12px; background:var(--aurora); transition:transform .15s, filter .2s; display:inline-block; }
+.vo-landing .btn-primary { border:0; cursor:pointer; font-weight:600; font-size:15px; color:var(--ink); padding:14px 24px; border-radius:12px; background:var(--aurora); transition:transform .15s, filter .2s; display:inline-block; }
 .vo-landing .btn-primary:hover { transform:translateY(-1px); filter:brightness(1.06); }
 .vo-landing .btn-secondary { font-weight:500; font-size:15px; color:var(--text-hi); padding:14px 20px; border-radius:12px; border:1px solid var(--line-dark); display:inline-flex; align-items:center; gap:8px; transition:border-color .2s; }
 .vo-landing .btn-secondary:hover { border-color:rgba(255,255,255,0.28); }
@@ -83,8 +82,8 @@
 .vo-landing .out:nth-child(3){animation-delay:.25s} .vo-landing .out:nth-child(4){animation-delay:.35s}
 @keyframes vo-rise { to { opacity:1; transform:translateY(0); } }
 .vo-landing .out .row { display:flex; align-items:center; gap:9px; }
-.vo-landing .out .glyph { flex:none; display:inline-flex; color:#E7E7EC; }
-.vo-landing .out .glyph-teal { color:#2DD4BF; }
+.vo-landing .out .glyph { flex:none; display:inline-flex; color:var(--platform-x); }
+.vo-landing .out .glyph-teal { color:var(--teal); }
 .vo-landing .out .pname { color:var(--text-hi); font-weight:600; font-size:13.5px; }
 .vo-landing .out .pmeta { font-family:var(--font-mono); font-size:11.5px; color:var(--text-lo); margin-top:7px; }
 .vo-landing .out .voice { display:inline-block; margin-top:9px; font-size:11px; color:var(--aur-1); border:1px solid rgba(45,212,191,0.35); border-radius:20px; padding:2px 9px; }
@@ -104,18 +103,18 @@
   content:''; position:absolute; top:28px; left:8%; right:8%; height:1px;
   background:linear-gradient(
     90deg,
-    #C2C3C6 0%,
+    var(--metal) 0%,
     rgba(45,212,191,0.25) 35%,
     rgba(99,102,241,0.35) 50%,
     rgba(226,75,196,0.25) 65%,
-    #C2C3C6 100%
+    var(--metal) 100%
   );
   pointer-events:none; z-index:0;
 }
 .vo-landing .step { position:relative; z-index:1; padding:0 4px; background:transparent; border:0; }
 .vo-landing .step .n {
   font-family:var(--font-display); font-weight:600; font-size:clamp(34px,4vw,44px);
-  letter-spacing:-0.03em; line-height:1; color:#C2C3C6; margin-bottom:18px;
+  letter-spacing:-0.03em; line-height:1; color:var(--metal); margin-bottom:18px;
 }
 .vo-landing .step .n.grad {
   background:var(--aurora); -webkit-background-clip:text; background-clip:text; color:transparent;
@@ -207,8 +206,8 @@
 
 .vo-landing .fmeta { display:flex; gap:12px; align-items:flex-start; }
 .vo-landing .fmeta .fmark { flex:none; margin-top:3px; display:inline-flex; }
-.vo-landing .fmeta .fmark-neutral { color:#E7E7EC; }
-.vo-landing .fmeta .fmark-teal { color:#2DD4BF; }
+.vo-landing .fmeta .fmark-neutral { color:var(--platform-x); }
+.vo-landing .fmeta .fmark-teal { color:var(--teal); }
 .vo-landing .fmeta h3 {
   font-family:var(--font-display); font-weight:600; font-size:17px; letter-spacing:-0.01em;
   color:var(--text-hi); margin:0 0 6px;
@@ -255,7 +254,7 @@
 }
 .vo-landing .chip:hover { color:var(--text-hi); border-color:rgba(255,255,255,0.3); }
 .vo-landing .chip[aria-pressed="true"] {
-  color:#0B0D14; background:var(--aurora); border-color:transparent; font-weight:500;
+  color:var(--ink); background:var(--aurora); border-color:transparent; font-weight:500;
 }
 .vo-landing .chip:focus-visible,
 .vo-landing .btn-primary:focus-visible,
@@ -358,7 +357,7 @@
   text-align:center;
 }
 .vo-landing .price-cta.primary {
-  color:#0B0D14; background:var(--aurora);
+  color:var(--ink); background:var(--aurora);
 }
 .vo-landing .price-cta.secondary {
   color:var(--ink); border:1px solid var(--line-light); background:transparent;
@@ -400,11 +399,11 @@
     top:0; bottom:0; left:0; right:auto; width:1px; height:auto;
     background:linear-gradient(
       180deg,
-      #C2C3C6 0%,
+      var(--metal) 0%,
       rgba(45,212,191,0.25) 35%,
       rgba(99,102,241,0.35) 50%,
       rgba(226,75,196,0.25) 65%,
-      #C2C3C6 100%
+      var(--metal) 100%
     );
   }
   .vo-landing .format-grid { grid-template-columns:1fr; }
@@ -429,7 +428,7 @@
 
 /* ============ AUTH / ONBOARDING SHELL ============ */
 .vo-auth {
-  background: var(--ink, #0b0d14);
+  background: var(--ink);
   overflow: hidden;
 }
 .vo-auth-glow {
@@ -448,25 +447,18 @@
   width: 100%;
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(18, 21, 34, 0.92);
-  color: #f4f4f5;
+  background: var(--panel-translucent);
+  color: var(--foreground);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(10px);
 }
-.vo-auth .vo-auth-card .text-muted-foreground,
-.vo-auth .vo-auth-card [data-slot="card-description"] {
-  color: #a1a1aa;
-}
-.vo-auth .vo-auth-card label {
-  color: #e4e4e7;
-}
 .vo-auth .vo-auth-card input {
-  background: rgba(11, 13, 20, 0.65);
+  background: var(--ink-translucent);
   border-color: rgba(255, 255, 255, 0.12);
-  color: #f4f4f5;
+  color: var(--foreground);
 }
 .vo-auth .vo-auth-card input::placeholder {
-  color: #71717a;
+  color: var(--muted-foreground);
 }
 .vo-auth .vo-auth-card [data-slot="separator"] {
   background: rgba(255, 255, 255, 0.12);
@@ -475,8 +467,8 @@
   width: 100%;
   border-radius: 20px;
   border: 1px solid rgba(45, 212, 191, 0.35);
-  background: rgba(18, 21, 34, 0.92);
+  background: var(--panel-translucent);
   padding: 28px 24px;
   text-align: center;
-  color: #f4f4f5;
+  color: var(--foreground);
 }

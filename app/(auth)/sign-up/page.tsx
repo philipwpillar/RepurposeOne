@@ -15,11 +15,11 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
       footerNote={
         <>
           Free plan included. By creating an account you agree to our{" "}
-          <a href="/terms" className="underline underline-offset-2 hover:text-[#F4F4F5]">
+          <a href="/terms" className="underline underline-offset-2 hover:text-foreground">
             Terms
           </a>{" "}
           and{" "}
-          <a href="/privacy" className="underline underline-offset-2 hover:text-[#F4F4F5]">
+          <a href="/privacy" className="underline underline-offset-2 hover:text-foreground">
             Privacy Policy
           </a>
           .

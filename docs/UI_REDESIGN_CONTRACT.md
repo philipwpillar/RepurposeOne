@@ -1,7 +1,7 @@
 # UI Redesign Contract — Voiceora
 
 > Slice 1 foundation. Living companion to `PRODUCT_SPEC.md`.
-> Last updated: 2026-07-24
+> Last updated: 2026-07-25 (Phase 2 design system)
 
 ## 1. Product feel
 
@@ -22,7 +22,29 @@ Preserve:
 5. **Accessible by default** — WCAG 2.2 AA target; visible focus; keyboard complete; `prefers-reduced-motion` honored.
 6. **MVP scope guard** — no scheduling, direct publishing, teams, or analytics inside this redesign.
 
-## 3. Density & hierarchy
+## 3. Zones
+
+| Zone | Class | Meaning |
+| --- | --- | --- |
+| Content canvas | `:root` / `.dark` on `<html>` | User-selected light or dark theme |
+| Always-dark chrome | `.chrome-dark` | Sidebar, top bar, mobile drawer, auth/onboarding shell — brand-dark in both themes |
+
+`.chrome-dark` is not "navigation only"; it is any surface that must stay dark regardless of theme. Do not invent auth-specific colour tokens — put the shell in `.chrome-dark` and use semantic tokens (`text-foreground`, `text-muted-foreground`).
+
+The marketing landing (`.vo-landing`) is **theme-invariant**. It aliases to brand primitives (`--ink`, `--paper`, `--teal`, `--ink-foreground`, …), never to semantic tokens that flip (`--foreground`, `--muted-foreground`, `--border`). Four values (`#F1F2F7`, `#0E1230`, `#5B6178`, `#E6E8F0`) *do* have semantic counterparts — they are not used for landing because those counterparts flip in dark mode.
+
+## 4. Surface scale
+
+| Token | Light role | Notes |
+| --- | --- | --- |
+| `--surface-0` | Page canvas | Also `--background` |
+| `--surface-1` | Cards | Also `--card` |
+| `--surface-2` | Raised / inset | Also `--secondary` / `--muted` / `--accent` (light) |
+| `--surface-3` | Overlays, popovers | Reserved for Phase 3 |
+
+Semantic tokens re-point at the scale so elevation has one source of truth. `.dark` redefines the scale; `.chrome-dark` keeps its own palette.
+
+## 5. Density & hierarchy
 
 | Surface | Density | Page width |
 | --- | --- | --- |
@@ -32,13 +54,13 @@ Preserve:
 
 Page titles use `font-display`, `text-2xl`, `font-semibold`, `tracking-tight`. Subtitles use `text-sm text-muted-foreground`.
 
-## 4. Icons
+## 6. Icons
 
 - **Lucide** for UI chrome and actions
 - **SVG platform marks** from `components/landing/platform-marks.tsx` for X, LinkedIn, Instagram, Email
 - **No Font Awesome** stylesheet dependency
 
-## 5. Motion
+## 7. Motion
 
 | Token | Duration | Use |
 | --- | --- | --- |
@@ -48,16 +70,17 @@ Page titles use `font-display`, `text-2xl`, `font-semibold`, `tracking-tight`. S
 
 Animate `opacity` and `transform` only. Decorative motion must stop under `prefers-reduced-motion: reduce`.
 
-## 6. Component states
+## 8. Component states
 
 Every interactive primitive must define: default, hover, focus-visible, disabled, loading (where async), and error (where validating).
 
 Destructive actions use an in-app Dialog — never `window.confirm` / `alert` for product flows.
 
-## 7. Acceptance floor (every slice)
+## 9. Acceptance floor (every slice)
 
 - `npm run lint` + `npm run typecheck` pass
 - Desktop + ~390px mobile screenshots of touched surfaces
 - No dead controls
 - No unsupported icon fonts
 - Plan labels human-readable (`Pro Plus`, not `pro_plus`)
+- `npm run contrast-check` pass (both themes) after Phase 2
