@@ -6,27 +6,45 @@
   --panel: #121522;
   --paper: #f5f6fa;
   --paper-elevated: #ffffff;
+  --paper-elevated-2: #fafbfc;
   --teal: #2dd4bf;
   --indigo: #6366f1;
   --magenta: #e24bc4;
   --hair: rgba(255, 255, 255, 0.08);
+  --hair-light: #e6e8f0;
+  --metal: #c2c3c6;
+  /* Theme-invariant ink/paper text — do NOT alias landing to --foreground /
+     --muted-foreground / --border; those flip in dark mode. */
+  --ink-foreground: #f1f2f7;
+  --ink-foreground-muted: #9aa1b2;
+  --paper-foreground: #0e1230;
+  --paper-foreground-muted: #5b6178;
   --aurora: linear-gradient(100deg, #2dd4bf 0%, #6366f1 52%, #e24bc4 100%);
+  --aurora-foreground: var(--ink);
+  --panel-translucent: rgba(18, 21, 34, 0.92);
+  --ink-translucent: rgba(11, 13, 20, 0.65);
+
+  /* Elevation scale — 0 furthest back, 3 nearest the user */
+  --surface-0: #f5f6fa; /* page canvas   (was --background) */
+  --surface-1: #ffffff; /* cards         (was --card) */
+  --surface-2: #edeff5; /* raised/inset  (was --secondary/--muted/--accent) */
+  --surface-3: #e3e6ef; /* overlays, popovers, hover-on-raised */
 
   /* --- LIGHT content zone (default) --- */
-  --background: var(--paper);
-  --foreground: #0e1230;
-  --card: var(--paper-elevated);
-  --card-foreground: #0e1230;
+  --background: var(--surface-0);
+  --foreground: var(--paper-foreground);
+  --card: var(--surface-1);
+  --card-foreground: var(--paper-foreground);
 
   --primary: var(--indigo);
   --primary-foreground: #ffffff;
 
-  --secondary: #edeff5;
-  --secondary-foreground: #0e1230;
-  --muted: #edeff5;
-  --muted-foreground: #5b6178;
-  --accent: #edeff5;
-  --accent-foreground: #0e1230;
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--paper-foreground);
+  --muted: var(--surface-2);
+  --muted-foreground: var(--paper-foreground-muted);
+  --accent: var(--surface-2);
+  --accent-foreground: var(--paper-foreground);
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
 
@@ -35,8 +53,8 @@
   --warning: #b45309;
   --warning-foreground: #ffffff;
 
-  --border: #e6e8f0;
-  --input: #e6e8f0;
+  --border: var(--hair-light);
+  --input: var(--hair-light);
   --ring: var(--indigo);
 
   --radius: 0.625rem;
@@ -105,6 +123,10 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-surface-0: var(--surface-0);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
