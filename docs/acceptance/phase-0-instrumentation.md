@@ -59,7 +59,7 @@ RESULT: PASS
 
 - **Anon vs auth rule:** `.anon.spec.ts` = public/signed-out surfaces; `.spec.ts` = authenticated. Landing/legal renamed so “Start free” is asserted as a visitor.
 - **Studio stub is format-aware:** `/api/generate` returns schema-valid output per `target_format` so LinkedIn/Instagram/Email no longer fail invisibly.
-**Visual regression deliberately deferred to Phase 8** — snapshot tests would fail on nearly every PR during a redesign that changes pixels by design, and would be rubber-stamped rather than read. `e2e/visual.spec.ts` is committed and skipped; Phase 8 un-skips it, generates Linux baselines, and makes it a hard CI gate.
+- **Visual regression deliberately deferred to Phase 8** — snapshot tests would fail on nearly every PR during a redesign that changes pixels by design, and would be rubber-stamped rather than read. `e2e/visual.spec.ts` is committed and skipped; Phase 8 un-skips it, generates Linux baselines, and makes it a hard CI gate.
 - **CWV numeric gates:** Analytics/Speed Insights must be live on Vercel after merge. No numeric LCP/INP/CLS gate until traffic exists.
 - **Later phases:** bump the CI line `bash scripts/ac-check.sh 0` to the active phase number when opening that phase’s PR.
 
