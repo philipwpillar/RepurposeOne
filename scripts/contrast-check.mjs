@@ -121,15 +121,20 @@ const PAIRS = [
   { fg: "--muted-foreground", bg: "--surface-1", min: 4.5 },
   { fg: "--primary-foreground", bg: "--primary", min: 4.5 },
   { fg: "--destructive", bg: "--surface-1", min: 4.5 },
-  // Hairline borders are decorative; 3:1 UI-component contrast would force a
-  // heavy visible border. Gate presence at ≥1.2; ring keeps the 3:1 focus rule.
+  // Decorative hairline only — deliberately below the 3:1 UI-component threshold.
+  // Form field boundaries are gated separately via --input on --surface-1.
   { fg: "--border", bg: "--surface-0", min: 1.1 },
+  { fg: "--input", bg: "--surface-1", min: 3.0 },
   { fg: "--ring", bg: "--surface-0", min: 3.0 },
-  // Platform accents sit on dark format cards (--panel), not light surface-1.
+  // Landing format cards use --panel; Studio glyphs use --surface-1 (bg-card).
+  // --platform-x has no surface-1 pair — Studio uses text-foreground for the X mark.
   { fg: "--platform-x", bg: "--panel", min: 3.0 },
   { fg: "--platform-linkedin", bg: "--panel", min: 3.0 },
   { fg: "--platform-instagram", bg: "--panel", min: 3.0 },
   { fg: "--platform-email", bg: "--panel", min: 3.0 },
+  { fg: "--platform-linkedin", bg: "--surface-1", min: 3.0 },
+  { fg: "--platform-instagram", bg: "--surface-1", min: 3.0 },
+  { fg: "--platform-email", bg: "--surface-1", min: 3.0 },
 ];
 
 function checkTheme(label, map) {

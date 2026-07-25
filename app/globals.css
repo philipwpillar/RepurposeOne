@@ -54,7 +54,9 @@
   --warning-foreground: #ffffff;
 
   --border: var(--hair-light);
-  --input: var(--hair-light);
+  /* Input edges are WCAG 1.4.11 UI components — must clear 3:1 on surface-1.
+     Keep --border as a lighter decorative hairline (gated separately at 1.1). */
+  --input: #8b90a5;
   --ring: var(--indigo);
 
   --radius: 0.625rem;
@@ -63,7 +65,8 @@
   --platform-x: #e7e7ec;
   --platform-linkedin: #0a66c2;
   --platform-instagram: #e24bc4;
-  --platform-email: var(--teal);
+  /* Darker than --teal so Studio glyphs clear 3:1 on light surface-1 */
+  --platform-email: #0d9488;
 
   /* Motion */
   --motion-fast: 100ms;
@@ -101,7 +104,7 @@
   --warning-foreground: #0b0d14;
 
   --border: rgba(255, 255, 255, 0.10);
-  --input: rgba(255, 255, 255, 0.14);
+  --input: rgba(255, 255, 255, 0.42); /* 3:1 on surface-1 for form edges */
   --ring: #818cf8;
 
   --platform-x: #e7e7ec;

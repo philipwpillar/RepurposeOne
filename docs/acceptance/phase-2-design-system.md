@@ -54,9 +54,11 @@ Landing aliases brand primitives only. `#F1F2F7`, `#0E1230`, `#5B6178`, and `#E6
 
 ## Contrast table notes
 
-- Platform accents are checked on `--panel` (dark format cards), not light `--surface-1`.  
-- Hairline `--border` uses min **1.1** (decorative); `--ring` keeps **3.0** for focus.  
-- Light `--primary` is `#5b5ff0` (slightly darker than brand `--indigo`) so white label text clears AA 4.5.  
+- Platform accents are checked on `--panel` (landing format cards) **and** on `--surface-1` for LinkedIn / Instagram / Email (Studio `bg-card` glyphs). `--platform-x` has no `--surface-1` pair — Studio uses `text-foreground` for the X mark.
+- Light `--platform-email` is `#0d9488` (darker than brand `--teal`) so Studio glyphs clear 3:1 on white cards.
+- `--input` on `--surface-1` is gated at **3.0** (WCAG 1.4.11 form edges). Light `--input` is `#8b90a5`; dark is `rgba(255,255,255,0.42)`.
+- Hairline `--border` uses min **1.1** deliberately (decorative only; inputs are gated separately). `--ring` keeps **3.0** for focus.
+- Light `--primary` is `#5b5ff0` (slightly darker than brand `--indigo`) so white label text clears AA 4.5.
 - Dark `--platform-linkedin` is `#4d9fff` because `#0a66c2` fails on dark canvases.
 
 ## Deliberate non-actions
