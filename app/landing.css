@@ -447,25 +447,18 @@
   width: 100%;
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(18, 21, 34, 0.92);
-  color: #f4f4f5;
+  background: var(--panel-translucent);
+  color: var(--foreground);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(10px);
 }
-.vo-auth .vo-auth-card .text-muted-foreground,
-.vo-auth .vo-auth-card [data-slot="card-description"] {
-  color: #a1a1aa;
-}
-.vo-auth .vo-auth-card label {
-  color: #e4e4e7;
-}
 .vo-auth .vo-auth-card input {
-  background: rgba(11, 13, 20, 0.65);
+  background: var(--ink-translucent);
   border-color: rgba(255, 255, 255, 0.12);
-  color: #f4f4f5;
+  color: var(--foreground);
 }
 .vo-auth .vo-auth-card input::placeholder {
-  color: #71717a;
+  color: var(--muted-foreground);
 }
 .vo-auth .vo-auth-card [data-slot="separator"] {
   background: rgba(255, 255, 255, 0.12);
@@ -474,8 +467,8 @@
   width: 100%;
   border-radius: 20px;
   border: 1px solid rgba(45, 212, 191, 0.35);
-  background: rgba(18, 21, 34, 0.92);
+  background: var(--panel-translucent);
   padding: 28px 24px;
   text-align: center;
-  color: #f4f4f5;
+  color: var(--foreground);
 }

@@ -116,7 +116,7 @@ export default async function HomePage() {
               <div className="outs">
                 <div
                   className="out"
-                  style={{ ["--pl" as string]: "#E7E7EC" }}
+                  style={{ ["--pl" as string]: "var(--platform-x)" }}
                 >
                   <div className="row">
                     <span className="glyph">
@@ -129,7 +129,7 @@ export default async function HomePage() {
                 </div>
                 <div
                   className="out"
-                  style={{ ["--pl" as string]: "#3B82F6" }}
+                  style={{ ["--pl" as string]: "var(--platform-linkedin)" }}
                 >
                   <div className="row">
                     <span className="glyph">
@@ -142,7 +142,7 @@ export default async function HomePage() {
                 </div>
                 <div
                   className="out"
-                  style={{ ["--pl" as string]: "#E24BC4" }}
+                  style={{ ["--pl" as string]: "var(--platform-instagram)" }}
                 >
                   <div className="row">
                     <span className="glyph">
@@ -155,7 +155,7 @@ export default async function HomePage() {
                 </div>
                 <div
                   className="out"
-                  style={{ ["--pl" as string]: "#2DD4BF" }}
+                  style={{ ["--pl" as string]: "var(--platform-email)" }}
                 >
                   <div className="row">
                     <span className="glyph glyph-teal">

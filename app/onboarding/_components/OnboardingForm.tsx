@@ -132,10 +132,10 @@ export function OnboardingForm() {
     <AuthShell>
       <Card className="vo-auth-card w-full max-w-md border-0 shadow-none">
         <CardHeader>
-          <div className="mb-1 text-xs font-semibold tracking-wider text-[#A78BFA]">
+          <div className="mb-1 text-xs font-semibold tracking-wider text-primary">
             QUICK SETUP · 1 OF 1
           </div>
-          <h1 className="font-display text-2xl text-[#F4F4F5]">
+          <h1 className="font-display text-2xl text-foreground">
             Teach Voiceora how you write
           </h1>
           <CardDescription>
@@ -153,7 +153,7 @@ export function OnboardingForm() {
               onChange={(e) => setSample(e.target.value)}
               rows={4}
               disabled={busy}
-              className="border-white/12 bg-[rgba(11,13,20,0.65)] text-[#F4F4F5] placeholder:text-[#71717A]"
+              className="border-white/12 bg-[color:var(--ink-translucent)] text-foreground placeholder:text-muted-foreground"
             />
           </div>
 
@@ -186,19 +186,19 @@ export function OnboardingForm() {
           <Button
             type="button"
             variant="ghost"
-            className="w-full text-[#A1A1AA] hover:bg-white/5 hover:text-[#F4F4F5]"
+            className="w-full text-muted-foreground hover:bg-white/5 hover:text-foreground"
             disabled={busy}
             onClick={() => void handleSkip()}
           >
             {isSkipping && <Loader2 className="animate-spin" />}
             Skip for now
           </Button>
-          <p className="text-center text-xs leading-relaxed text-[#71717A]">
+          <p className="text-center text-xs leading-relaxed text-muted-foreground">
             Skipping uses a built-in generic style until you add a Brand Voice —
             outputs won’t sound as much like you.
           </p>
         </CardContent>
-        <CardFooter className="justify-center text-xs text-[#71717A]">
+        <CardFooter className="justify-center text-xs text-muted-foreground">
           You can change this anytime in Brand Voice.
         </CardFooter>
       </Card>
