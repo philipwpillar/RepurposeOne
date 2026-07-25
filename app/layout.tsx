@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL ?? "https://repurpose-one-seven.vercel.app",
   ),
   title: {
-    default: "Voiceora",
+    default: "Voiceora — content repurposing in your brand voice",
     template: "%s | Voiceora",
   },
   description:
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     siteName: "Voiceora",
     title: "Voiceora — one piece of content, every platform, your voice",
     description:
-      "Paste a post, a transcript, or a photo. Get an X thread, a LinkedIn post, an Instagram caption, and an email draft — each written the way you write.",
+      "Paste a post, transcript, or photo. Get an X thread, LinkedIn post, Instagram caption, and email draft — in your voice.",
   },
   twitter: { card: "summary_large_image" },
 };
