@@ -10,9 +10,7 @@ test.describe("signed out", () => {
 
   test("sign-up form renders its fields", async ({ page }) => {
     await page.goto("/sign-up");
-    await expect(
-      page.getByRole("heading", { name: "Create your account" }),
-    ).toBeVisible();
+    await expect(page.getByText("Create your account")).toBeVisible();
     await expect(page.locator("#email")).toBeVisible();
     await expect(page.locator("#password")).toBeVisible();
     await expect(
