@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-// PLACEHOLDER COPY — Phil sign-off required before merge (see brief §5)
+// Illustrative demo copy — sample voices, not customer quotes.
 const VOICE_LAB_COPY = [
   "Photos are content now. Upload one, add a line of context, and Voiceora writes the posts. Four formats, one pass — done before your coffee cools.",
   "Some ideas start as a picture — the whiteboard after a good meeting, the desk on launch morning. Now you can hand Voiceora that photo, tell it what mattered, and get posts that sound like you were there. Because you were.",

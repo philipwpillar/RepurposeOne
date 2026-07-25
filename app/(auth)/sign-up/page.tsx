@@ -1,5 +1,6 @@
-import Link from "next/link";
 import { AuthForm } from "@/components/auth/auth-form";
+import { AuthShell } from "@/components/auth/auth-shell";
+import "@/app/landing.css";
 
 interface SignUpPageProps {
   searchParams: Promise<{ redirect?: string }>;
@@ -10,11 +11,22 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
   const redirectTo = params.redirect ?? "/dashboard";
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-4">
-      <Link href="/" className="text-xl font-bold tracking-tight">
-        Voiceora
-      </Link>
+    <AuthShell
+      footerNote={
+        <>
+          Free plan included. By creating an account you agree to our{" "}
+          <a href="/terms" className="underline underline-offset-2 hover:text-[#F4F4F5]">
+            Terms
+          </a>{" "}
+          and{" "}
+          <a href="/privacy" className="underline underline-offset-2 hover:text-[#F4F4F5]">
+            Privacy Policy
+          </a>
+          .
+        </>
+      }
+    >
       <AuthForm mode="sign-up" redirectTo={redirectTo} />
-    </div>
+    </AuthShell>
   );
 }

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,8 +18,10 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
+import { isGoogleAuthEnabled } from "@/lib/auth-config";
 import { isNativePlatform } from "@/lib/platform";
 import { Separator } from "@/components/ui/separator";
+import "@/app/landing.css";
 
 interface AuthFormProps {
   mode: "sign-in" | "sign-up";
@@ -27,15 +29,21 @@ interface AuthFormProps {
   initialError?: string;
 }
 
-export function AuthForm({ mode, redirectTo = "/dashboard", initialError }: AuthFormProps) {
+export function AuthForm({
+  mode,
+  redirectTo = "/dashboard",
+  initialError,
+}: AuthFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(initialError ?? "");
   const [message, setMessage] = useState("");
+  const [awaitingEmail, setAwaitingEmail] = useState(false);
 
   const isSignUp = mode === "sign-up";
+  const showGoogle = isGoogleAuthEnabled() && !isNativePlatform();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -60,7 +68,6 @@ export function AuthForm({ mode, redirectTo = "/dashboard", initialError }: Auth
         return;
       }
 
-      // If email confirmation is disabled, session is created immediately.
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -69,8 +76,9 @@ export function AuthForm({ mode, redirectTo = "/dashboard", initialError }: Auth
         router.push(redirectTo);
         router.refresh();
       } else {
+        setAwaitingEmail(true);
         setMessage(
-          "Check your email for a confirmation link, then sign in."
+          "Check your email for a confirmation link, then sign in to continue."
         );
       }
     } else {
@@ -92,33 +100,64 @@ export function AuthForm({ mode, redirectTo = "/dashboard", initialError }: Auth
     setLoading(false);
   }
 
+  if (awaitingEmail) {
+    return (
+      <div className="vo-auth-confirm space-y-4">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgba(45,212,191,0.15)]">
+          <Mail className="h-5 w-5 text-[#2DD4BF]" aria-hidden />
+        </div>
+        <h2 className="font-display text-xl font-semibold tracking-tight">
+          Check your inbox
+        </h2>
+        <p className="text-sm text-[#A1A1AA]">
+          We sent a confirmation link to{" "}
+          <span className="font-medium text-[#F4F4F5]">{email}</span>. Open it,
+          then sign in to finish setup.
+        </p>
+        {message ? (
+          <p className="text-xs text-[#A1A1AA]" role="status">
+            {message}
+          </p>
+        ) : null}
+        <Button asChild variant="outline" className="w-full border-white/15 bg-transparent text-[#F4F4F5] hover:bg-white/5">
+          <Link href="/sign-in">Back to sign in</Link>
+        </Button>
+      </div>
+    );
+  }
+
   return (
-    <Card className="w-full max-w-md">
+    <Card className="vo-auth-card w-full max-w-md border-0 shadow-none">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl">
+        <CardTitle className="font-display text-2xl text-[#F4F4F5]">
           {isSignUp ? "Create your account" : "Welcome back"}
         </CardTitle>
         <CardDescription>
           {isSignUp
-            ? "Start repurposing content in your brand voice"
+            ? "Start free — teach your voice, then generate your first drafts."
             : "Sign in to continue to Voiceora"}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <GoogleSignInButton redirectTo={redirectTo} />
+        {showGoogle ? (
+          <GoogleSignInButton
+            redirectTo={redirectTo}
+            onError={(msg) => setError(msg)}
+          />
+        ) : null}
 
-        {!isNativePlatform() && (
+        {showGoogle ? (
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <Separator />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">
+              <span className="bg-[rgba(18,21,34,0.92)] px-2 text-[#A1A1AA]">
                 or continue with email
               </span>
             </div>
           </div>
-        )}
+        ) : null}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -154,25 +193,19 @@ export function AuthForm({ mode, redirectTo = "/dashboard", initialError }: Auth
             </Alert>
           )}
 
-          {message && (
-            <Alert>
-              <AlertDescription>{message}</AlertDescription>
-            </Alert>
-          )}
-
           <Button type="submit" className="w-full" disabled={loading}>
             {loading && <Loader2 className="animate-spin" />}
             {isSignUp ? "Create account" : "Sign in"}
           </Button>
         </form>
       </CardContent>
-      <CardFooter className="justify-center text-sm text-muted-foreground">
+      <CardFooter className="justify-center text-sm text-[#A1A1AA]">
         {isSignUp ? (
           <>
             Already have an account?{" "}
             <Link
               href={`/sign-in${redirectTo !== "/dashboard" ? `?redirect=${encodeURIComponent(redirectTo)}` : ""}`}
-              className="ml-1 font-medium text-foreground underline-offset-4 hover:underline"
+              className="ml-1 font-medium text-[#F4F4F5] underline-offset-4 hover:underline"
             >
               Sign in
             </Link>
@@ -182,7 +215,7 @@ export function AuthForm({ mode, redirectTo = "/dashboard", initialError }: Auth
             Don&apos;t have an account?{" "}
             <Link
               href={`/sign-up${redirectTo !== "/dashboard" ? `?redirect=${encodeURIComponent(redirectTo)}` : ""}`}
-              className="ml-1 font-medium text-foreground underline-offset-4 hover:underline"
+              className="ml-1 font-medium text-[#F4F4F5] underline-offset-4 hover:underline"
             >
               Sign up
             </Link>

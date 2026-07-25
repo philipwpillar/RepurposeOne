@@ -1,5 +1,5 @@
 // Route group for unauthenticated auth pages (sign-in, sign-up).
-// No shared layout chrome yet — pages render their own centered card UI.
+// Shared aurora chrome lives in AuthShell.
 export default function AuthLayout({
   children,
 }: {
