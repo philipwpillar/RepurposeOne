@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
 
-test.describe("visual baselines", () => {
+// Phase 8: un-skip, generate Linux baselines, and make CI execute this file.
+// Visual regression is deferred — Phases 1–7 change pixels by design.
+test.describe.skip("visual baselines", () => {
   test("landing desktop screenshot", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/");

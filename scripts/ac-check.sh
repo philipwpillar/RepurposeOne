@@ -58,10 +58,17 @@ run_floor(){
 run_0(){ echo "── PHASE 0 ──"
   assert "@vercel/analytics+speed-insights" "$(n '@vercel/analytics|@vercel/speed-insights' app/layout.tsx package.json)" ge 2
   assert "@playwright/test installed"       "$(n '@playwright/test' package.json)" ge 1
-  assert "e2e specs present"                "$(ls e2e/*.spec.ts 2>/dev/null | wc -l | tr -d ' ')" ge 3
-  assert "visual snapshot spec"             "$(n 'toHaveScreenshot' e2e)" ge 1
-  assert "CI runs the AC harness"           "$(n 'ac-check' .github/workflows/ci.yml)" ge 1
-  assert "CI runs playwright"               "$(n 'playwright' .github/workflows/ci.yml)" ge 1
+  assert "auth setup spec exists"           "$(f 'e2e/auth.setup.ts')" eq 1
+  assert "storageState wired"               "$(n 'storageState' playwright.config.ts e2e)" ge 2
+  assert "setup project + dependencies"     "$(n 'name:\s*.setup.|dependencies:\s*\[' playwright.config.ts)" ge 2
+  assert "authenticated critical paths"     "$(ls e2e/*.spec.ts 2>/dev/null | wc -l | tr -d ' ')" ge 4
+  assert "studio spec hits /studio"         "$(n 'goto\(./studio' e2e)" ge 1
+  assert "library spec hits /library"       "$(n 'goto\(./library|/library' e2e)" ge 1
+  assert "402 upgrade-gate covered"         "$(n '402|limit_exceeded' e2e)" ge 1
+  assert "AI calls stubbed in e2e"          "$(n 'page\.route\(|route\(.\*\*/api/generate' e2e)" ge 1
+  assert "auth guard covered"               "$(n 'sign-in' e2e)" ge 1
+  assert "CI runs the AC harness"           "$(n 'ac-check' .github/workflows/ci.yml)" ge 2
+  assert "CI runs playwright"               "$(n 'playwright test' .github/workflows/ci.yml)" ge 1
   assert "acceptance note committed"        "$(f 'docs/acceptance/phase-0-*.md')" eq 1 ; }
 run_1(){ echo "── PHASE 1 ──"
   assert "og-pack files present"            "$(ls $A 2>/dev/null | rg -c '^(opengraph-image|twitter-image|icon|apple-icon|robots|sitemap)\.(tsx|ts)$' || echo 0)" ge 6
@@ -131,7 +138,9 @@ run_8(){ echo "── PHASE 8 ──"
   assert "@sentry installed"                "$(n '@sentry/' package.json)" ge 1
   assert "sentry configs present"           "$(ls sentry.*.config.* 2>/dev/null | wc -l | tr -d ' ')" ge 2
   assert "e2e specs (expanded)"             "$(ls e2e/*.spec.ts 2>/dev/null | wc -l | tr -d ' ')" ge 4
-  assert "visual baselines committed"       "$(ls e2e/**/*-snapshots/* 2>/dev/null | wc -l | tr -d ' ')" ge 8
+  assert "visual spec un-skipped"           "$(n 'test\.describe\.skip|test\.skip' e2e/visual.spec.ts)" eq 0
+  assert "CI executes visual.spec.ts"       "$(n 'visual\.spec\.ts' .github/workflows/ci.yml)" ge 1
+  assert "Linux visual baselines committed" "$(find e2e -name '*-linux.png' 2>/dev/null | wc -l | tr -d ' ')" ge 4
   assert "acceptance note committed"        "$(f 'docs/acceptance/phase-8-*.md')" eq 1 ; }
 
 case "$PHASE" in

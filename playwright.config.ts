@@ -15,9 +15,22 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   projects: [
+    { name: "setup", testMatch: /.*\.setup\.ts/ },
     {
       name: "chromium",
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: "e2e/.auth/user.json",
+      },
+      dependencies: ["setup"],
+      // Anon specs must not inherit the authenticated storageState.
+      testIgnore: [/.*\.setup\.ts/, /.*\.anon\.spec\.ts/],
+    },
+    {
+      // Specs that must run signed OUT.
+      name: "anon",
       use: { ...devices["Desktop Chrome"] },
+      testMatch: /.*\.anon\.spec\.ts/,
     },
   ],
   webServer: process.env.PLAYWRIGHT_BASE_URL
