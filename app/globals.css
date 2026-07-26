@@ -342,6 +342,18 @@ body {
   view-transition-name: vo-main-probe;
 }
 
+/* Sidebar collapse — width from html class set in themeBootScript (no flash). */
+.vo-sidebar {
+  width: 16rem;
+  transition: width var(--motion-base) ease;
+}
+html.vo-sidebar-collapsed .vo-sidebar {
+  width: 4rem;
+}
+html.vo-sidebar-collapsed .vo-topbar-usage {
+  display: flex;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

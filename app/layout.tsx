@@ -51,7 +51,7 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image" },
 };
 
-const themeBootScript = `(function(){try{var t=localStorage.getItem("vo-theme");var d=t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);if(d)document.documentElement.classList.add("dark");}catch(e){}})();`;
+const themeBootScript = `(function(){try{var t=localStorage.getItem("vo-theme");var d=t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);if(d)document.documentElement.classList.add("dark");if(localStorage.getItem("vo-sidebar-collapsed")==="1")document.documentElement.classList.add("vo-sidebar-collapsed");}catch(e){}})();`;
 
 export default function RootLayout({
   children,
