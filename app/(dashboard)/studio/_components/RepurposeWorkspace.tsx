@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AlertCircle, Loader2, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { INPUT_CONTENT_MIN_LENGTH, planAllowsVision } from "@/lib/config";
@@ -199,8 +200,6 @@ export default function RepurposeWorkspace({
     null
   );
   const [expandedFormat, setExpandedFormat] = useState<TargetFormat>("x_thread");
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [exportMessage, setExportMessage] = useState<string | null>(null);
 
   const atLimit = usedCount >= repurposesLimit;
 
@@ -214,15 +213,13 @@ export default function RepurposeWorkspace({
   );
 
   const liveStatus = useMemo(() => {
-    if (exportMessage) return exportMessage;
-    if (statusMessage) return statusMessage;
     const generating = ALL_FORMATS.filter((f) => formatLoading[f]);
     if (generating.length === 0) return null;
     if (generating.length === 1) {
       return `Generating ${FORMAT_TITLES[generating[0]]}…`;
     }
     return `Generating ${generating.length} formats…`;
-  }, [exportMessage, formatLoading, statusMessage]);
+  }, [formatLoading]);
 
   // --- Protected fence: generate clients + usage error handling ---
 
@@ -425,7 +422,6 @@ export default function RepurposeWorkspace({
 
       setFormatErrors((prev) => ({ ...prev, [format]: null }));
       setReactiveUpgradeGate(null);
-      setExportMessage(null);
       setFormatLoading((prev) => ({ ...prev, [format]: true }));
       setExpandedFormat(format);
 
@@ -439,7 +435,6 @@ export default function RepurposeWorkspace({
         });
         applyOutput(format, output, repurposeId);
         setUsedCount(usage.used);
-        setStatusMessage(`${FORMAT_TITLES[format]} ready`);
 
         if (format === "x_thread" && options?.targetTweets !== undefined) {
           const length = clampTargetTweets(options.targetTweets);
@@ -472,7 +467,6 @@ export default function RepurposeWorkspace({
 
       setFormatErrors((prev) => ({ ...prev, [format]: null }));
       setReactiveUpgradeGate(null);
-      setExportMessage(null);
       setFormatLoading((prev) => ({ ...prev, [format]: true }));
       setExpandedFormat(format);
 
@@ -485,7 +479,6 @@ export default function RepurposeWorkspace({
         );
         applyOutput(format, output, repurposeId);
         setUsedCount(usage.used);
-        setStatusMessage(`${FORMAT_TITLES[format]} ready`);
 
         if (format === "x_thread" && options?.targetTweets !== undefined) {
           const length = clampTargetTweets(options.targetTweets);
@@ -533,11 +526,6 @@ export default function RepurposeWorkspace({
 
   const regenerateAll = async () => {
     setIsRegeneratingAll(true);
-    setStatusMessage(
-      isPhotoMode
-        ? "Analysing your photo…"
-        : `Generating ${activeFormats.length} format${activeFormats.length === 1 ? "" : "s"}…`
-    );
     const generationId = crypto.randomUUID();
     const formats = ALL_FORMATS.filter((format) => selectedFormats.has(format));
 
@@ -552,13 +540,12 @@ export default function RepurposeWorkspace({
     }
 
     setIsRegeneratingAll(false);
-    setStatusMessage("Run complete — review each format below");
+    toast.success("Run complete", { description: "Review each format below" });
   };
 
   const handleTextInputUpdate = async (content: string) => {
     setInputSummary(content);
     setIsRegeneratingAll(true);
-    setStatusMessage("Generating from updated source…");
     const generationId = crypto.randomUUID();
     const formats = ALL_FORMATS.filter((format) => selectedFormats.has(format));
     await Promise.allSettled(
@@ -567,7 +554,7 @@ export default function RepurposeWorkspace({
       )
     );
     setIsRegeneratingAll(false);
-    setStatusMessage("Run complete — review each format below");
+    toast.success("Run complete", { description: "Review each format below" });
   };
 
   const copyAllToClipboard = async () => {
@@ -596,13 +583,12 @@ export default function RepurposeWorkspace({
   const exportBundle = async () => {
     try {
       await copyAllToClipboard();
-      setExportMessage("Copied all generated formats to the clipboard.");
-      setTimeout(() => setExportMessage(null), 4000);
+      toast.success("All formats copied");
     } catch (err) {
       console.error("Clipboard write failed", err);
-      setExportMessage(
-        "Could not copy to clipboard. Your browser may be blocking clipboard access."
-      );
+      toast.error("Could not copy", {
+        description: "Your browser may be blocking clipboard access.",
+      });
     }
   };
 
