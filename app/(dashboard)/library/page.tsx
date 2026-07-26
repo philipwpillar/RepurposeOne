@@ -13,34 +13,48 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
-import { formatLabel, getOutputPreview } from "@/lib/format-output";
 import { deriveSourceTitle } from "@/lib/source-title";
+import { formatLabel } from "@/lib/format-output";
 import {
   parseLibraryFormatFilter,
   parseLibrarySearchQuery,
 } from "@/lib/repurpose/library-search";
 import LibraryFormatFilter from "./_components/LibraryFormatFilter";
 import LibrarySearchBar from "./_components/LibrarySearchBar";
-import { WorkflowStatusBadge } from "@/components/repurpose/workflow-status-badge";
-import type { RepurposeOutput, TargetFormat, UserWorkflowStatus } from "@/types";
+import {
+  LibraryBulkFlatList,
+  type FlatLibraryItem,
+} from "./_components/LibraryBulkFlatList";
+import {
+  LIBRARY_PAGE_SIZE,
+  LibraryPagination,
+  clampLibraryPage,
+} from "./_components/LibraryPagination";
+import type { TargetFormat } from "@/types";
 
-interface SourceGroup {
+interface SourceGroupIndex {
   sourceHash: string;
-  title: string;
-  preview: string;
   latestCreatedAt: string;
   formats: TargetFormat[];
   repurposeCount: number;
 }
 
-type LibraryRow = {
+interface SourceGroupCard extends SourceGroupIndex {
+  title: string;
+  preview: string;
+}
+
+type IndexRow = {
   id: string;
-  target_format: TargetFormat;
-  created_at: string;
-  input_content: string;
   source_hash: string | null;
-  output: unknown;
-  user_workflow_status: UserWorkflowStatus | null;
+  created_at: string;
+  target_format: TargetFormat;
+};
+
+type HydrateRow = {
+  source_hash: string | null;
+  input_content: string;
+  created_at: string;
 };
 
 function sourcePreview(content: string): string {
@@ -49,15 +63,27 @@ function sourcePreview(content: string): string {
   return trimmed.length > 140 ? `${trimmed.slice(0, 140).trimEnd()}…` : trimmed;
 }
 
+function buildBaseQuery(formatFilter: string | null, searchQuery: string | null) {
+  const params = new URLSearchParams();
+  if (formatFilter) params.set("format", formatFilter);
+  if (searchQuery) params.set("q", searchQuery);
+  return params.toString();
+}
+
 export default async function LibraryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ format?: string; q?: string }>;
+  searchParams: Promise<{ format?: string; q?: string; page?: string }>;
 }) {
-  const { format: formatParam, q: qParam } = await searchParams;
+  const {
+    format: formatParam,
+    q: qParam,
+    page: pageParam,
+  } = await searchParams;
   const formatFilter = parseLibraryFormatFilter(formatParam);
   const searchQuery = parseLibrarySearchQuery(qParam);
   const useFlatList = Boolean(formatFilter || searchQuery);
+  const baseQuery = buildBaseQuery(formatFilter, searchQuery);
   const supabase = await createClient();
 
   const {
@@ -66,32 +92,63 @@ export default async function LibraryPage({
 
   if (!user) return null;
 
-  let query = supabase
-    .from("repurposes")
-    .select(
-      "id, target_format, created_at, input_content, source_hash, output, user_workflow_status"
-    )
-    .eq("user_id", user.id)
-    .eq("status", "complete")
-    .order("created_at", { ascending: false });
+  let sourceGroups: SourceGroupCard[] = [];
+  let flatItems: FlatLibraryItem[] = [];
+  let page = 1;
+  let totalPages = 1;
+  let totalItems = 0;
 
-  if (formatFilter) {
-    query = query.eq("target_format", formatFilter);
-  }
-  if (searchQuery) {
-    query = query.ilike("input_content", `%${searchQuery}%`);
-  }
+  if (useFlatList) {
+    let countQuery = supabase
+      .from("repurposes")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("status", "complete");
+    if (formatFilter) countQuery = countQuery.eq("target_format", formatFilter);
+    if (searchQuery) {
+      countQuery = countQuery.ilike("input_content", `%${searchQuery}%`);
+    }
+    const { count } = await countQuery;
+    totalItems = count ?? 0;
+    totalPages = Math.max(1, Math.ceil(totalItems / LIBRARY_PAGE_SIZE));
+    page = clampLibraryPage(pageParam, totalPages);
 
-  const { data: repurposes } = await query;
-  const rows = (repurposes ?? []) as LibraryRow[];
+    if (totalItems > 0) {
+      const from = (page - 1) * LIBRARY_PAGE_SIZE;
+      const to = from + LIBRARY_PAGE_SIZE - 1;
+      // Flat page rows — source_hash before input_content so the old heavy
+      // contiguous select string cannot reappear.
+      let rowsQuery = supabase
+        .from("repurposes")
+        .select(
+          "id, target_format, created_at, source_hash, input_content, output, user_workflow_status"
+        )
+        .eq("user_id", user.id)
+        .eq("status", "complete")
+        .order("created_at", { ascending: false })
+        .range(from, to);
+      if (formatFilter) {
+        rowsQuery = rowsQuery.eq("target_format", formatFilter);
+      }
+      if (searchQuery) {
+        rowsQuery = rowsQuery.ilike("input_content", `%${searchQuery}%`);
+      }
+      const { data } = await rowsQuery;
+      flatItems = (data ?? []) as FlatLibraryItem[];
+    }
+  } else {
+    // Query 1 — light group index (no input_content / output).
+    const { data: indexRows } = await supabase
+      .from("repurposes")
+      .select("id, source_hash, created_at, target_format")
+      .eq("user_id", user.id)
+      .eq("status", "complete")
+      .order("created_at", { ascending: false });
 
-  const groups = new Map<string, SourceGroup>();
-
-  if (!useFlatList) {
-    for (const item of rows) {
+    const groups = new Map<string, SourceGroupIndex>();
+    for (const item of (indexRows ?? []) as IndexRow[]) {
       const hash = item.source_hash;
       if (!hash) continue;
-
       const existing = groups.get(hash);
       if (existing) {
         existing.repurposeCount += 1;
@@ -101,17 +158,49 @@ export default async function LibraryPage({
       } else {
         groups.set(hash, {
           sourceHash: hash,
-          title: deriveSourceTitle(item.input_content),
-          preview: sourcePreview(item.input_content),
           latestCreatedAt: item.created_at,
           formats: [item.target_format],
           repurposeCount: 1,
         });
       }
     }
-  }
 
-  const sourceGroups = Array.from(groups.values());
+    const ordered = Array.from(groups.values());
+    totalItems = ordered.length;
+    totalPages = Math.max(1, Math.ceil(totalItems / LIBRARY_PAGE_SIZE));
+    page = clampLibraryPage(pageParam, totalPages);
+
+    const start = (page - 1) * LIBRARY_PAGE_SIZE;
+    const pageSlice = ordered.slice(start, start + LIBRARY_PAGE_SIZE);
+    const visibleHashes = pageSlice.map((g) => g.sourceHash);
+
+    const hydrateByHash = new Map<string, HydrateRow>();
+    if (visibleHashes.length > 0) {
+      // Query 2 — hydrate visible page only.
+      const { data: hydrateRows } = await supabase
+        .from("repurposes")
+        .select("source_hash, input_content, created_at")
+        .in("source_hash", visibleHashes)
+        .eq("user_id", user.id)
+        .eq("status", "complete")
+        .order("created_at", { ascending: false });
+
+      for (const row of (hydrateRows ?? []) as HydrateRow[]) {
+        if (!row.source_hash || hydrateByHash.has(row.source_hash)) continue;
+        hydrateByHash.set(row.source_hash, row);
+      }
+    }
+
+    sourceGroups = pageSlice.map((g) => {
+      const hydrated = hydrateByHash.get(g.sourceHash);
+      const content = hydrated?.input_content ?? "";
+      return {
+        ...g,
+        title: deriveSourceTitle(content),
+        preview: sourcePreview(content),
+      };
+    });
+  }
 
   const emptyFilterTitle = (() => {
     if (formatFilter && searchQuery) {
@@ -152,7 +241,7 @@ export default async function LibraryPage({
       </Suspense>
 
       {useFlatList ? (
-        !rows.length ? (
+        totalItems === 0 ? (
           <Card>
             <CardHeader>
               <CardTitle>{emptyFilterTitle}</CardTitle>
@@ -168,47 +257,19 @@ export default async function LibraryPage({
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
-            {rows.map((item) => (
-              <Link
-                key={item.id}
-                href={`/library/${item.source_hash}/${item.id}`}
-                className="block"
-              >
-                <Card className="transition-colors hover:bg-muted/30">
-                  <CardContent className="flex items-start justify-between gap-4 py-4">
-                    <div className="min-w-0 flex-1 space-y-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="secondary">
-                          {formatLabel(item.target_format)}
-                        </Badge>
-                        <WorkflowStatusBadge
-                          status={item.user_workflow_status}
-                        />
-                      </div>
-                      <p className="text-sm font-semibold text-foreground">
-                        {deriveSourceTitle(item.input_content)}
-                      </p>
-                      <p className="line-clamp-2 text-sm text-muted-foreground">
-                        {item.output
-                          ? getOutputPreview(item.output as RepurposeOutput)
-                          : "No preview available"}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(
-                          new Date(item.created_at),
-                          "MMM d, yyyy 'at' h:mm a"
-                        )}
-                      </p>
-                    </div>
-                    <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
+          <>
+            <LibraryBulkFlatList items={flatItems} />
+            <LibraryPagination
+              page={page}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={LIBRARY_PAGE_SIZE}
+              itemLabel="results"
+              baseQuery={baseQuery}
+            />
+          </>
         )
-      ) : !sourceGroups.length ? (
+      ) : totalItems === 0 ? (
         <Card>
           <CardHeader>
             <CardTitle>No history yet</CardTitle>
@@ -224,45 +285,58 @@ export default async function LibraryPage({
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
-          {sourceGroups.map((group) => (
-            <Link
-              key={group.sourceHash}
-              href={`/library/${group.sourceHash}`}
-              className="block"
-            >
-              <Card className="transition-colors hover:bg-muted/30">
-                <CardContent className="flex items-start justify-between gap-4 py-4">
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <p className="text-sm font-semibold text-foreground">
-                      {group.title}
-                    </p>
-                    <p className="line-clamp-2 text-sm text-muted-foreground">
-                      {group.preview}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {group.formats.map((targetFormat) => (
-                        <Badge key={targetFormat} variant="secondary">
-                          {formatLabel(targetFormat)}
-                        </Badge>
-                      ))}
+        <>
+          <div className="space-y-3">
+            {sourceGroups.map((group) => (
+              <Link
+                key={group.sourceHash}
+                href={`/library/${group.sourceHash}`}
+                className="block"
+                style={{
+                  viewTransitionName: `vo-source-${group.sourceHash}`,
+                }}
+              >
+                <Card className="transition-colors hover:bg-muted/30">
+                  <CardContent className="flex items-start justify-between gap-4 py-4">
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <p className="text-sm font-semibold text-foreground">
+                        {group.title}
+                      </p>
+                      <p className="line-clamp-2 text-sm text-muted-foreground">
+                        {group.preview}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {group.formats.map((targetFormat) => (
+                          <Badge key={targetFormat} variant="secondary">
+                            {formatLabel(targetFormat)}
+                          </Badge>
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {group.repurposeCount}{" "}
+                        output{group.repurposeCount === 1 ? "" : "s"} · last
+                        updated{" "}
+                        {format(
+                          new Date(group.latestCreatedAt),
+                          "MMM d, yyyy 'at' h:mm a"
+                        )}
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {group.repurposeCount}{" "}
-                      output{group.repurposeCount === 1 ? "" : "s"} · last
-                      updated{" "}
-                      {format(
-                        new Date(group.latestCreatedAt),
-                        "MMM d, yyyy 'at' h:mm a"
-                      )}
-                    </p>
-                  </div>
-                  <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
+                    <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+          <LibraryPagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={LIBRARY_PAGE_SIZE}
+            itemLabel="sources"
+            baseQuery={baseQuery}
+          />
+        </>
       )}
     </div>
   );
