@@ -337,6 +337,11 @@ body {
   animation: vo-shimmer 1.4s linear infinite;
 }
 
+/* Phase 5A Commit 0 probe — shared chrome names land in Commit 4. */
+#main-content {
+  view-transition-name: vo-main-probe;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
