@@ -87,6 +87,21 @@ type FormatLoadingState = Record<TargetFormat, boolean>;
 type FormatErrorState = Record<TargetFormat, string | null>;
 type FormatIdState = Record<TargetFormat, string | null>;
 
+/** One generated result. Variants are client state only — every variant is
+ * already its own `repurposes` row (Regenerate mints a new generation_id), so
+ * this array is purely presentational; no schema or billing change. */
+type FormatVariant = { repurposeId: string; output: RepurposeOutput };
+type FormatVariantsState = Record<TargetFormat, FormatVariant[]>;
+
+function createVariantsRecord(): FormatVariantsState {
+  return {
+    x_thread: [],
+    linkedin: [],
+    instagram: [],
+    email: [],
+  };
+}
+
 function createFormatRecord<T>(value: T): Record<TargetFormat, T> {
   return {
     x_thread: value,
@@ -293,23 +308,69 @@ export default function RepurposeWorkspace({
   const [pendingTwitterLength, setPendingTwitterLength] = useState(
     clampTargetTweets(initialTwitterLength ?? 6)
   );
-  const [xThreadOutput, setXThreadOutput] = useState<XThreadOutput | null>(
-    initialTwitterOutput
-      ? {
-          format: "x_thread",
-          tweets: initialTwitterOutput
-            .split(/\n\n+/)
-            .filter(Boolean)
-            .map((text, index) => ({ number: index + 1, text })),
-        }
-      : null
+  const [formatVariants, setFormatVariants] = useState<FormatVariantsState>(
+    () => {
+      const base = createVariantsRecord();
+      if (initialTwitterOutput) {
+        base.x_thread = [
+          {
+            repurposeId: "",
+            output: {
+              format: "x_thread",
+              tweets: initialTwitterOutput
+                .split(/\n\n+/)
+                .filter(Boolean)
+                .map((text, index) => ({ number: index + 1, text })),
+            },
+          },
+        ];
+      }
+      return base;
+    }
   );
-  const [linkedinOutput, setLinkedinOutput] = useState<LinkedInOutput | null>(null);
-  const [instagramOutput, setInstagramOutput] = useState<InstagramOutput | null>(null);
-  const [emailOutput, setEmailOutput] = useState<EmailOutput | null>(null);
-  const [repurposeIds, setRepurposeIds] = useState<FormatIdState>(
-    createFormatRecord(null)
+  // null → show newest; a number pins a specific variant chip.
+  const [selectedVariant, setSelectedVariant] = useState<
+    Record<TargetFormat, number | null>
+  >(() => createFormatRecord<number | null>(null));
+  // Streaming partial preview (uncommitted, no repurposeId yet).
+  const [partialPreview, setPartialPreview] = useState<
+    Record<TargetFormat, RepurposeOutput | null>
+  >(() => createFormatRecord<RepurposeOutput | null>(null));
+
+  const activeIndexFor = useCallback(
+    (format: TargetFormat) =>
+      selectedVariant[format] ??
+      Math.max(0, formatVariants[format].length - 1),
+    [selectedVariant, formatVariants]
   );
+
+  const displayOutputFor = useCallback(
+    (format: TargetFormat): RepurposeOutput | null => {
+      // Preview is only ever set while a stream is in flight and is cleared on
+      // commit or abort, so it takes precedence when present.
+      return (
+        partialPreview[format] ??
+        formatVariants[format][activeIndexFor(format)]?.output ??
+        null
+      );
+    },
+    [partialPreview, formatVariants, activeIndexFor]
+  );
+
+  const repurposeIds: FormatIdState = {
+    x_thread:
+      formatVariants.x_thread[activeIndexFor("x_thread")]?.repurposeId || null,
+    linkedin:
+      formatVariants.linkedin[activeIndexFor("linkedin")]?.repurposeId || null,
+    instagram:
+      formatVariants.instagram[activeIndexFor("instagram")]?.repurposeId ||
+      null,
+    email: formatVariants.email[activeIndexFor("email")]?.repurposeId || null,
+  };
+
+  const selectVariant = useCallback((format: TargetFormat, index: number) => {
+    setSelectedVariant((prev) => ({ ...prev, [format]: index }));
+  }, []);
 
   const [formatLoading, setFormatLoading] = useState<FormatLoadingState>(
     createFormatRecord(false)
@@ -334,8 +395,27 @@ export default function RepurposeWorkspace({
   const isAnyLoading =
     isRegeneratingAll || activeFormats.some((format) => formatLoading[format]);
 
-  const hasAnyOutput = Boolean(
-    xThreadOutput || linkedinOutput || instagramOutput || emailOutput
+  const xThreadActive = displayOutputFor("x_thread");
+  const xThreadOutput =
+    xThreadActive && isFormatOutput(xThreadActive, "x_thread")
+      ? xThreadActive
+      : null;
+  const linkedinActive = displayOutputFor("linkedin");
+  const linkedinOutput =
+    linkedinActive && isFormatOutput(linkedinActive, "linkedin")
+      ? linkedinActive
+      : null;
+  const instagramActive = displayOutputFor("instagram");
+  const instagramOutput =
+    instagramActive && isFormatOutput(instagramActive, "instagram")
+      ? instagramActive
+      : null;
+  const emailActive = displayOutputFor("email");
+  const emailOutput =
+    emailActive && isFormatOutput(emailActive, "email") ? emailActive : null;
+
+  const hasAnyOutput = ALL_FORMATS.some(
+    (format) => formatVariants[format].length > 0
   );
 
   const liveStatus = useMemo(() => {
@@ -425,57 +505,45 @@ export default function RepurposeWorkspace({
 
   const applyOutput = useCallback(
     (format: TargetFormat, output: RepurposeOutput, repurposeId: string) => {
-      setRepurposeIds((prev) => ({ ...prev, [format]: repurposeId }));
-      switch (format) {
-        case "x_thread":
-          if (isFormatOutput(output, "x_thread")) {
-            setXThreadOutput(output);
-            onTwitterGenerate?.(formatXThreadForCopy(output));
-          }
-          break;
-        case "linkedin":
-          if (isFormatOutput(output, "linkedin")) {
-            setLinkedinOutput(output);
-          }
-          break;
-        case "instagram":
-          if (isFormatOutput(output, "instagram")) {
-            setInstagramOutput(output);
-          }
-          break;
-        case "email":
-          if (isFormatOutput(output, "email")) {
-            setEmailOutput(output);
-          }
-          break;
+      // Append as a new variant; clear the streaming preview; snap to newest.
+      setFormatVariants((prev) => ({
+        ...prev,
+        [format]: [...prev[format], { repurposeId, output }],
+      }));
+      setSelectedVariant((prev) => ({ ...prev, [format]: null }));
+      setPartialPreview((prev) => ({ ...prev, [format]: null }));
+      if (format === "x_thread" && isFormatOutput(output, "x_thread")) {
+        onTwitterGenerate?.(formatXThreadForCopy(output));
       }
     },
     [onTwitterGenerate]
   );
 
+  const clearPartialPreview = useCallback((format: TargetFormat) => {
+    setPartialPreview((prev) =>
+      prev[format] === null ? prev : { ...prev, [format]: null }
+    );
+  }, []);
+
   const applyPartialOutput = useCallback(
     (format: TargetFormat, partial: Record<string, unknown>) => {
+      let coerced: RepurposeOutput | null = null;
       switch (format) {
-        case "x_thread": {
-          const coerced = coercePartialXThread(partial);
-          if (coerced) setXThreadOutput(coerced);
+        case "x_thread":
+          coerced = coercePartialXThread(partial);
           break;
-        }
-        case "linkedin": {
-          const coerced = coercePartialLinkedIn(partial);
-          if (coerced) setLinkedinOutput(coerced);
+        case "linkedin":
+          coerced = coercePartialLinkedIn(partial);
           break;
-        }
-        case "instagram": {
-          const coerced = coercePartialInstagram(partial);
-          if (coerced) setInstagramOutput(coerced);
+        case "instagram":
+          coerced = coercePartialInstagram(partial);
           break;
-        }
-        case "email": {
-          const coerced = coercePartialEmail(partial);
-          if (coerced) setEmailOutput(coerced);
+        case "email":
+          coerced = coercePartialEmail(partial);
           break;
-        }
+      }
+      if (coerced) {
+        setPartialPreview((prev) => ({ ...prev, [format]: coerced }));
       }
     },
     []
@@ -682,9 +750,11 @@ export default function RepurposeWorkspace({
       } catch (err) {
         if (isAbortError(err)) {
           setFormatErrors((prev) => ({ ...prev, [format]: null }));
+          clearPartialPreview(format);
           return;
         }
         console.error(err);
+        clearPartialPreview(format);
         resolveGenerateError(err, format, FORMAT_FALLBACK_ERRORS);
       } finally {
         formatAbortRef.current.delete(format);
@@ -696,6 +766,7 @@ export default function RepurposeWorkspace({
       applyPartialOutput,
       brandVoice,
       callGenerateApi,
+      clearPartialPreview,
       inputSummary,
       resolveGenerateError,
       useStream,
@@ -874,8 +945,45 @@ export default function RepurposeWorkspace({
     }
 
     if (output) {
+      const variants = formatVariants[format];
+      const activeIdx = activeIndexFor(format);
+      const activeId = variants[activeIdx]?.repurposeId;
+      const previewing = partialPreview[format] !== null;
+      const showMeta = !previewing && variants.length > 0;
       return (
         <div className={formatLoading[format] ? "opacity-60 transition-opacity" : undefined}>
+          {showMeta ? (
+            <div className="mb-3 flex flex-wrap items-center gap-1.5">
+              {variants.length > 1 ? (
+                <>
+                  <span className="text-[11px] font-medium text-muted-foreground">
+                    Versions
+                  </span>
+                  {variants.map((variant, index) => (
+                    <button
+                      key={variant.repurposeId || `v${index}`}
+                      type="button"
+                      onClick={() => selectVariant(format, index)}
+                      aria-pressed={index === activeIdx}
+                      aria-label={`Show version ${index + 1}`}
+                      className={
+                        index === activeIdx
+                          ? "rounded-full border border-primary bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary transition-colors"
+                          : "rounded-full border border-border px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+                      }
+                    >
+                      v{index + 1}
+                    </button>
+                  ))}
+                </>
+              ) : null}
+              {activeId ? (
+                <span className="ml-auto font-mono text-[10px] text-muted-foreground">
+                  ID {activeId.slice(0, 8)}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
           {output}
         </div>
       );
