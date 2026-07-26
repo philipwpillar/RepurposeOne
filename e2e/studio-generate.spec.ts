@@ -12,7 +12,7 @@ test("generates a thread from pasted source and reaches the Library", async ({
   page,
 }) => {
   // Stub every generate call — deterministic, and zero AI spend in CI.
-  await page.route("**/api/generate", async (route) => {
+  await page.route("**/api/generate**", async (route) => {
     const body = route.request().postDataJSON() as { target_format?: string };
     const format = body?.target_format ?? "x_thread";
 

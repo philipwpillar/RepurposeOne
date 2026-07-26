@@ -1,16 +1,25 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { AlertCircle, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { INPUT_CONTENT_MIN_LENGTH, planAllowsVision } from "@/lib/config";
+import {
+  INPUT_CONTENT_MIN_LENGTH,
+  STREAM_STUDIO,
+  planAllowsVision,
+} from "@/lib/config";
 import {
   callPhotoGenerateApi,
   PhotoGenerateApiError,
 } from "@/lib/repurpose/photo-generate-client";
+import {
+  callGenerateStreamApi,
+  StreamGenerateApiError,
+} from "@/lib/repurpose/stream-generate-client";
 import type { InputMode, PhotoInputReady } from "@/types/photo-input";
 import type { Plan } from "@/types";
 import InputModeTabs from "./InputModeTabs";
@@ -112,6 +121,116 @@ function isFormatOutput<F extends TargetFormat>(
   return output.format === format;
 }
 
+function isAbortError(err: unknown): boolean {
+  return (
+    (err instanceof DOMException && err.name === "AbortError") ||
+    (err instanceof Error && err.name === "AbortError")
+  );
+}
+
+function coercePartialXThread(
+  partial: Record<string, unknown>
+): XThreadOutput | null {
+  if (!Array.isArray(partial.tweets)) return null;
+  const tweets = partial.tweets
+    .map((tweet, index) => {
+      if (!tweet || typeof tweet !== "object") return null;
+      const row = tweet as { number?: unknown; text?: unknown };
+      const text = typeof row.text === "string" ? row.text : "";
+      if (!text) return null;
+      return {
+        number: typeof row.number === "number" ? row.number : index + 1,
+        text,
+      };
+    })
+    .filter((tweet): tweet is { number: number; text: string } => tweet !== null);
+  if (tweets.length === 0) return null;
+  return {
+    format: "x_thread",
+    tweets,
+    thread_summary:
+      typeof partial.thread_summary === "string"
+        ? partial.thread_summary
+        : null,
+  };
+}
+
+function coercePartialLinkedIn(
+  partial: Record<string, unknown>
+): LinkedInOutput | null {
+  const post = typeof partial.post === "string" ? partial.post : "";
+  const slides: LinkedInOutput["carousel_slides"] = [];
+  if (Array.isArray(partial.carousel_slides)) {
+    partial.carousel_slides.forEach((slide, index) => {
+      if (!slide || typeof slide !== "object") return;
+      const row = slide as {
+        number?: unknown;
+        title?: unknown;
+        body?: unknown;
+      };
+      const title = typeof row.title === "string" ? row.title : "";
+      if (!title && typeof row.body !== "string") return;
+      slides.push({
+        number: typeof row.number === "number" ? row.number : index + 1,
+        title: title || `Slide ${index + 1}`,
+        body: typeof row.body === "string" ? row.body : undefined,
+      });
+    });
+  }
+  if (!post && slides.length === 0) return null;
+  return {
+    format: "linkedin",
+    post: post || "…",
+    carousel_slides:
+      slides.length > 0 ? slides : [{ number: 1, title: "…" }],
+    post_summary:
+      typeof partial.post_summary === "string"
+        ? partial.post_summary
+        : undefined,
+  };
+}
+
+function coercePartialInstagram(
+  partial: Record<string, unknown>
+): InstagramOutput | null {
+  const caption = typeof partial.caption === "string" ? partial.caption : "";
+  const hooks = Array.isArray(partial.hook_variations)
+    ? partial.hook_variations.filter(
+        (hook): hook is string => typeof hook === "string" && hook.length > 0
+      )
+    : [];
+  const hashtags = Array.isArray(partial.hashtags)
+    ? partial.hashtags.filter(
+        (tag): tag is string => typeof tag === "string" && tag.length > 0
+      )
+    : [];
+  if (!caption && hooks.length === 0) return null;
+  return {
+    format: "instagram",
+    caption: caption || "…",
+    hook_variations: hooks.length > 0 ? hooks : ["…"],
+    hashtags,
+  };
+}
+
+function coercePartialEmail(
+  partial: Record<string, unknown>
+): EmailOutput | null {
+  const subject =
+    typeof partial.subject_line === "string" ? partial.subject_line : "";
+  const body = typeof partial.body === "string" ? partial.body : "";
+  if (!subject && !body) return null;
+  return {
+    format: "email",
+    subject_line: subject || "…",
+    preview_text:
+      typeof partial.preview_text === "string"
+        ? partial.preview_text
+        : undefined,
+    body: body || "…",
+  };
+}
+
 class GenerateApiError extends Error {
   usage?: UsageInfo;
   code?: GenerateErrorResponse["code"];
@@ -156,6 +275,13 @@ export default function RepurposeWorkspace({
   brandVoice = null,
   onTwitterGenerate,
 }: RepurposeWorkspaceProps) {
+  const searchParams = useSearchParams();
+  const useStream =
+    STREAM_STUDIO || searchParams.get("stream") === "1";
+
+  const formatAbortRef = useRef<Map<TargetFormat, AbortController>>(new Map());
+  const runAbortRef = useRef<AbortController | null>(null);
+
   const [inputSummary, setInputSummary] = useState(initialInput);
   const [inputMode, setInputMode] = useState<InputMode>("paste");
   const [photoInput, setPhotoInput] = useState<PhotoInputReady | null>(null);
@@ -327,6 +453,45 @@ export default function RepurposeWorkspace({
     [onTwitterGenerate]
   );
 
+  const applyPartialOutput = useCallback(
+    (format: TargetFormat, partial: Record<string, unknown>) => {
+      switch (format) {
+        case "x_thread": {
+          const coerced = coercePartialXThread(partial);
+          if (coerced) setXThreadOutput(coerced);
+          break;
+        }
+        case "linkedin": {
+          const coerced = coercePartialLinkedIn(partial);
+          if (coerced) setLinkedinOutput(coerced);
+          break;
+        }
+        case "instagram": {
+          const coerced = coercePartialInstagram(partial);
+          if (coerced) setInstagramOutput(coerced);
+          break;
+        }
+        case "email": {
+          const coerced = coercePartialEmail(partial);
+          if (coerced) setEmailOutput(coerced);
+          break;
+        }
+      }
+    },
+    []
+  );
+
+  const stopFormat = useCallback((format: TargetFormat) => {
+    formatAbortRef.current.get(format)?.abort();
+  }, []);
+
+  const stopAll = useCallback(() => {
+    runAbortRef.current?.abort();
+    for (const controller of formatAbortRef.current.values()) {
+      controller.abort();
+    }
+  }, []);
+
   const resolveGenerateError = useCallback(
     (
       err: unknown,
@@ -334,7 +499,9 @@ export default function RepurposeWorkspace({
       fallbackMessages: Record<TargetFormat, string>
     ): boolean => {
       const apiErr =
-        err instanceof GenerateApiError || err instanceof PhotoGenerateApiError
+        err instanceof GenerateApiError ||
+        err instanceof PhotoGenerateApiError ||
+        err instanceof StreamGenerateApiError
           ? err
           : null;
 
@@ -470,15 +637,42 @@ export default function RepurposeWorkspace({
       setFormatLoading((prev) => ({ ...prev, [format]: true }));
       setExpandedFormat(format);
 
+      const controller = new AbortController();
+      formatAbortRef.current.set(format, controller);
+      const runSignal = runAbortRef.current?.signal;
+      if (runSignal) {
+        if (runSignal.aborted) {
+          controller.abort();
+        } else {
+          runSignal.addEventListener("abort", () => controller.abort(), {
+            once: true,
+          });
+        }
+      }
+
       try {
-        const { output, usage, repurposeId } = await callGenerateApi(
-          trimmed,
-          format,
-          options?.targetTweets,
-          options?.generationId
-        );
-        applyOutput(format, output, repurposeId);
-        setUsedCount(usage.used);
+        if (useStream) {
+          const { output, usage, repurposeId } = await callGenerateStreamApi({
+            inputContent: trimmed,
+            targetFormat: format,
+            brandVoice,
+            targetTweets: options?.targetTweets,
+            generationId: options?.generationId,
+            signal: controller.signal,
+            onPartial: (partial) => applyPartialOutput(format, partial),
+          });
+          applyOutput(format, output, repurposeId);
+          setUsedCount(usage.used);
+        } else {
+          const { output, usage, repurposeId } = await callGenerateApi(
+            trimmed,
+            format,
+            options?.targetTweets,
+            options?.generationId
+          );
+          applyOutput(format, output, repurposeId);
+          setUsedCount(usage.used);
+        }
 
         if (format === "x_thread" && options?.targetTweets !== undefined) {
           const length = clampTargetTweets(options.targetTweets);
@@ -486,13 +680,26 @@ export default function RepurposeWorkspace({
           setPendingTwitterLength(length);
         }
       } catch (err) {
+        if (isAbortError(err)) {
+          setFormatErrors((prev) => ({ ...prev, [format]: null }));
+          return;
+        }
         console.error(err);
         resolveGenerateError(err, format, FORMAT_FALLBACK_ERRORS);
       } finally {
+        formatAbortRef.current.delete(format);
         setFormatLoading((prev) => ({ ...prev, [format]: false }));
       }
     },
-    [applyOutput, callGenerateApi, inputSummary, resolveGenerateError]
+    [
+      applyOutput,
+      applyPartialOutput,
+      brandVoice,
+      callGenerateApi,
+      inputSummary,
+      resolveGenerateError,
+      useStream,
+    ]
   );
 
   const generateTwitter = (
@@ -528,19 +735,29 @@ export default function RepurposeWorkspace({
     setIsRegeneratingAll(true);
     const generationId = crypto.randomUUID();
     const formats = ALL_FORMATS.filter((format) => selectedFormats.has(format));
+    const runController = new AbortController();
+    runAbortRef.current = runController;
 
-    if (isPhotoMode) {
-      await Promise.allSettled(
-        formats.map((format) => generatePhotoFormat(format, { generationId }))
-      );
-    } else {
-      await Promise.allSettled(
-        formats.map((format) => generateFormat(format, { generationId }))
-      );
+    try {
+      if (isPhotoMode) {
+        await Promise.allSettled(
+          formats.map((format) => generatePhotoFormat(format, { generationId }))
+        );
+      } else {
+        await Promise.allSettled(
+          formats.map((format) => generateFormat(format, { generationId }))
+        );
+      }
+
+      if (!runController.signal.aborted) {
+        toast.success("Run complete", {
+          description: "Review each format below",
+        });
+      }
+    } finally {
+      runAbortRef.current = null;
+      setIsRegeneratingAll(false);
     }
-
-    setIsRegeneratingAll(false);
-    toast.success("Run complete", { description: "Review each format below" });
   };
 
   const handleTextInputUpdate = async (content: string) => {
@@ -548,13 +765,24 @@ export default function RepurposeWorkspace({
     setIsRegeneratingAll(true);
     const generationId = crypto.randomUUID();
     const formats = ALL_FORMATS.filter((format) => selectedFormats.has(format));
-    await Promise.allSettled(
-      formats.map((format) =>
-        generateFormat(format, { generationId, inputContent: content })
-      )
-    );
-    setIsRegeneratingAll(false);
-    toast.success("Run complete", { description: "Review each format below" });
+    const runController = new AbortController();
+    runAbortRef.current = runController;
+
+    try {
+      await Promise.allSettled(
+        formats.map((format) =>
+          generateFormat(format, { generationId, inputContent: content })
+        )
+      );
+      if (!runController.signal.aborted) {
+        toast.success("Run complete", {
+          description: "Review each format below",
+        });
+      }
+    } finally {
+      runAbortRef.current = null;
+      setIsRegeneratingAll(false);
+    }
   };
 
   const copyAllToClipboard = async () => {
@@ -774,6 +1002,7 @@ export default function RepurposeWorkspace({
           expanded={expandedFormat === "x_thread"}
           onToggleExpand={() => setExpandedFormat("x_thread")}
           onRegenerate={() => regenerateFormat("x_thread")}
+          onStop={useStream ? () => stopFormat("x_thread") : undefined}
           regenerateDisabled={atLimit}
           error={
             formatErrors.x_thread
@@ -851,6 +1080,7 @@ export default function RepurposeWorkspace({
           expanded={expandedFormat === "linkedin"}
           onToggleExpand={() => setExpandedFormat("linkedin")}
           onRegenerate={() => regenerateFormat("linkedin")}
+          onStop={useStream ? () => stopFormat("linkedin") : undefined}
           regenerateDisabled={atLimit}
           error={
             formatErrors.linkedin
@@ -893,6 +1123,7 @@ export default function RepurposeWorkspace({
           expanded={expandedFormat === "instagram"}
           onToggleExpand={() => setExpandedFormat("instagram")}
           onRegenerate={() => regenerateFormat("instagram")}
+          onStop={useStream ? () => stopFormat("instagram") : undefined}
           regenerateDisabled={atLimit}
           error={
             formatErrors.instagram
@@ -933,6 +1164,7 @@ export default function RepurposeWorkspace({
           expanded={expandedFormat === "email"}
           onToggleExpand={() => setExpandedFormat("email")}
           onRegenerate={() => regenerateFormat("email")}
+          onStop={useStream ? () => stopFormat("email") : undefined}
           regenerateDisabled={atLimit}
           error={
             formatErrors.email
@@ -959,23 +1191,34 @@ export default function RepurposeWorkspace({
 
       <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-card/80 md:left-64">
         <div className="mx-auto flex max-w-screen-md gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            className="flex-1 rounded-xl"
-            onClick={() => void regenerateAll()}
-            disabled={isAnyLoading || atLimit || !canStartRun}
-          >
-            {isRegeneratingAll
-              ? isPhotoMode
-                ? "Analysing your photo…"
-                : "Generating selected formats…"
-              : activeFormats.length === ALL_FORMATS.length
-                ? hasAnyOutput
-                  ? "Regenerate All"
-                  : "Generate All"
-                : `${hasAnyOutput ? "Regenerate" : "Generate"} ${activeFormats.length} format${activeFormats.length === 1 ? "" : "s"}`}
-          </Button>
+          {useStream && isAnyLoading ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1 rounded-xl"
+              onClick={stopAll}
+            >
+              Stop
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1 rounded-xl"
+              onClick={() => void regenerateAll()}
+              disabled={isAnyLoading || atLimit || !canStartRun}
+            >
+              {isRegeneratingAll
+                ? isPhotoMode
+                  ? "Analysing your photo…"
+                  : "Generating selected formats…"
+                : activeFormats.length === ALL_FORMATS.length
+                  ? hasAnyOutput
+                    ? "Regenerate All"
+                    : "Generate All"
+                  : `${hasAnyOutput ? "Regenerate" : "Generate"} ${activeFormats.length} format${activeFormats.length === 1 ? "" : "s"}`}
+            </Button>
+          )}
 
           <Button
             type="button"

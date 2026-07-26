@@ -1,6 +1,6 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { streamObject } from "ai";
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { fetchVoiceExemplarsText } from "@/lib/ai/exemplars";
 import {
   buildBrandVoiceBlock,
@@ -333,7 +333,8 @@ export async function POST(request: Request) {
   };
 
   const onAbort = () => {
-    void markFailed("aborted");
+    // Survive Vercel teardown when the client disconnects mid-stream.
+    after(() => markFailed("aborted"));
   };
   if (request.signal.aborted) {
     await markFailed("aborted");
@@ -459,7 +460,7 @@ export async function POST(request: Request) {
       }
     },
     cancel() {
-      void markFailed("aborted");
+      after(() => markFailed("aborted"));
     },
   });
 
