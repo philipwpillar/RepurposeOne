@@ -21,6 +21,7 @@ import { useCallback, useState } from "react";
 import { SignOutButton } from "@/components/app/sign-out-button";
 import { PaymentFailedBanner } from "@/components/billing/payment-failed-banner";
 import { useShortcuts } from "@/components/shortcut-provider";
+import { RouteViewTransition } from "@/components/route-view-transition";
 import { Button } from "@/components/ui/button";
 import { planLabel } from "@/lib/plan-label";
 import { cn } from "@/lib/utils";
@@ -402,7 +403,7 @@ export function DashboardShell({
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="chrome-dark sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border bg-card px-4">
+        <header className="vo-topbar chrome-dark sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border bg-card px-4">
           <div className="flex min-w-0 items-center gap-3">
             <Button
               variant="ghost"
@@ -467,8 +468,10 @@ export function DashboardShell({
             isFullBleed ? "p-0" : "p-4 md:p-8"
           )}
         >
-          {paymentFailed ? <PaymentFailedBanner /> : null}
-          {children}
+          <RouteViewTransition>
+            {paymentFailed ? <PaymentFailedBanner /> : null}
+            {children}
+          </RouteViewTransition>
         </main>
       </div>
 

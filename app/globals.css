@@ -337,21 +337,26 @@ body {
   animation: vo-shimmer 1.4s linear infinite;
 }
 
-/* Phase 5A Commit 0 probe — shared chrome names land in Commit 4. */
-#main-content {
-  view-transition-name: vo-main-probe;
-}
-
 /* Sidebar collapse — width from html class set in themeBootScript (no flash). */
 .vo-sidebar {
   width: 16rem;
+  view-transition-name: vo-sidebar;
   transition: width var(--motion-base) ease;
+}
+.vo-topbar {
+  view-transition-name: vo-topbar;
 }
 html.vo-sidebar-collapsed .vo-sidebar {
   width: 4rem;
 }
 html.vo-sidebar-collapsed .vo-topbar-usage {
   display: flex;
+}
+
+::view-transition-old(vo-main),
+::view-transition-new(vo-main) {
+  animation-duration: var(--motion-base);
+  animation-timing-function: ease;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -366,5 +371,11 @@ html.vo-sidebar-collapsed .vo-topbar-usage {
 
   .skip-link {
     transition: none;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }
