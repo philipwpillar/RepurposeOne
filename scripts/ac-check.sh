@@ -110,10 +110,18 @@ run_2(){ echo "── PHASE 2 ──"
   assert "acceptance note committed"        "$(f 'docs/acceptance/phase-2-*.md')" eq 1 ; }
 run_3(){ echo "── PHASE 3 ──"
   assert "sonner / Toaster wired"           "$(n 'sonner|<Toaster' $A $C package.json)" ge 3
-  assert "studio ad-hoc msg state removed"  "$(n 'statusMessage|exportMessage' "$W")" eq 0
+  assert "no tailwindcss-animate"           "$(n 'tailwindcss-animate' package.json package-lock.json)" eq 0
+  # Case-insensitive: catches setStatusMessage / setExportMessage too (baseline 16 at 614be2b).
+  assert "studio ad-hoc msg state removed"  "$(rg -ni --no-heading 'statusmessage|exportmessage' "$W" 2>/dev/null | wc -l | tr -d ' ')" eq 0
   assert "live regions STILL preserved"     "$(n 'aria-live|role="status"|role="alert"' $A $C)" ge 11
-  assert "dialog enter/exit animation"      "$(n 'data-\[state=(open|closed)\]:(animate|fade|zoom)' components/ui/dialog.tsx)" ge 2
-  assert "undo action toast exists"         "$(n 'label:\s*"Undo"|action:\s*\{[^}]*Undo' $A $C)" ge 1
+  assert "dialog enter/exit animated"       "$(n 'vo-overlay|vo-dialog' components/ui/dialog.tsx)" ge 2
+  assert "motion keyframes @keyframes vo-"  "$(n '@keyframes vo-' app/globals.css)" ge 6
+  assert "motion tokens consumed"           "$(n -- '--motion-' app/globals.css $A $C)" ge 4
+  assert "drawer animated"                  "$(n 'vo-slide-in-left|vo-fade-in' 'app/(dashboard)/_components/dashboard-shell.tsx')" ge 2
+  assert "undo action toast exists"         "$(n 'label:\s*"Undo"' $A $C)" ge 1
+  assert "deferred-delete timer"            "$(n 'pendingDelete|PENDING_DELETE' 'app/(dashboard)/brand-voice')" ge 2
+  assert "account delete form untouched"    "$(git diff --name-only origin/main...HEAD -- 'app/(dashboard)/account/_components/DeleteAccountForm.tsx' 2>/dev/null | wc -l | tr -d ' ')" eq 0
+  assert "reduced-motion block intact"      "$(n 'prefers-reduced-motion' $A $C)" ge 4
   assert "acceptance note committed"        "$(f 'docs/acceptance/phase-3-*.md')" eq 1 ; }
 run_4(){ echo "── PHASE 4 ──"
   assert "stream route exists"              "$(f 'app/api/generate/stream/route.ts')" eq 1

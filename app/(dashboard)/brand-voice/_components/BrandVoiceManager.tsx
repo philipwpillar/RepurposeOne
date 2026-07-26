@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { Mic, Pencil, Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,14 +16,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -34,6 +27,12 @@ const SAMPLE_FIELD_COUNT = 3;
 const EMPTY_SAMPLES = () => Array.from({ length: SAMPLE_FIELD_COUNT }, () => "");
 const VOICE_SELECT =
   "id, user_id, name, samples, description, is_default, created_at, updated_at";
+const PENDING_DELETE_MS = 6000;
+
+type PendingDelete = {
+  voice: BrandVoice;
+  timerId: ReturnType<typeof setTimeout>;
+};
 
 interface BrandVoiceManagerProps {
   initialVoices: BrandVoice[];
@@ -100,7 +99,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
   const [actionError, setActionError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [loadingId, setLoadingId] = useState<string | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<BrandVoice | null>(null);
+  const pendingDeletesRef = useRef<Map<string, PendingDelete>>(new Map());
 
   const resetForm = useCallback(() => {
     setFormMode(null);
@@ -230,6 +229,120 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
     }
   };
 
+  const commitPendingDelete = useCallback(async (voice: BrandVoice) => {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      throw new Error("You must be signed in.");
+    }
+
+    const { error } = await supabase
+      .from("brand_voices")
+      .delete()
+      .eq("id", voice.id)
+      .eq("user_id", user.id);
+
+    if (error) throw error;
+  }, []);
+
+  const flushPendingDelete = useCallback(
+    async (voiceId: string) => {
+      const pending = pendingDeletesRef.current.get(voiceId);
+      if (!pending) return;
+
+      clearTimeout(pending.timerId);
+      pendingDeletesRef.current.delete(voiceId);
+
+      try {
+        await commitPendingDelete(pending.voice);
+        refreshList();
+      } catch (err) {
+        setVoices((prev) =>
+          sortVoices(
+            prev.some((v) => v.id === pending.voice.id)
+              ? prev
+              : [...prev, pending.voice]
+          )
+        );
+        toast.error("Could not delete voice", {
+          description:
+            err instanceof Error ? err.message : "Failed to delete brand voice.",
+        });
+      }
+    },
+    [commitPendingDelete, refreshList]
+  );
+
+  const undoPendingDelete = useCallback((voiceId: string) => {
+    const pending = pendingDeletesRef.current.get(voiceId);
+    if (!pending) return;
+
+    clearTimeout(pending.timerId);
+    pendingDeletesRef.current.delete(voiceId);
+    setVoices((prev) =>
+      sortVoices(
+        prev.some((v) => v.id === pending.voice.id)
+          ? prev
+          : [...prev, pending.voice]
+      )
+    );
+  }, []);
+
+  const schedulePendingDelete = useCallback(
+    (voice: BrandVoice) => {
+      setActionError(null);
+
+      const existing = pendingDeletesRef.current.get(voice.id);
+      if (existing) {
+        clearTimeout(existing.timerId);
+        pendingDeletesRef.current.delete(voice.id);
+      }
+
+      setVoices((prev) => prev.filter((v) => v.id !== voice.id));
+      if (editingId === voice.id) {
+        resetForm();
+      }
+
+      const timerId = setTimeout(() => {
+        void flushPendingDelete(voice.id);
+      }, PENDING_DELETE_MS);
+
+      pendingDeletesRef.current.set(voice.id, { voice, timerId });
+
+      toast("Voice deleted", {
+        description: voiceDisplayName(voice),
+        duration: PENDING_DELETE_MS,
+        action: {
+          label: "Undo",
+          onClick: () => undoPendingDelete(voice.id),
+        },
+      });
+    },
+    [editingId, flushPendingDelete, resetForm, undoPendingDelete]
+  );
+
+  useEffect(() => {
+    const flushAllPendingDeletes = () => {
+      const entries = [...pendingDeletesRef.current.entries()];
+      for (const [voiceId, pending] of entries) {
+        clearTimeout(pending.timerId);
+        pendingDeletesRef.current.delete(voiceId);
+        void commitPendingDelete(pending.voice).catch(() => {
+          // Best-effort flush on unload/unmount; timer path surfaces failures.
+        });
+      }
+    };
+
+    window.addEventListener("beforeunload", flushAllPendingDeletes);
+    return () => {
+      window.removeEventListener("beforeunload", flushAllPendingDeletes);
+      flushAllPendingDeletes();
+    };
+  }, [commitPendingDelete]);
+
   const handleSetDefault = async (voiceId: string) => {
     setActionError(null);
     setLoadingId(voiceId);
@@ -267,47 +380,6 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to set default voice.";
-      setActionError(message);
-    } finally {
-      setLoadingId(null);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-
-    const voiceId = deleteTarget.id;
-    setActionError(null);
-    setLoadingId(voiceId);
-
-    try {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        setActionError("You must be signed in.");
-        return;
-      }
-
-      const { error } = await supabase
-        .from("brand_voices")
-        .delete()
-        .eq("id", voiceId)
-        .eq("user_id", user.id);
-
-      if (error) throw error;
-
-      setVoices((prev) => prev.filter((v) => v.id !== voiceId));
-      if (editingId === voiceId) {
-        resetForm();
-      }
-      setDeleteTarget(null);
-      refreshList();
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to delete brand voice.";
       setActionError(message);
     } finally {
       setLoadingId(null);
@@ -566,7 +638,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => setDeleteTarget(voice)}
+                        onClick={() => schedulePendingDelete(voice)}
                         disabled={loadingId === voice.id}
                         className="text-destructive hover:text-destructive/80"
                       >
@@ -581,44 +653,6 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
           })}
         </div>
       )}
-
-      <Dialog
-        open={deleteTarget !== null}
-        onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null);
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              Delete{" "}
-              {deleteTarget ? voiceDisplayName(deleteTarget) : "brand voice"}?
-            </DialogTitle>
-            <DialogDescription>
-              This permanently removes the voice and cannot be undone. Studio
-              will fall back to another default or a built-in style.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setDeleteTarget(null)}
-              disabled={loadingId === deleteTarget?.id}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={() => void handleDelete()}
-              disabled={loadingId === deleteTarget?.id}
-            >
-              {loadingId === deleteTarget?.id ? "Deleting…" : "Delete voice"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

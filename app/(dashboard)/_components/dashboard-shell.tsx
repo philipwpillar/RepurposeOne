@@ -289,12 +289,12 @@ export function DashboardShell({
         <div className="fixed inset-0 z-50 md:hidden" id="mobile-nav">
           <button
             type="button"
-            className="absolute inset-0 bg-black/40"
+            className="vo-fade-in absolute inset-0 bg-black/40"
             aria-label="Close navigation"
             onClick={() => setMobileNavOpen(false)}
           />
           <aside
-            className="chrome-dark absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-card shadow-xl"
+            className="vo-slide-in-left chrome-dark absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-card shadow-xl"
             aria-label="Primary"
           >
             <div className="flex h-14 items-center justify-between border-b border-border px-4">
