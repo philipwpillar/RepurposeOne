@@ -124,13 +124,28 @@ run_3(){ echo "── PHASE 3 ──"
   assert "reduced-motion block intact"      "$(n 'prefers-reduced-motion' $A $C)" ge 4
   assert "acceptance note committed"        "$(f 'docs/acceptance/phase-3-*.md')" eq 1 ; }
 run_4(){ echo "── PHASE 4 ──"
-  assert "stream route exists"              "$(f 'app/api/generate/stream/route.ts')" eq 1
+  S='app/api/generate/stream/route.ts'
+  assert "stream route exists"              "$(f "$S")" eq 1
   assert "stream client exists"             "$(f 'lib/repurpose/stream-generate-client.ts')" eq 1
-  assert "fenced client UNCHANGED"          "$(git diff --unified=0 origin/main...HEAD -- lib/repurpose/photo-generate-client.ts 2>/dev/null | rg -c '^[-+][^-+]' || echo 0)" eq 0
-  assert "AbortController + Stop"           "$(n 'AbortController' 'app/(dashboard)/studio' lib/repurpose)" ge 1
-  assert "variant_index migration"          "$(ls supabase/migrations 2>/dev/null | rg -c 'variant' || echo 0)" ge 1
-  assert "gate fires before stream opens"   "$(n 'checkUsageLimit|checkRateLimit' app/api/generate/stream/route.ts)" ge 2
+  assert "photo client byte-unchanged"      "$(git diff --numstat origin/main...HEAD -- lib/repurpose/photo-generate-client.ts 2>/dev/null | wc -l | tr -d ' ')" eq 0
+  assert "non-streaming route untouched"    "$(git diff --numstat origin/main...HEAD -- app/api/generate/route.ts 2>/dev/null | wc -l | tr -d ' ')" eq 0
+  assert "reservation in stream route"      "$(n 'reservePendingRepurpose' "$S")" ge 1
+  assert "rate + usage checks present"      "$(n 'checkRateLimit|checkUsageLimit' "$S")" ge 2
+  assert "provider allowlist in stream path" "$(n 'OPENROUTER_ALLOWED_PROVIDERS' "$S" lib)" ge 2
+  RES=$(rg -n 'reservePendingRepurpose\(' "$S" 2>/dev/null | head -1 | cut -d: -f1)
+  STR=$(rg -n 'streamObject\(' "$S" 2>/dev/null | head -1 | cut -d: -f1)
+  assert "reservation precedes stream open" "$( [ -n "$RES" ] && [ -n "$STR" ] && [ "$RES" -lt "$STR" ] && echo 1 || echo 0 )" eq 1
+  assert "AbortController wired"            "$(n 'AbortController' 'app/(dashboard)/studio' lib/repurpose)" ge 2
+  assert "Stop control present"             "$(n 'Stop' 'app/(dashboard)/studio')" ge 1
+  assert "NO variant migration added"       "$(ls supabase/migrations 2>/dev/null | rg -c 'variant' || echo 0)" eq 0
+  assert "variants are client state"        "$(n 'formatVariants' 'app/(dashboard)/studio')" ge 3
+  assert "refinement chips"                 "$(f 'app/(dashboard)/studio/_components/RefinementChips.tsx')" eq 1
+  assert "live output limits consumed"      "$(n 'LINKEDIN_POST_MAX|INSTAGRAM_CAPTION_MAX' components app)" ge 2
+  assert "stream flag defaults off"         "$(n 'NEXT_PUBLIC_STREAM_STUDIO' lib/config.ts)" ge 1
+  assert "stream query opt-in"              "$(n 'get\(\"stream\"\)' 'app/(dashboard)/studio')" ge 1
+  assert "canary script kept"               "$(f 'scripts/spike-stream.mjs')" eq 1
   assert "e2e proves chunks before done"    "$(n 'stream' e2e)" ge 1
+  assert "generate stubs catch stream path" "$(n '\*\*/api/generate\*\*' e2e)" ge 1
   assert "acceptance note committed"        "$(f 'docs/acceptance/phase-4-*.md')" eq 1 ; }
 run_5(){ echo "── PHASE 5 ──"
   assert "command palette component"        "$(n 'CommandDialog|CommandPalette' $A $C)" ge 1
