@@ -99,6 +99,7 @@ export const TextGenerateRequestSchema = GenerateRequestSharedSchema.extend({
       INPUT_CONTENT_MAX_LENGTH,
       `Source content must be at most ${INPUT_CONTENT_MAX_LENGTH.toLocaleString()} characters`
     ),
+  refinement: z.string().trim().min(1).max(200).optional(),
 });
 
 export const ImageGenerateRequestSchema = GenerateRequestSharedSchema.extend({

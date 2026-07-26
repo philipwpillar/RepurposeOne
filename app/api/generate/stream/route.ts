@@ -166,6 +166,7 @@ export async function POST(request: Request) {
     target_format,
     target_tweets,
     generation_id,
+    refinement,
   } = requestData;
 
   let plan;
@@ -313,6 +314,7 @@ export async function POST(request: Request) {
     targetFormat: target_format,
     targetTweets: target_tweets,
     exemplarsText: exemplarsText || undefined,
+    refinement,
   });
 
   const schema = schemaForFormat(target_format);

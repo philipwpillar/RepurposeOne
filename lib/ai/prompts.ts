@@ -5,6 +5,8 @@ export interface PromptContext {
   sourceText: string;
   targetFormat: TargetFormat;
   targetTweets?: number;
+  /** Optional direction for a newly generated variant. */
+  refinement?: string;
   /** Optional voice exemplars from rated/edited past outputs (Brief S2). */
   exemplarsText?: string;
 }
@@ -129,12 +131,15 @@ export function buildGenerationPrompt(ctx: PromptContext): {
   const exemplarsBlock = ctx.exemplarsText?.trim()
     ? `\n\n${ctx.exemplarsText.trim()}`
     : "";
+  const refinementBlock = ctx.refinement?.trim()
+    ? `\n\nRefinement for this new version:\n${ctx.refinement.trim()}`
+    : "";
 
   const baseUser = `Brand voice:
 ${ctx.brandVoiceText}${exemplarsBlock}
 
 Source content:
-${ctx.sourceText}`;
+${ctx.sourceText}${refinementBlock}`;
 
   switch (ctx.targetFormat) {
     case "x_thread":

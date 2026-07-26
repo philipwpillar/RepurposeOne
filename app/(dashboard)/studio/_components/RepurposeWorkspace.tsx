@@ -28,6 +28,7 @@ import TextSourceCard from "./TextSourceCard";
 import VoiceSetupBanner from "./VoiceSetupBanner";
 import StudioFormatPicker from "./StudioFormatPicker";
 import { ModeSwitchDialog } from "./ModeSwitchDialog";
+import { RefinementChips } from "./RefinementChips";
 import {
   StudioFormatResultCard,
   type FormatCardStatus,
@@ -359,13 +360,22 @@ export default function RepurposeWorkspace({
 
   const repurposeIds: FormatIdState = {
     x_thread:
-      formatVariants.x_thread[activeIndexFor("x_thread")]?.repurposeId || null,
+      partialPreview.x_thread === null
+        ? formatVariants.x_thread[activeIndexFor("x_thread")]?.repurposeId || null
+        : null,
     linkedin:
-      formatVariants.linkedin[activeIndexFor("linkedin")]?.repurposeId || null,
+      partialPreview.linkedin === null
+        ? formatVariants.linkedin[activeIndexFor("linkedin")]?.repurposeId || null
+        : null,
     instagram:
-      formatVariants.instagram[activeIndexFor("instagram")]?.repurposeId ||
-      null,
-    email: formatVariants.email[activeIndexFor("email")]?.repurposeId || null,
+      partialPreview.instagram === null
+        ? formatVariants.instagram[activeIndexFor("instagram")]?.repurposeId ||
+          null
+        : null,
+    email:
+      partialPreview.email === null
+        ? formatVariants.email[activeIndexFor("email")]?.repurposeId || null
+        : null,
   };
 
   const selectVariant = useCallback((format: TargetFormat, index: number) => {
@@ -689,7 +699,12 @@ export default function RepurposeWorkspace({
   const generateFormat = useCallback(
     async (
       format: TargetFormat,
-      options?: { inputContent?: string; targetTweets?: number; generationId?: string }
+      options?: {
+        inputContent?: string;
+        targetTweets?: number;
+        generationId?: string;
+        refinement?: string;
+      }
     ) => {
       const trimmed = (options?.inputContent ?? inputSummary).trim();
       if (trimmed.length < INPUT_CONTENT_MIN_LENGTH) {
@@ -726,6 +741,7 @@ export default function RepurposeWorkspace({
             brandVoice,
             targetTweets: options?.targetTweets,
             generationId: options?.generationId,
+            refinement: options?.refinement,
             signal: controller.signal,
             onPartial: (partial) => applyPartialOutput(format, partial),
           });
@@ -800,6 +816,11 @@ export default function RepurposeWorkspace({
       return;
     }
     void generateFormat(format);
+  };
+
+  const refineFormat = (format: TargetFormat, refinement: string) => {
+    if (!useStream || isPhotoMode) return;
+    void generateFormat(format, { refinement });
   };
 
   const regenerateAll = async () => {
@@ -992,6 +1013,14 @@ export default function RepurposeWorkspace({
     return emptyPlaceholder;
   };
 
+  const renderRefinementChips = (format: TargetFormat) =>
+    useStream && !isPhotoMode && formatVariants[format].length > 0 ? (
+      <RefinementChips
+        disabled={formatLoading[format] || atLimit}
+        onRefine={(directive) => refineFormat(format, directive)}
+      />
+    ) : null;
+
   const canStartRun = isPhotoMode
     ? canGeneratePhoto
     : inputSummary.trim().length >= INPUT_CONTENT_MIN_LENGTH;
@@ -1118,35 +1147,40 @@ export default function RepurposeWorkspace({
               : null
           }
           footerExtra={
-            <div>
-              <div className="mb-1.5 flex justify-between text-xs">
-                <span className="text-muted-foreground">Target length</span>
-                <span className="font-mono">{pendingTwitterLength} tweets</span>
+            <div className="space-y-4">
+              <div>
+                <div className="mb-1.5 flex justify-between text-xs">
+                  <span className="text-muted-foreground">Target length</span>
+                  <span className="font-mono">{pendingTwitterLength} tweets</span>
+                </div>
+                <input
+                  type="range"
+                  min={TWITTER_LENGTH_MIN}
+                  max={TWITTER_LENGTH_MAX}
+                  value={pendingTwitterLength}
+                  onChange={(e) =>
+                    setPendingTwitterLength(
+                      clampTargetTweets(parseInt(e.target.value, 10))
+                    )
+                  }
+                  className="w-full accent-primary"
+                  aria-label="Target tweet count"
+                />
+                <div className="mt-2 flex justify-end">
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="rounded-xl"
+                    onClick={handleApplyTwitterLength}
+                    disabled={formatLoading.x_thread || atLimit}
+                  >
+                    {formatLoading.x_thread
+                      ? "Generating…"
+                      : "Apply & Regenerate"}
+                  </Button>
+                </div>
               </div>
-              <input
-                type="range"
-                min={TWITTER_LENGTH_MIN}
-                max={TWITTER_LENGTH_MAX}
-                value={pendingTwitterLength}
-                onChange={(e) =>
-                  setPendingTwitterLength(
-                    clampTargetTweets(parseInt(e.target.value, 10))
-                  )
-                }
-                className="w-full accent-primary"
-                aria-label="Target tweet count"
-              />
-              <div className="mt-2 flex justify-end">
-                <Button
-                  type="button"
-                  size="sm"
-                  className="rounded-xl"
-                  onClick={handleApplyTwitterLength}
-                  disabled={formatLoading.x_thread || atLimit}
-                >
-                  {formatLoading.x_thread ? "Generating…" : "Apply & Regenerate"}
-                </Button>
-              </div>
+              {renderRefinementChips("x_thread")}
             </div>
           }
         >
@@ -1195,6 +1229,7 @@ export default function RepurposeWorkspace({
               ? renderFormatError("linkedin", formatErrors.linkedin)
               : null
           }
+          footerExtra={renderRefinementChips("linkedin")}
         >
           {renderFormatBody(
             "linkedin",
@@ -1238,6 +1273,7 @@ export default function RepurposeWorkspace({
               ? renderFormatError("instagram", formatErrors.instagram)
               : null
           }
+          footerExtra={renderRefinementChips("instagram")}
         >
           {renderFormatBody(
             "instagram",
@@ -1279,6 +1315,7 @@ export default function RepurposeWorkspace({
               ? renderFormatError("email", formatErrors.email)
               : null
           }
+          footerExtra={renderRefinementChips("email")}
         >
           {renderFormatBody(
             "email",

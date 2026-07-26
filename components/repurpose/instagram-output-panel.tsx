@@ -37,7 +37,7 @@ function CaptionLengthIndicators({ length }: { length: number }) {
         length={length}
         softThreshold={INSTAGRAM_SOFT_TRUNCATION}
       />
-      <LengthIndicator mode="info" length={length} max={INSTAGRAM_CAPTION_MAX} />
+      <LengthIndicator mode="hard" length={length} max={INSTAGRAM_CAPTION_MAX} />
     </div>
   );
 }
@@ -122,6 +122,7 @@ export function InstagramOutputPanel({
           <textarea
             className="w-full rounded-md border border-border bg-background p-3 text-sm leading-relaxed"
             rows={6}
+            maxLength={INSTAGRAM_CAPTION_MAX}
             value={active.caption}
             onChange={(e) =>
               feedback.setDraft({ ...feedback.draft, caption: e.target.value })

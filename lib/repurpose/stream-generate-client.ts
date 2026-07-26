@@ -67,6 +67,7 @@ export async function callGenerateStreamApi(params: {
   brandVoice?: BrandVoiceRef | null;
   targetTweets?: number;
   generationId?: string;
+  refinement?: string;
   signal?: AbortSignal;
   onPartial?: (partial: StreamPartialEvent["object"]) => void;
 }): Promise<{ output: RepurposeOutput; usage: UsageInfo; repurposeId: string }> {
@@ -91,6 +92,10 @@ export async function callGenerateStreamApi(params: {
 
   if (params.generationId) {
     body.generation_id = params.generationId;
+  }
+
+  if (params.refinement) {
+    body.refinement = params.refinement;
   }
 
   const response = await fetch("/api/generate/stream", {

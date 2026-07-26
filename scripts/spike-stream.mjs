@@ -5,12 +5,13 @@
  * incrementally parseable partial JSON (e.g. tweets[0].text) before the stream ends.
  *
  * Usage: node --env-file=.env.local scripts/spike-stream.mjs
- * Requires OPENROUTER_API_KEY. Optional AI_MODEL_STRONG override.
+ * Requires OPENROUTER_API_KEY. Optional SPIKE_MODEL override.
  */
 const API_KEY = process.env.OPENROUTER_API_KEY;
 // Canary pins the production strong slug. Do not inherit AI_MODEL_STRONG —
 // a local Claude override fails the deepinfra/fp8 allowlist and falsifies the check.
 const MODEL = process.env.SPIKE_MODEL ?? "qwen/qwen3.5-397b-a17b";
+const TEMPERATURE = Number(process.env.AI_TEMPERATURE ?? 0.7);
 
 if (!API_KEY) {
   console.error("FATAL: OPENROUTER_API_KEY is not set");
@@ -38,7 +39,8 @@ function tryPartialTweetText(buffer) {
 const body = {
   model: MODEL,
   stream: true,
-  temperature: 0.4,
+  // Match AI_CONFIG.temperature so this remains a production-path canary.
+  temperature: TEMPERATURE,
   response_format: { type: "json_object" },
   provider: { only: ["deepinfra/fp8"] },
   reasoning: { enabled: false },
@@ -81,6 +83,7 @@ let buffer = "";
 let sseCarry = "";
 let chunkCount = 0;
 let resolvedModel = null;
+let resolvedProvider = null;
 let firstPartialAt = null;
 let firstPartialText = null;
 
@@ -108,6 +111,10 @@ while (true) {
       resolvedModel = payload.model;
       console.log(`resolved model=${resolvedModel} t=${elapsed()}`);
     }
+    if (payload.provider && !resolvedProvider) {
+      resolvedProvider = payload.provider;
+      console.log(`resolved provider=${resolvedProvider} t=${elapsed()}`);
+    }
 
     const delta = payload.choices?.[0]?.delta?.content;
     if (typeof delta === "string" && delta.length > 0) {
@@ -134,9 +141,35 @@ while (true) {
 console.log("---");
 console.log(`chunks=${chunkCount} buffer_len=${buffer.length} t=${elapsed()}`);
 console.log(`model=${resolvedModel ?? "(none)"}`);
+console.log(`provider=${resolvedProvider ?? "(not reported)"}`);
+
+let completeOutput;
+try {
+  completeOutput = JSON.parse(buffer);
+} catch {
+  console.error("FATAL: streamed output is not valid JSON");
+  process.exit(1);
+}
+if (
+  completeOutput?.format !== "x_thread" ||
+  !Array.isArray(completeOutput.tweets) ||
+  completeOutput.tweets.length !== 3 ||
+  completeOutput.tweets.some(
+    (tweet) =>
+      typeof tweet?.number !== "number" ||
+      typeof tweet?.text !== "string" ||
+      tweet.text.length === 0 ||
+      tweet.text.length > 280
+  )
+) {
+  console.error("FATAL: streamed output does not match the production X schema");
+  process.exit(1);
+}
+if (firstPartialAt == null) {
+  console.error("FATAL: no tweets[0].text was readable before stream completion");
+  process.exit(1);
+}
 console.log(
-  firstPartialAt != null
-    ? `OUTCOME: partial_json_readable at ${firstPartialAt}ms`
-    : "OUTCOME: chunks_ok_but_json_only_at_end (or empty)"
+  `OUTCOME: partial_json_readable at ${firstPartialAt}ms; final_schema_valid`
 );
 console.log(`tail=${JSON.stringify(buffer.slice(-120))}`);

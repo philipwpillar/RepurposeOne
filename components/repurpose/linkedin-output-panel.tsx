@@ -40,7 +40,7 @@ function PostLengthIndicators({ length }: { length: number }) {
         length={length}
         softThreshold={LINKEDIN_SOFT_TRUNCATION}
       />
-      <LengthIndicator mode="info" length={length} max={LINKEDIN_POST_MAX} />
+      <LengthIndicator mode="hard" length={length} max={LINKEDIN_POST_MAX} />
     </div>
   );
 }
@@ -144,6 +144,7 @@ export function LinkedInOutputPanel({
     <textarea
       className="w-full rounded-md border border-border bg-background p-3 text-sm leading-relaxed"
       rows={8}
+      maxLength={LINKEDIN_POST_MAX}
       value={active.post}
       onChange={(e) =>
         feedback.setDraft({ ...feedback.draft, post: e.target.value })
