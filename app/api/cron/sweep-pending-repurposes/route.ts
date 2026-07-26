@@ -6,13 +6,14 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 /** Pending rows older than this are treated as stranded and settled to failed. */
-export const PENDING_ORPHAN_MAX_AGE_MS = 10 * 60 * 1000;
+const PENDING_ORPHAN_MAX_AGE_MS = 10 * 60 * 1000;
 
 /**
  * Distinguishable from generation failures / client aborts so ops can query:
  *   select * from repurposes where error_message like 'orphaned_pending:%'
+ * Not exported — Next.js route modules may only export route handlers / config.
  */
-export const ORPHANED_PENDING_ERROR =
+const ORPHANED_PENDING_ERROR =
   "orphaned_pending: settled by sweeper after 10m";
 
 function authorizeCron(request: Request): boolean {
