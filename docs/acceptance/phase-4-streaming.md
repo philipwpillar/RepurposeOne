@@ -60,23 +60,29 @@ This document does not claim that external dashboard evidence was captured.
 
 ## Canary
 
-The production-fidelity canary was rerun on 2026-07-26:
+The canary now exercises BOTH wire formats in one run and reports which
+succeeded, because the production route sends `json_schema` (the AI SDK's
+`supportsStructuredOutputs: true`) rather than `json_object`. A `json_object`-only
+canary would pass while production broke if structured-output support regressed
+on DeepInfra. Running both distinguishes the incidents:
+
+- both fail → DeepInfra / model down;
+- only `json_schema` fails → structured-output regression, production broken.
+
+Rerun on 2026-07-26:
 
 ```text
-requested model=qwen/qwen3.5-397b-a17b
-resolved model=qwen/qwen3.5-397b-a17b
-resolved provider=DeepInfra
-chunks=219
-first partial tweets[0].text=1849ms
-total=3516ms
-OUTCOME: partial_json_readable at 1849ms; final_schema_valid
+json_object: OK — model=qwen/qwen3.5-397b-a17b provider=DeepInfra chunks=152 first_partial=2225ms
+json_schema: OK — model=qwen/qwen3.5-397b-a17b provider=DeepInfra chunks=151 first_partial=6181ms
+OUTCOME: both wire formats stream partial JSON → design stands
 EXIT=0
 ```
 
-The canary uses the production temperature default, the fixed
-`deepinfra/fp8` allowlist, reasoning disabled, and `json_object` streaming. It
-now fails unless the complete output is valid JSON matching the X-thread
-shape and each tweet is at most 280 characters.
+Both requests use the production temperature default, the fixed
+`deepinfra/fp8` allowlist, and reasoning disabled. Each fails unless the
+complete output is valid JSON matching the X-thread shape with every tweet at
+most 280 characters, and a partial `tweets[0].text` was readable before the
+stream ended.
 
 ## Client behavior
 
