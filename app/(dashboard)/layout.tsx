@@ -5,6 +5,7 @@ import {
 } from "./_components/dashboard-shell";
 import { ShortcutProvider } from "@/components/shortcut-provider";
 import { CommandPalette } from "@/components/command-palette";
+import { ShortcutSheet } from "@/components/shortcut-sheet";
 import { createClient } from "@/lib/supabase/server";
 import { checkUsageLimit } from "@/lib/usage";
 
@@ -69,6 +70,7 @@ export default async function DashboardLayout({
         {children}
       </DashboardShell>
       <CommandPalette />
+      <ShortcutSheet />
     </ShortcutProvider>
   );
 }
