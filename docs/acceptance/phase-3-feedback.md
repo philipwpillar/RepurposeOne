@@ -76,6 +76,22 @@ Recorded after every Studio edit; final counts match the floor:
 - Fence symbols unmodified.
 - Phase 4 streaming not started.
 
+## Known limitation — deferred delete cannot survive tab close
+
+`beforeunload` calls `commitPendingDelete`, which issues an async Supabase request. Browsers do not await async work during unload, so that request is usually cancelled.
+
+**Stated behaviour:** delete a brand voice and close or reload the tab within the 6-second window, and the voice comes back. This is a product fact, not an implementation detail.
+
+The unmount path is unaffected — navigating inside the app runs the effect cleanup synchronously and the request completes normally. Only tab close and reload are impacted.
+
+**Fix path (Phase 5, not now):** a same-origin `POST /api/brand-voice/[id]/delete` invoked via `navigator.sendBeacon`. Supabase SSR authenticates from cookies, so the beacon needs no custom headers — which is precisely what `sendBeacon` cannot send.
+
+## Invariant — never refresh while a delete is pending
+
+`voices` initialises from `initialVoices` and never re-syncs. `refreshList()` (`router.refresh()`) is called at three sites, each only after a committed write.
+
+**Do not call `refreshList()` while `pendingDeletesRef` is non-empty.** A refresh mid-window would return the not-yet-deleted row from the server, so the voice would reappear and then vanish again when the timer fires. Anyone touching this component must preserve that ordering.
+
 ## Motion notes
 
 Hand-written `@keyframes vo-*` (fade/scale/slide) plus `.vo-overlay` / `.vo-dialog` / `.vo-fade-in` / `.vo-slide-in-left` / `.vo-tabs-content`. Global `prefers-reduced-motion` block left intact (not duplicated).
