@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { checkUsageLimit } from "@/lib/usage";
 import { STUDIO_EXAMPLE_INPUT } from "@/lib/repurpose/studio-example";
@@ -51,13 +52,15 @@ export default async function StudioPage({
   }
 
   return (
-    <RepurposeWorkspace
-      key={workspaceKey}
-      initialInput={initialInput}
-      repurposesUsed={usage.used}
-      repurposesLimit={usage.limit}
-      userPlan={usage.plan}
-      brandVoice={defaultVoice}
-    />
+    <Suspense fallback={null}>
+      <RepurposeWorkspace
+        key={workspaceKey}
+        initialInput={initialInput}
+        repurposesUsed={usage.used}
+        repurposesLimit={usage.limit}
+        userPlan={usage.plan}
+        brandVoice={defaultVoice}
+      />
+    </Suspense>
   );
 }

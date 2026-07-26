@@ -46,6 +46,15 @@ export const UPGRADE_MESSAGES: Record<Plan, string> = {
 
 export type AiProvider = "openai" | "openrouter";
 
+/**
+ * Kill switch for Phase 4 streaming Studio. Default off — unset / anything
+ * other than "true" keeps the non-streaming `/api/generate` path.
+ * Build-time inlined (NEXT_PUBLIC_*), so Playwright cannot flip it; pair with
+ * the per-request `?stream=1` opt-in in Studio for CI / Preview QA.
+ */
+export const STREAM_STUDIO =
+  process.env.NEXT_PUBLIC_STREAM_STUDIO === "true";
+
 function parseAiProvider(value: string | undefined): AiProvider {
   return value === "openrouter" ? "openrouter" : "openai";
 }

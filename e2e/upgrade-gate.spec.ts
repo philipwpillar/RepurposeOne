@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 test("at-limit generation surfaces the upgrade prompt", async ({ page }) => {
-  await page.route("**/api/generate", async (route) => {
+  await page.route("**/api/generate**", async (route) => {
     await route.fulfill({
       status: 402,
       contentType: "application/json",

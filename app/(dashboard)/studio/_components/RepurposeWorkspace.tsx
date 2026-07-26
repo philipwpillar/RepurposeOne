@@ -1,16 +1,25 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { AlertCircle, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { INPUT_CONTENT_MIN_LENGTH, planAllowsVision } from "@/lib/config";
+import {
+  INPUT_CONTENT_MIN_LENGTH,
+  STREAM_STUDIO,
+  planAllowsVision,
+} from "@/lib/config";
 import {
   callPhotoGenerateApi,
   PhotoGenerateApiError,
 } from "@/lib/repurpose/photo-generate-client";
+import {
+  callGenerateStreamApi,
+  StreamGenerateApiError,
+} from "@/lib/repurpose/stream-generate-client";
 import type { InputMode, PhotoInputReady } from "@/types/photo-input";
 import type { Plan } from "@/types";
 import InputModeTabs from "./InputModeTabs";
@@ -19,6 +28,7 @@ import TextSourceCard from "./TextSourceCard";
 import VoiceSetupBanner from "./VoiceSetupBanner";
 import StudioFormatPicker from "./StudioFormatPicker";
 import { ModeSwitchDialog } from "./ModeSwitchDialog";
+import { RefinementChips } from "./RefinementChips";
 import {
   StudioFormatResultCard,
   type FormatCardStatus,
@@ -78,6 +88,21 @@ type FormatLoadingState = Record<TargetFormat, boolean>;
 type FormatErrorState = Record<TargetFormat, string | null>;
 type FormatIdState = Record<TargetFormat, string | null>;
 
+/** One generated result. Variants are client state only — every variant is
+ * already its own `repurposes` row (Regenerate mints a new generation_id), so
+ * this array is purely presentational; no schema or billing change. */
+type FormatVariant = { repurposeId: string; output: RepurposeOutput };
+type FormatVariantsState = Record<TargetFormat, FormatVariant[]>;
+
+function createVariantsRecord(): FormatVariantsState {
+  return {
+    x_thread: [],
+    linkedin: [],
+    instagram: [],
+    email: [],
+  };
+}
+
 function createFormatRecord<T>(value: T): Record<TargetFormat, T> {
   return {
     x_thread: value,
@@ -110,6 +135,116 @@ function isFormatOutput<F extends TargetFormat>(
   format: F
 ): output is Extract<RepurposeOutput, { format: F }> {
   return output.format === format;
+}
+
+function isAbortError(err: unknown): boolean {
+  return (
+    (err instanceof DOMException && err.name === "AbortError") ||
+    (err instanceof Error && err.name === "AbortError")
+  );
+}
+
+function coercePartialXThread(
+  partial: Record<string, unknown>
+): XThreadOutput | null {
+  if (!Array.isArray(partial.tweets)) return null;
+  const tweets = partial.tweets
+    .map((tweet, index) => {
+      if (!tweet || typeof tweet !== "object") return null;
+      const row = tweet as { number?: unknown; text?: unknown };
+      const text = typeof row.text === "string" ? row.text : "";
+      if (!text) return null;
+      return {
+        number: typeof row.number === "number" ? row.number : index + 1,
+        text,
+      };
+    })
+    .filter((tweet): tweet is { number: number; text: string } => tweet !== null);
+  if (tweets.length === 0) return null;
+  return {
+    format: "x_thread",
+    tweets,
+    thread_summary:
+      typeof partial.thread_summary === "string"
+        ? partial.thread_summary
+        : null,
+  };
+}
+
+function coercePartialLinkedIn(
+  partial: Record<string, unknown>
+): LinkedInOutput | null {
+  const post = typeof partial.post === "string" ? partial.post : "";
+  const slides: LinkedInOutput["carousel_slides"] = [];
+  if (Array.isArray(partial.carousel_slides)) {
+    partial.carousel_slides.forEach((slide, index) => {
+      if (!slide || typeof slide !== "object") return;
+      const row = slide as {
+        number?: unknown;
+        title?: unknown;
+        body?: unknown;
+      };
+      const title = typeof row.title === "string" ? row.title : "";
+      if (!title && typeof row.body !== "string") return;
+      slides.push({
+        number: typeof row.number === "number" ? row.number : index + 1,
+        title: title || `Slide ${index + 1}`,
+        body: typeof row.body === "string" ? row.body : undefined,
+      });
+    });
+  }
+  if (!post && slides.length === 0) return null;
+  return {
+    format: "linkedin",
+    post: post || "…",
+    carousel_slides:
+      slides.length > 0 ? slides : [{ number: 1, title: "…" }],
+    post_summary:
+      typeof partial.post_summary === "string"
+        ? partial.post_summary
+        : undefined,
+  };
+}
+
+function coercePartialInstagram(
+  partial: Record<string, unknown>
+): InstagramOutput | null {
+  const caption = typeof partial.caption === "string" ? partial.caption : "";
+  const hooks = Array.isArray(partial.hook_variations)
+    ? partial.hook_variations.filter(
+        (hook): hook is string => typeof hook === "string" && hook.length > 0
+      )
+    : [];
+  const hashtags = Array.isArray(partial.hashtags)
+    ? partial.hashtags.filter(
+        (tag): tag is string => typeof tag === "string" && tag.length > 0
+      )
+    : [];
+  if (!caption && hooks.length === 0) return null;
+  return {
+    format: "instagram",
+    caption: caption || "…",
+    hook_variations: hooks.length > 0 ? hooks : ["…"],
+    hashtags,
+  };
+}
+
+function coercePartialEmail(
+  partial: Record<string, unknown>
+): EmailOutput | null {
+  const subject =
+    typeof partial.subject_line === "string" ? partial.subject_line : "";
+  const body = typeof partial.body === "string" ? partial.body : "";
+  if (!subject && !body) return null;
+  return {
+    format: "email",
+    subject_line: subject || "…",
+    preview_text:
+      typeof partial.preview_text === "string"
+        ? partial.preview_text
+        : undefined,
+    body: body || "…",
+  };
 }
 
 class GenerateApiError extends Error {
@@ -156,6 +291,13 @@ export default function RepurposeWorkspace({
   brandVoice = null,
   onTwitterGenerate,
 }: RepurposeWorkspaceProps) {
+  const searchParams = useSearchParams();
+  const useStream =
+    STREAM_STUDIO || searchParams.get("stream") === "1";
+
+  const formatAbortRef = useRef<Map<TargetFormat, AbortController>>(new Map());
+  const runAbortRef = useRef<AbortController | null>(null);
+
   const [inputSummary, setInputSummary] = useState(initialInput);
   const [inputMode, setInputMode] = useState<InputMode>("paste");
   const [photoInput, setPhotoInput] = useState<PhotoInputReady | null>(null);
@@ -167,23 +309,78 @@ export default function RepurposeWorkspace({
   const [pendingTwitterLength, setPendingTwitterLength] = useState(
     clampTargetTweets(initialTwitterLength ?? 6)
   );
-  const [xThreadOutput, setXThreadOutput] = useState<XThreadOutput | null>(
-    initialTwitterOutput
-      ? {
-          format: "x_thread",
-          tweets: initialTwitterOutput
-            .split(/\n\n+/)
-            .filter(Boolean)
-            .map((text, index) => ({ number: index + 1, text })),
-        }
-      : null
+  const [formatVariants, setFormatVariants] = useState<FormatVariantsState>(
+    () => {
+      const base = createVariantsRecord();
+      if (initialTwitterOutput) {
+        base.x_thread = [
+          {
+            repurposeId: "",
+            output: {
+              format: "x_thread",
+              tweets: initialTwitterOutput
+                .split(/\n\n+/)
+                .filter(Boolean)
+                .map((text, index) => ({ number: index + 1, text })),
+            },
+          },
+        ];
+      }
+      return base;
+    }
   );
-  const [linkedinOutput, setLinkedinOutput] = useState<LinkedInOutput | null>(null);
-  const [instagramOutput, setInstagramOutput] = useState<InstagramOutput | null>(null);
-  const [emailOutput, setEmailOutput] = useState<EmailOutput | null>(null);
-  const [repurposeIds, setRepurposeIds] = useState<FormatIdState>(
-    createFormatRecord(null)
+  // null → show newest; a number pins a specific variant chip.
+  const [selectedVariant, setSelectedVariant] = useState<
+    Record<TargetFormat, number | null>
+  >(() => createFormatRecord<number | null>(null));
+  // Streaming partial preview (uncommitted, no repurposeId yet).
+  const [partialPreview, setPartialPreview] = useState<
+    Record<TargetFormat, RepurposeOutput | null>
+  >(() => createFormatRecord<RepurposeOutput | null>(null));
+
+  const activeIndexFor = useCallback(
+    (format: TargetFormat) =>
+      selectedVariant[format] ??
+      Math.max(0, formatVariants[format].length - 1),
+    [selectedVariant, formatVariants]
   );
+
+  const displayOutputFor = useCallback(
+    (format: TargetFormat): RepurposeOutput | null => {
+      // Preview is only ever set while a stream is in flight and is cleared on
+      // commit or abort, so it takes precedence when present.
+      return (
+        partialPreview[format] ??
+        formatVariants[format][activeIndexFor(format)]?.output ??
+        null
+      );
+    },
+    [partialPreview, formatVariants, activeIndexFor]
+  );
+
+  const repurposeIds: FormatIdState = {
+    x_thread:
+      partialPreview.x_thread === null
+        ? formatVariants.x_thread[activeIndexFor("x_thread")]?.repurposeId || null
+        : null,
+    linkedin:
+      partialPreview.linkedin === null
+        ? formatVariants.linkedin[activeIndexFor("linkedin")]?.repurposeId || null
+        : null,
+    instagram:
+      partialPreview.instagram === null
+        ? formatVariants.instagram[activeIndexFor("instagram")]?.repurposeId ||
+          null
+        : null,
+    email:
+      partialPreview.email === null
+        ? formatVariants.email[activeIndexFor("email")]?.repurposeId || null
+        : null,
+  };
+
+  const selectVariant = useCallback((format: TargetFormat, index: number) => {
+    setSelectedVariant((prev) => ({ ...prev, [format]: index }));
+  }, []);
 
   const [formatLoading, setFormatLoading] = useState<FormatLoadingState>(
     createFormatRecord(false)
@@ -208,8 +405,27 @@ export default function RepurposeWorkspace({
   const isAnyLoading =
     isRegeneratingAll || activeFormats.some((format) => formatLoading[format]);
 
-  const hasAnyOutput = Boolean(
-    xThreadOutput || linkedinOutput || instagramOutput || emailOutput
+  const xThreadActive = displayOutputFor("x_thread");
+  const xThreadOutput =
+    xThreadActive && isFormatOutput(xThreadActive, "x_thread")
+      ? xThreadActive
+      : null;
+  const linkedinActive = displayOutputFor("linkedin");
+  const linkedinOutput =
+    linkedinActive && isFormatOutput(linkedinActive, "linkedin")
+      ? linkedinActive
+      : null;
+  const instagramActive = displayOutputFor("instagram");
+  const instagramOutput =
+    instagramActive && isFormatOutput(instagramActive, "instagram")
+      ? instagramActive
+      : null;
+  const emailActive = displayOutputFor("email");
+  const emailOutput =
+    emailActive && isFormatOutput(emailActive, "email") ? emailActive : null;
+
+  const hasAnyOutput = ALL_FORMATS.some(
+    (format) => formatVariants[format].length > 0
   );
 
   const liveStatus = useMemo(() => {
@@ -299,33 +515,60 @@ export default function RepurposeWorkspace({
 
   const applyOutput = useCallback(
     (format: TargetFormat, output: RepurposeOutput, repurposeId: string) => {
-      setRepurposeIds((prev) => ({ ...prev, [format]: repurposeId }));
-      switch (format) {
-        case "x_thread":
-          if (isFormatOutput(output, "x_thread")) {
-            setXThreadOutput(output);
-            onTwitterGenerate?.(formatXThreadForCopy(output));
-          }
-          break;
-        case "linkedin":
-          if (isFormatOutput(output, "linkedin")) {
-            setLinkedinOutput(output);
-          }
-          break;
-        case "instagram":
-          if (isFormatOutput(output, "instagram")) {
-            setInstagramOutput(output);
-          }
-          break;
-        case "email":
-          if (isFormatOutput(output, "email")) {
-            setEmailOutput(output);
-          }
-          break;
+      // Append as a new variant; clear the streaming preview; snap to newest.
+      setFormatVariants((prev) => ({
+        ...prev,
+        [format]: [...prev[format], { repurposeId, output }],
+      }));
+      setSelectedVariant((prev) => ({ ...prev, [format]: null }));
+      setPartialPreview((prev) => ({ ...prev, [format]: null }));
+      if (format === "x_thread" && isFormatOutput(output, "x_thread")) {
+        onTwitterGenerate?.(formatXThreadForCopy(output));
       }
     },
     [onTwitterGenerate]
   );
+
+  const clearPartialPreview = useCallback((format: TargetFormat) => {
+    setPartialPreview((prev) =>
+      prev[format] === null ? prev : { ...prev, [format]: null }
+    );
+  }, []);
+
+  const applyPartialOutput = useCallback(
+    (format: TargetFormat, partial: Record<string, unknown>) => {
+      let coerced: RepurposeOutput | null = null;
+      switch (format) {
+        case "x_thread":
+          coerced = coercePartialXThread(partial);
+          break;
+        case "linkedin":
+          coerced = coercePartialLinkedIn(partial);
+          break;
+        case "instagram":
+          coerced = coercePartialInstagram(partial);
+          break;
+        case "email":
+          coerced = coercePartialEmail(partial);
+          break;
+      }
+      if (coerced) {
+        setPartialPreview((prev) => ({ ...prev, [format]: coerced }));
+      }
+    },
+    []
+  );
+
+  const stopFormat = useCallback((format: TargetFormat) => {
+    formatAbortRef.current.get(format)?.abort();
+  }, []);
+
+  const stopAll = useCallback(() => {
+    runAbortRef.current?.abort();
+    for (const controller of formatAbortRef.current.values()) {
+      controller.abort();
+    }
+  }, []);
 
   const resolveGenerateError = useCallback(
     (
@@ -334,7 +577,9 @@ export default function RepurposeWorkspace({
       fallbackMessages: Record<TargetFormat, string>
     ): boolean => {
       const apiErr =
-        err instanceof GenerateApiError || err instanceof PhotoGenerateApiError
+        err instanceof GenerateApiError ||
+        err instanceof PhotoGenerateApiError ||
+        err instanceof StreamGenerateApiError
           ? err
           : null;
 
@@ -454,7 +699,12 @@ export default function RepurposeWorkspace({
   const generateFormat = useCallback(
     async (
       format: TargetFormat,
-      options?: { inputContent?: string; targetTweets?: number; generationId?: string }
+      options?: {
+        inputContent?: string;
+        targetTweets?: number;
+        generationId?: string;
+        refinement?: string;
+      }
     ) => {
       const trimmed = (options?.inputContent ?? inputSummary).trim();
       if (trimmed.length < INPUT_CONTENT_MIN_LENGTH) {
@@ -470,15 +720,43 @@ export default function RepurposeWorkspace({
       setFormatLoading((prev) => ({ ...prev, [format]: true }));
       setExpandedFormat(format);
 
+      const controller = new AbortController();
+      formatAbortRef.current.set(format, controller);
+      const runSignal = runAbortRef.current?.signal;
+      if (runSignal) {
+        if (runSignal.aborted) {
+          controller.abort();
+        } else {
+          runSignal.addEventListener("abort", () => controller.abort(), {
+            once: true,
+          });
+        }
+      }
+
       try {
-        const { output, usage, repurposeId } = await callGenerateApi(
-          trimmed,
-          format,
-          options?.targetTweets,
-          options?.generationId
-        );
-        applyOutput(format, output, repurposeId);
-        setUsedCount(usage.used);
+        if (useStream) {
+          const { output, usage, repurposeId } = await callGenerateStreamApi({
+            inputContent: trimmed,
+            targetFormat: format,
+            brandVoice,
+            targetTweets: options?.targetTweets,
+            generationId: options?.generationId,
+            refinement: options?.refinement,
+            signal: controller.signal,
+            onPartial: (partial) => applyPartialOutput(format, partial),
+          });
+          applyOutput(format, output, repurposeId);
+          setUsedCount(usage.used);
+        } else {
+          const { output, usage, repurposeId } = await callGenerateApi(
+            trimmed,
+            format,
+            options?.targetTweets,
+            options?.generationId
+          );
+          applyOutput(format, output, repurposeId);
+          setUsedCount(usage.used);
+        }
 
         if (format === "x_thread" && options?.targetTweets !== undefined) {
           const length = clampTargetTweets(options.targetTweets);
@@ -486,13 +764,29 @@ export default function RepurposeWorkspace({
           setPendingTwitterLength(length);
         }
       } catch (err) {
+        if (isAbortError(err)) {
+          setFormatErrors((prev) => ({ ...prev, [format]: null }));
+          clearPartialPreview(format);
+          return;
+        }
         console.error(err);
+        clearPartialPreview(format);
         resolveGenerateError(err, format, FORMAT_FALLBACK_ERRORS);
       } finally {
+        formatAbortRef.current.delete(format);
         setFormatLoading((prev) => ({ ...prev, [format]: false }));
       }
     },
-    [applyOutput, callGenerateApi, inputSummary, resolveGenerateError]
+    [
+      applyOutput,
+      applyPartialOutput,
+      brandVoice,
+      callGenerateApi,
+      clearPartialPreview,
+      inputSummary,
+      resolveGenerateError,
+      useStream,
+    ]
   );
 
   const generateTwitter = (
@@ -524,23 +818,38 @@ export default function RepurposeWorkspace({
     void generateFormat(format);
   };
 
+  const refineFormat = (format: TargetFormat, refinement: string) => {
+    if (!useStream || isPhotoMode) return;
+    void generateFormat(format, { refinement });
+  };
+
   const regenerateAll = async () => {
     setIsRegeneratingAll(true);
     const generationId = crypto.randomUUID();
     const formats = ALL_FORMATS.filter((format) => selectedFormats.has(format));
+    const runController = new AbortController();
+    runAbortRef.current = runController;
 
-    if (isPhotoMode) {
-      await Promise.allSettled(
-        formats.map((format) => generatePhotoFormat(format, { generationId }))
-      );
-    } else {
-      await Promise.allSettled(
-        formats.map((format) => generateFormat(format, { generationId }))
-      );
+    try {
+      if (isPhotoMode) {
+        await Promise.allSettled(
+          formats.map((format) => generatePhotoFormat(format, { generationId }))
+        );
+      } else {
+        await Promise.allSettled(
+          formats.map((format) => generateFormat(format, { generationId }))
+        );
+      }
+
+      if (!runController.signal.aborted) {
+        toast.success("Run complete", {
+          description: "Review each format below",
+        });
+      }
+    } finally {
+      runAbortRef.current = null;
+      setIsRegeneratingAll(false);
     }
-
-    setIsRegeneratingAll(false);
-    toast.success("Run complete", { description: "Review each format below" });
   };
 
   const handleTextInputUpdate = async (content: string) => {
@@ -548,13 +857,24 @@ export default function RepurposeWorkspace({
     setIsRegeneratingAll(true);
     const generationId = crypto.randomUUID();
     const formats = ALL_FORMATS.filter((format) => selectedFormats.has(format));
-    await Promise.allSettled(
-      formats.map((format) =>
-        generateFormat(format, { generationId, inputContent: content })
-      )
-    );
-    setIsRegeneratingAll(false);
-    toast.success("Run complete", { description: "Review each format below" });
+    const runController = new AbortController();
+    runAbortRef.current = runController;
+
+    try {
+      await Promise.allSettled(
+        formats.map((format) =>
+          generateFormat(format, { generationId, inputContent: content })
+        )
+      );
+      if (!runController.signal.aborted) {
+        toast.success("Run complete", {
+          description: "Review each format below",
+        });
+      }
+    } finally {
+      runAbortRef.current = null;
+      setIsRegeneratingAll(false);
+    }
   };
 
   const copyAllToClipboard = async () => {
@@ -646,8 +966,45 @@ export default function RepurposeWorkspace({
     }
 
     if (output) {
+      const variants = formatVariants[format];
+      const activeIdx = activeIndexFor(format);
+      const activeId = variants[activeIdx]?.repurposeId;
+      const previewing = partialPreview[format] !== null;
+      const showMeta = !previewing && variants.length > 0;
       return (
         <div className={formatLoading[format] ? "opacity-60 transition-opacity" : undefined}>
+          {showMeta ? (
+            <div className="mb-3 flex flex-wrap items-center gap-1.5">
+              {variants.length > 1 ? (
+                <>
+                  <span className="text-[11px] font-medium text-muted-foreground">
+                    Versions
+                  </span>
+                  {variants.map((variant, index) => (
+                    <button
+                      key={variant.repurposeId || `v${index}`}
+                      type="button"
+                      onClick={() => selectVariant(format, index)}
+                      aria-pressed={index === activeIdx}
+                      aria-label={`Show version ${index + 1}`}
+                      className={
+                        index === activeIdx
+                          ? "rounded-full border border-primary bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary transition-colors"
+                          : "rounded-full border border-border px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+                      }
+                    >
+                      v{index + 1}
+                    </button>
+                  ))}
+                </>
+              ) : null}
+              {activeId ? (
+                <span className="ml-auto font-mono text-[10px] text-muted-foreground">
+                  ID {activeId.slice(0, 8)}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
           {output}
         </div>
       );
@@ -655,6 +1012,14 @@ export default function RepurposeWorkspace({
 
     return emptyPlaceholder;
   };
+
+  const renderRefinementChips = (format: TargetFormat) =>
+    useStream && !isPhotoMode && formatVariants[format].length > 0 ? (
+      <RefinementChips
+        disabled={formatLoading[format] || atLimit}
+        onRefine={(directive) => refineFormat(format, directive)}
+      />
+    ) : null;
 
   const canStartRun = isPhotoMode
     ? canGeneratePhoto
@@ -774,6 +1139,7 @@ export default function RepurposeWorkspace({
           expanded={expandedFormat === "x_thread"}
           onToggleExpand={() => setExpandedFormat("x_thread")}
           onRegenerate={() => regenerateFormat("x_thread")}
+          onStop={useStream ? () => stopFormat("x_thread") : undefined}
           regenerateDisabled={atLimit}
           error={
             formatErrors.x_thread
@@ -781,35 +1147,40 @@ export default function RepurposeWorkspace({
               : null
           }
           footerExtra={
-            <div>
-              <div className="mb-1.5 flex justify-between text-xs">
-                <span className="text-muted-foreground">Target length</span>
-                <span className="font-mono">{pendingTwitterLength} tweets</span>
+            <div className="space-y-4">
+              <div>
+                <div className="mb-1.5 flex justify-between text-xs">
+                  <span className="text-muted-foreground">Target length</span>
+                  <span className="font-mono">{pendingTwitterLength} tweets</span>
+                </div>
+                <input
+                  type="range"
+                  min={TWITTER_LENGTH_MIN}
+                  max={TWITTER_LENGTH_MAX}
+                  value={pendingTwitterLength}
+                  onChange={(e) =>
+                    setPendingTwitterLength(
+                      clampTargetTweets(parseInt(e.target.value, 10))
+                    )
+                  }
+                  className="w-full accent-primary"
+                  aria-label="Target tweet count"
+                />
+                <div className="mt-2 flex justify-end">
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="rounded-xl"
+                    onClick={handleApplyTwitterLength}
+                    disabled={formatLoading.x_thread || atLimit}
+                  >
+                    {formatLoading.x_thread
+                      ? "Generating…"
+                      : "Apply & Regenerate"}
+                  </Button>
+                </div>
               </div>
-              <input
-                type="range"
-                min={TWITTER_LENGTH_MIN}
-                max={TWITTER_LENGTH_MAX}
-                value={pendingTwitterLength}
-                onChange={(e) =>
-                  setPendingTwitterLength(
-                    clampTargetTweets(parseInt(e.target.value, 10))
-                  )
-                }
-                className="w-full accent-primary"
-                aria-label="Target tweet count"
-              />
-              <div className="mt-2 flex justify-end">
-                <Button
-                  type="button"
-                  size="sm"
-                  className="rounded-xl"
-                  onClick={handleApplyTwitterLength}
-                  disabled={formatLoading.x_thread || atLimit}
-                >
-                  {formatLoading.x_thread ? "Generating…" : "Apply & Regenerate"}
-                </Button>
-              </div>
+              {renderRefinementChips("x_thread")}
             </div>
           }
         >
@@ -851,12 +1222,14 @@ export default function RepurposeWorkspace({
           expanded={expandedFormat === "linkedin"}
           onToggleExpand={() => setExpandedFormat("linkedin")}
           onRegenerate={() => regenerateFormat("linkedin")}
+          onStop={useStream ? () => stopFormat("linkedin") : undefined}
           regenerateDisabled={atLimit}
           error={
             formatErrors.linkedin
               ? renderFormatError("linkedin", formatErrors.linkedin)
               : null
           }
+          footerExtra={renderRefinementChips("linkedin")}
         >
           {renderFormatBody(
             "linkedin",
@@ -893,12 +1266,14 @@ export default function RepurposeWorkspace({
           expanded={expandedFormat === "instagram"}
           onToggleExpand={() => setExpandedFormat("instagram")}
           onRegenerate={() => regenerateFormat("instagram")}
+          onStop={useStream ? () => stopFormat("instagram") : undefined}
           regenerateDisabled={atLimit}
           error={
             formatErrors.instagram
               ? renderFormatError("instagram", formatErrors.instagram)
               : null
           }
+          footerExtra={renderRefinementChips("instagram")}
         >
           {renderFormatBody(
             "instagram",
@@ -933,12 +1308,14 @@ export default function RepurposeWorkspace({
           expanded={expandedFormat === "email"}
           onToggleExpand={() => setExpandedFormat("email")}
           onRegenerate={() => regenerateFormat("email")}
+          onStop={useStream ? () => stopFormat("email") : undefined}
           regenerateDisabled={atLimit}
           error={
             formatErrors.email
               ? renderFormatError("email", formatErrors.email)
               : null
           }
+          footerExtra={renderRefinementChips("email")}
         >
           {renderFormatBody(
             "email",
@@ -959,23 +1336,34 @@ export default function RepurposeWorkspace({
 
       <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-card/80 md:left-64">
         <div className="mx-auto flex max-w-screen-md gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            className="flex-1 rounded-xl"
-            onClick={() => void regenerateAll()}
-            disabled={isAnyLoading || atLimit || !canStartRun}
-          >
-            {isRegeneratingAll
-              ? isPhotoMode
-                ? "Analysing your photo…"
-                : "Generating selected formats…"
-              : activeFormats.length === ALL_FORMATS.length
-                ? hasAnyOutput
-                  ? "Regenerate All"
-                  : "Generate All"
-                : `${hasAnyOutput ? "Regenerate" : "Generate"} ${activeFormats.length} format${activeFormats.length === 1 ? "" : "s"}`}
-          </Button>
+          {useStream && isAnyLoading ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1 rounded-xl"
+              onClick={stopAll}
+            >
+              Stop
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1 rounded-xl"
+              onClick={() => void regenerateAll()}
+              disabled={isAnyLoading || atLimit || !canStartRun}
+            >
+              {isRegeneratingAll
+                ? isPhotoMode
+                  ? "Analysing your photo…"
+                  : "Generating selected formats…"
+                : activeFormats.length === ALL_FORMATS.length
+                  ? hasAnyOutput
+                    ? "Regenerate All"
+                    : "Generate All"
+                  : `${hasAnyOutput ? "Regenerate" : "Generate"} ${activeFormats.length} format${activeFormats.length === 1 ? "" : "s"}`}
+            </Button>
+          )}
 
           <Button
             type="button"

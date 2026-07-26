@@ -18,6 +18,7 @@ interface StudioFormatResultCardProps {
   expanded: boolean;
   onToggleExpand: () => void;
   onRegenerate: () => void;
+  onStop?: () => void;
   regenerateDisabled?: boolean;
   children: ReactNode;
   footerExtra?: ReactNode;
@@ -34,6 +35,7 @@ export function StudioFormatResultCard({
   expanded,
   onToggleExpand,
   onRegenerate,
+  onStop,
   regenerateDisabled = false,
   children,
   footerExtra,
@@ -98,16 +100,28 @@ export function StudioFormatResultCard({
         </div>
 
         <div className="flex gap-2 border-t border-border bg-secondary px-5 py-3">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="flex-1 rounded-xl"
-            onClick={onRegenerate}
-            disabled={regenerateDisabled || status === "generating"}
-          >
-            {status === "generating" ? "Generating…" : "Regenerate"}
-          </Button>
+          {status === "generating" && onStop ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="flex-1 rounded-xl"
+              onClick={onStop}
+            >
+              Stop
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="flex-1 rounded-xl"
+              onClick={onRegenerate}
+              disabled={regenerateDisabled || status === "generating"}
+            >
+              {status === "generating" ? "Generating…" : "Regenerate"}
+            </Button>
+          )}
         </div>
       </div>
     </article>
