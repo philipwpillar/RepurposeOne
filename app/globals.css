@@ -240,6 +240,92 @@ body {
   }
 }
 
+@keyframes vo-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes vo-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vo-scale-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes vo-scale-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+}
+
+@keyframes vo-slide-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes vo-slide-out-left {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+.vo-overlay[data-state="open"] {
+  animation: vo-fade-in var(--motion-base) ease both;
+}
+
+.vo-overlay[data-state="closed"] {
+  animation: vo-fade-out var(--motion-fast) ease both;
+}
+
+.vo-dialog[data-state="open"] {
+  animation: vo-scale-in var(--motion-base) cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+.vo-dialog[data-state="closed"] {
+  animation: vo-scale-out var(--motion-fast) ease both;
+}
+
+.vo-tabs-content[data-state="active"] {
+  animation: vo-fade-in var(--motion-fast) ease both;
+}
+
+.vo-fade-in {
+  animation: vo-fade-in var(--motion-base) ease both;
+}
+
+.vo-slide-in-left {
+  animation: vo-slide-in-left var(--motion-base) ease both;
+}
+
 .skeleton-shimmer {
   background-image: linear-gradient(
     90deg,

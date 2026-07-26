@@ -1,8 +1,9 @@
 "use client";
 
+import type { ComponentProps, CSSProperties } from "react";
 import { Toaster as Sonner } from "sonner";
 
-type ToasterProps = React.ComponentProps<typeof Sonner>;
+type ToasterProps = ComponentProps<typeof Sonner>;
 
 function Toaster({ ...props }: ToasterProps) {
   return (
@@ -21,7 +22,7 @@ function Toaster({ ...props }: ToasterProps) {
           "--error-bg": "var(--surface-1)",
           "--error-text": "var(--destructive)",
           "--error-border": "var(--destructive)",
-        } as React.CSSProperties
+        } as CSSProperties
       }
       toastOptions={{
         duration: 4000,
