@@ -23,7 +23,14 @@ function isAuthPath(pathname: string): boolean {
   );
 }
 
-/** Same-origin redirect only — return a resolved URL so callers never re-resolve. */
+/**
+ * Resolve a user-supplied `redirect` param to a same-origin URL.
+ *
+ * Returns a URL (not a string) deliberately: returning a path string and
+ * letting the caller re-resolve it reintroduces the bug — `/..//evil.com`
+ * normalises to pathname `//evil.com`, which passes an origin check here
+ * and then becomes protocol-relative at `new URL(dest, base)`.
+ */
 function safeRedirectUrl(
   candidate: string | null,
   requestUrl: string,
@@ -36,7 +43,6 @@ function safeRedirectUrl(
   try {
     const resolved = new URL(candidate, requestUrl);
     if (resolved.origin !== origin) return fallback;
-    // After normalisation, pathname can become "//evil.com" while origin still matches.
     if (resolved.pathname.startsWith("//")) return fallback;
     return resolved;
   } catch {
