@@ -1,5 +1,17 @@
+import { timingSafeEqual } from "node:crypto";
 import http from "node:http";
 import type { HealthSnapshot } from "./types";
+
+function authorizeWakeSecret(
+  provided: string | string[] | undefined,
+  expectedSecret: string
+): boolean {
+  if (typeof provided !== "string" || !expectedSecret) return false;
+  const expected = Buffer.from(expectedSecret);
+  const actual = Buffer.from(provided);
+  if (expected.length !== actual.length) return false;
+  return timingSafeEqual(expected, actual);
+}
 
 export function createHealthServer(params: {
   port: number;
@@ -28,8 +40,7 @@ export function createHealthServer(params: {
     }
 
     if (req.method === "POST" && url === "/wake") {
-      const secret = req.headers["x-wake-secret"];
-      if (secret !== wakeSecret) {
+      if (!authorizeWakeSecret(req.headers["x-wake-secret"], wakeSecret)) {
         res.writeHead(401, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: "Unauthorized" }));
         return;

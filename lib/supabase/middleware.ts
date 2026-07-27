@@ -23,6 +23,26 @@ function isAuthPath(pathname: string): boolean {
   );
 }
 
+/** Same-origin path only — rejects protocol-relative `//evil.com` open redirects. */
+function safeInternalPath(
+  candidate: string | null,
+  requestUrl: string,
+  origin: string
+): string {
+  if (!candidate || !candidate.startsWith("/") || candidate.startsWith("//")) {
+    return "/dashboard";
+  }
+  try {
+    const resolved = new URL(candidate, requestUrl);
+    if (resolved.origin !== origin) {
+      return "/dashboard";
+    }
+    return `${resolved.pathname}${resolved.search}${resolved.hash}`;
+  } catch {
+    return "/dashboard";
+  }
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -61,8 +81,11 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (isAuthPath(pathname) && user) {
-    const redirect = request.nextUrl.searchParams.get("redirect");
-    const destination = redirect && redirect.startsWith("/") ? redirect : "/dashboard";
+    const destination = safeInternalPath(
+      request.nextUrl.searchParams.get("redirect"),
+      request.url,
+      request.nextUrl.origin
+    );
     return NextResponse.redirect(new URL(destination, request.url));
   }
 
