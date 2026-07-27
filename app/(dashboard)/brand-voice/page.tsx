@@ -18,7 +18,8 @@ export default async function BrandVoicePage() {
     )
     .eq("user_id", user.id)
     .order("is_default", { ascending: false })
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(50);
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">

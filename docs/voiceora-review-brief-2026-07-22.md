@@ -29,7 +29,7 @@ Core differentiators the review should protect, not just "clean code" in the abs
 
 ## 2. Non-negotiable constraints — flag any violation as high severity
 
-- **The fence in `RepurposeWorkspace.tsx` is absolute.** Protected symbols: `GenerateApiError`, `callGenerateApi`, `callPhotoGenerateApi`, both `setUsedCount(err.usage.used)` branches, `PhotoGenerateApiError`. Any diff touching these needs explicit justification. (Brief 0a’s plan-gate expressions using `planAllowsVision` were the sanctioned fence edits.)
+- **The fence in `RepurposeWorkspace.tsx` is absolute.** Protected symbols: `GenerateApiError`, `callGenerateApi`, `callPhotoGenerateApi`, `setUsedCount(apiErr.usage.used)` / success `setUsedCount(usage.used)`, `PhotoGenerateApiError`. Any diff touching these needs explicit justification. (Brief 0a’s plan-gate expressions using `planAllowsVision` were the sanctioned fence edits.) Do **not** grep the obsolete `setUsedCount(err.usage.used)` — that pattern is gone and a zero-count check is inert.
 - **Server-side enforcement before AI spend.** The 402/limit gate must fire server-side; no AI cost should be incurred on over-limit requests. Same rule for bundle generate/prepare and `/api/transcribe`.
 - **Model slugs must be version-pinned**, never `-latest` or floating aliases. **Current code still uses floating Qwen 3.5 slugs** (`qwen/qwen3.5-35b-a3b`, `qwen/qwen3.5-397b-a17b`) — treat as an open medium finding unless dated pins landed after this brief.
 - **`provider.only`, not `provider.order`**, for the OpenRouter allowlist — `.order` is preference-only and silently falls through.
