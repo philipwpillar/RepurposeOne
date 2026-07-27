@@ -9,7 +9,7 @@ Settled decisions amending/confirming `docs/plans/moment-bundle-implementation-p
 | D2 | Photo outputs = user's own photos + generated captions; no image generation |
 | D3 | Rendered clips in-app: Voiceora cuts and finishes (trim, static styled caption burn, encode) |
 | D4 | Gating: new **Pro Plus** tier ~£59/mo (display name provisional — internal enum `pro_plus` is final regardless of display name) |
-| D5 | Rendered clip retention: **30 days** |
+| D5 | Rendered clip retention: **30 days** for media files. Clip metadata (caption, overlay text, tags, timing) retained until account deletion (`bundle_clips.user_id` ON DELETE CASCADE). Metadata is not sufficient to reconstruct the video. |
 | D6 | GDPR track handled separately (options per plan §9 risk 5); does not block Briefs 0a/0b/1a; gates first vision-call beta |
 
 ## Numbers (Phil-approved 2026-07-12)
