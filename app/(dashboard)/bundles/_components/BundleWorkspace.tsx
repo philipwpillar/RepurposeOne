@@ -22,11 +22,11 @@ import {
   BundleGenerateApiError,
   BundleUploadError,
   callBundleGenerateApi,
-  fetchBundleStatus,
   prepareUploadAndGenerate,
 } from "@/lib/repurpose/bundle-generate-client";
 import { createClient } from "@/lib/supabase/client";
-import type { BundleClipStatus, BundlePack, Plan } from "@/types";
+import type { BundlePack, Plan } from "@/types";
+import BundleClipsPanel from "./BundleClipsPanel";
 import BundlePhotoPicker, {
   type BundlePhotoItem,
 } from "./BundlePhotoPicker";
@@ -43,21 +43,12 @@ const VIDEO_BUNDLES_DEV =
   process.env.NEXT_PUBLIC_VIDEO_BUNDLES_DEV === "true";
 
 const MAX_REQUEST_CHARS = 4_000_000;
-const CLIP_POLL_INTERVAL_MS = 3_000;
-const CLIP_POLL_CEILING_MS = 10 * 60 * 1_000;
 
 const PROGRESS_MESSAGES = [
   "Reading your photos…",
   "Finding the story…",
   "Writing your pack…",
 ] as const;
-
-function formatMmSs(seconds: number): string {
-  const s = Math.max(0, Math.floor(seconds));
-  const m = Math.floor(s / 60);
-  const r = s % 60;
-  return `${m}:${r.toString().padStart(2, "0")}`;
-}
 
 function bundleErrorUpgradeGate(code?: string): UpgradeGate | null {
   if (code === "limit_exceeded") return "monthly_limit";
@@ -70,11 +61,13 @@ function bundleErrorUpgradeGate(code?: string): UpgradeGate | null {
 interface BundleWorkspaceProps {
   pastBundles: PastBundleItem[];
   userPlan: Plan;
+  viewClipBundleId?: string;
 }
 
 export default function BundleWorkspace({
   pastBundles,
   userPlan,
+  viewClipBundleId,
 }: BundleWorkspaceProps) {
   const [photos, setPhotos] = useState<BundlePhotoItem[]>([]);
   const [videos, setVideos] = useState<BundleVideoItem[]>([]);
@@ -95,10 +88,6 @@ export default function BundleWorkspace({
   } | null>(null);
   const [pack, setPack] = useState<BundlePack | null>(null);
   const [bundleId, setBundleId] = useState<string | null>(null);
-  const [clipStatuses, setClipStatuses] = useState<BundleClipStatus[] | null>(
-    null
-  );
-  const [clipPollTimedOut, setClipPollTimedOut] = useState(false);
   const [libraryHash, setLibraryHash] = useState<string | null>(null);
   const [resultPreviews, setResultPreviews] = useState<
     Array<{ photoIndex: number; previewUrl: string }>
@@ -129,65 +118,12 @@ export default function BundleWorkspace({
     return () => window.clearInterval(id);
   }, [generating]);
 
-  // Poll clip render status while any clip is still in flight (Brief 3c).
   useEffect(() => {
-    if (!bundleId || !pack?.clip_specs?.length) return;
-
-    const trackable = pack.clip_specs.filter((c) => c.clip_id);
-    if (trackable.length === 0) return;
-
-    let cancelled = false;
-    let done = false;
-    let intervalId: number | undefined;
-
-    const stop = () => {
-      done = true;
-      if (intervalId !== undefined) {
-        window.clearInterval(intervalId);
-        intervalId = undefined;
-      }
-    };
-
-    const startedAt = Date.now();
-
-    const isInFlight = (clips: BundleClipStatus[]) =>
-      clips.some(
-        (c) =>
-          c.render_status === "pending" || c.render_status === "rendering"
-      );
-
-    const tick = async () => {
-      if (cancelled || done) return;
-
-      if (Date.now() - startedAt >= CLIP_POLL_CEILING_MS) {
-        setClipPollTimedOut(true);
-        stop();
-        return;
-      }
-
-      try {
-        const status = await fetchBundleStatus(bundleId);
-        if (cancelled || done) return;
-        setClipStatuses(status.clips);
-
-        if (!isInFlight(status.clips)) {
-          stop();
-        }
-      } catch (err) {
-        console.error("Clip status poll failed:", err);
-      }
-    };
-
-    intervalId = window.setInterval(() => {
-      void tick();
-    }, CLIP_POLL_INTERVAL_MS);
-    void tick();
-
-    return () => {
-      cancelled = true;
-      stop();
-    };
-  }, [bundleId, pack]);
+    if (!viewClipBundleId) return;
+    document
+      .getElementById("bundle-clips-panel")
+      ?.scrollIntoView({ behavior: "smooth" });
+  }, [viewClipBundleId]);
 
   const approxPayloadChars = () => {
     const photoChars = photosRef.current.reduce(
@@ -317,8 +253,6 @@ export default function BundleWorkspace({
     });
     setPack(null);
     setBundleId(null);
-    setClipStatuses(null);
-    setClipPollTimedOut(false);
     setLibraryHash(null);
   }, []);
 
@@ -326,8 +260,6 @@ export default function BundleWorkspace({
     setVideos((prev) => prev.filter((v) => v.id !== id));
     setPack(null);
     setBundleId(null);
-    setClipStatuses(null);
-    setClipPollTimedOut(false);
     setLibraryHash(null);
   }, []);
 
@@ -375,8 +307,6 @@ export default function BundleWorkspace({
     setUploadProgress(null);
     setPack(null);
     setBundleId(null);
-    setClipStatuses(null);
-    setClipPollTimedOut(false);
     setLibraryHash(null);
 
     try {
@@ -744,151 +674,16 @@ export default function BundleWorkspace({
           )}
 
           {VIDEO_BUNDLES_DEV &&
-            pack.clip_specs &&
+            bundleId &&
+            pack?.clip_specs &&
             pack.clip_specs.length > 0 && (
-              <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
-                <div>
-                  <h3 className="text-base font-semibold text-foreground">
-                    Suggested clips
-                  </h3>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Preview and download rendered clips when they&apos;re ready.
-                  </p>
-                </div>
-                {clipPollTimedOut && (
-                  <p className="text-xs text-muted-foreground">
-                    Still working — check back shortly.
-                  </p>
-                )}
-                <ul className="space-y-3">
-                  {(clipStatuses && clipStatuses.length > 0
-                    ? clipStatuses.map((clip) => ({
-                        key: clip.clip_id,
-                        video_index: clip.video_index,
-                        start_s: clip.start_s,
-                        end_s: clip.end_s,
-                        overlay_text: clip.overlay_text ?? "",
-                        caption: clip.caption,
-                        tags: clip.tags,
-                        status: clip.render_status,
-                        error_message: clip.error_message,
-                        download_url: clip.download_url,
-                      }))
-                    : pack.clip_specs.map((clip, i) => ({
-                        key: clip.clip_id ?? `${clip.video_index}-${clip.start_s}-${i}`,
-                        video_index: clip.video_index,
-                        start_s: clip.start_s,
-                        end_s: clip.end_s,
-                        overlay_text: clip.overlay_text,
-                        caption: clip.caption,
-                        tags: clip.tags,
-                        status: clip.clip_id
-                          ? ("pending" as const)
-                          : ("failed" as const),
-                        error_message: clip.clip_id
-                          ? null
-                          : "Clip was not queued for rendering.",
-                        download_url: undefined as string | undefined,
-                      }))
-                  ).map((clip, i) => {
-                    const tagsText = clip.tags.join(" ");
-                    const inFlight =
-                      clip.status === "pending" || clip.status === "rendering";
-                    const isComplete = clip.status === "complete";
-                    const isExpired = isComplete && !clip.download_url;
-                    const isFailed = clip.status === "failed";
-
-                    return (
-                      <li
-                        key={clip.key}
-                        className="rounded-xl border border-border/80 bg-background px-3 py-3"
-                      >
-                        <p className="text-xs font-medium text-muted-foreground">
-                          Video {clip.video_index + 1} ·{" "}
-                          {formatMmSs(clip.start_s)}–
-                          {formatMmSs(clip.end_s)}
-                        </p>
-                        {clip.overlay_text && (
-                          <p className="mt-1 text-sm font-medium text-foreground">
-                            Overlay: {clip.overlay_text}
-                          </p>
-                        )}
-
-                        {inFlight && (
-                          <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Rendering…
-                          </div>
-                        )}
-
-                        {isComplete && clip.download_url && (
-                          <div className="mt-2 space-y-2">
-                            <video
-                              controls
-                              playsInline
-                              preload="metadata"
-                              src={clip.download_url}
-                              className="max-h-64 w-full rounded-lg bg-black"
-                            />
-                            <a
-                              href={clip.download_url}
-                              download
-                              className="inline-flex items-center rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted/40"
-                            >
-                              Download clip
-                            </a>
-                          </div>
-                        )}
-
-                        {isExpired && (
-                          <p className="mt-2 text-sm text-muted-foreground">
-                            Clip expired
-                          </p>
-                        )}
-
-                        {isFailed && (
-                          <p className="mt-2 text-sm text-destructive">
-                            {clip.error_message || "Clip rendering failed."}
-                          </p>
-                        )}
-
-                        <p className="mt-2 whitespace-pre-wrap text-sm text-foreground">
-                          {clip.caption}
-                        </p>
-                        {tagsText && (
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {tagsText}
-                          </p>
-                        )}
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          <CopyActionButton
-                            copyKey={`clip-caption-${i}`}
-                            label="Copy caption"
-                            copiedKey={copiedKey}
-                            errorKey={errorKey}
-                            onCopy={() =>
-                              copy(clip.caption, `clip-caption-${i}`)
-                            }
-                            variant="studio"
-                          />
-                          {tagsText && (
-                            <CopyActionButton
-                              copyKey={`clip-tags-${i}`}
-                              label="Copy tags"
-                              copiedKey={copiedKey}
-                              errorKey={errorKey}
-                              onCopy={() => copy(tagsText, `clip-tags-${i}`)}
-                              variant="studio"
-                            />
-                          )}
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
+              <BundleClipsPanel bundleId={bundleId} />
             )}
         </section>
+      )}
+
+      {VIDEO_BUNDLES_DEV && viewClipBundleId && (
+        <BundleClipsPanel bundleId={viewClipBundleId} />
       )}
 
       <PastBundlesList bundles={pastBundles} />

@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { planAllowsBundles } from "@/lib/config";
 import { checkUsageLimit } from "@/lib/usage";
@@ -5,8 +6,23 @@ import BundleUpgradeGate from "./_components/BundleUpgradeGate";
 import BundleWorkspace from "./_components/BundleWorkspace";
 import type { PastBundleItem } from "./_components/PastBundlesList";
 
-export default async function BundlesPage() {
+const clipBundleParamSchema = z.string().uuid();
+
+export default async function BundlesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ clipBundle?: string }>;
+}) {
   const supabase = await createClient();
+  const params = await searchParams;
+
+  let viewClipBundleId: string | undefined;
+  if (params.clipBundle) {
+    const parsed = clipBundleParamSchema.safeParse(params.clipBundle);
+    if (parsed.success) {
+      viewClipBundleId = parsed.data;
+    }
+  }
 
   const {
     data: { user },
@@ -18,6 +34,20 @@ export default async function BundlesPage() {
 
   if (!planAllowsBundles(usage.plan)) {
     return <BundleUpgradeGate />;
+  }
+
+  if (viewClipBundleId) {
+    const { data: ownedBundle } = await supabase
+      .from("bundles")
+      .select("id")
+      .eq("id", viewClipBundleId)
+      .eq("user_id", user.id)
+      .eq("status", "complete")
+      .maybeSingle();
+
+    if (!ownedBundle) {
+      viewClipBundleId = undefined;
+    }
   }
 
   const { data: bundles } = await supabase
@@ -94,5 +124,11 @@ export default async function BundlesPage() {
     sourceHash: hashByBundle.get(b.id) ?? null,
   }));
 
-  return <BundleWorkspace pastBundles={pastBundles} userPlan={usage.plan} />;
+  return (
+    <BundleWorkspace
+      pastBundles={pastBundles}
+      userPlan={usage.plan}
+      viewClipBundleId={viewClipBundleId}
+    />
+  );
 }

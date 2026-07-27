@@ -4,6 +4,9 @@ import { ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
+const VIDEO_BUNDLES_DEV =
+  process.env.NEXT_PUBLIC_VIDEO_BUNDLES_DEV === "true";
+
 export interface PastBundleItem {
   id: string;
   title: string | null;
@@ -93,6 +96,10 @@ export default function PastBundlesList({ bundles }: PastBundlesListProps) {
             bundle.status === "pending" ||
             bundle.status === "analyzing" ||
             bundle.status === "rendering";
+          const showClipsLink =
+            VIDEO_BUNDLES_DEV &&
+            bundle.videoCount > 0 &&
+            bundle.status === "complete";
 
           return (
             <li
@@ -125,18 +132,28 @@ export default function PastBundlesList({ bundles }: PastBundlesListProps) {
                     </p>
                   ) : null}
                 </div>
-                {bundle.sourceHash ? (
-                  <Button asChild variant="outline" size="sm" className="shrink-0">
-                    <Link href={`/library/${bundle.sourceHash}`}>
-                      Library
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </Link>
-                  </Button>
-                ) : (
-                  <span className="shrink-0 text-xs text-muted-foreground">
-                    {isInFlight ? "Working…" : "No posts yet"}
-                  </span>
-                )}
+                <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+                  {showClipsLink ? (
+                    <Button asChild variant="outline" size="sm">
+                      <Link href={`/bundles?clipBundle=${bundle.id}`}>
+                        Clips
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Link>
+                    </Button>
+                  ) : null}
+                  {bundle.sourceHash ? (
+                    <Button asChild variant="outline" size="sm">
+                      <Link href={`/library/${bundle.sourceHash}`}>
+                        Library
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Link>
+                    </Button>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">
+                      {isInFlight ? "Working…" : "No posts yet"}
+                    </span>
+                  )}
+                </div>
               </div>
             </li>
           );
