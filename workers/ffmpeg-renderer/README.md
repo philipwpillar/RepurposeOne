@@ -43,7 +43,7 @@ Wake (immediate poll): `POST http://localhost:8080/wake` with header `x-wake-sec
 - Pre-flight: requires `bundle_assets.metadata.upload_verified === true`
 - Max 2 attempts per clip; failures reset to `pending` until attempt 2, then `failed`
 - Render timeout 300s (default) — kills ffmpeg on overrun
-- Hourly lifecycle: source cleanup, 24h abandoned grace, 30-day rendered clip retention
+- Hourly lifecycle: source cleanup, 24h abandoned grace, 30-day rendered clip retention (media deleted; metadata row kept as tombstone until account deletion)
 - SIGTERM: finishes current render, then exits
 
 ## Stuck `rendering` rows

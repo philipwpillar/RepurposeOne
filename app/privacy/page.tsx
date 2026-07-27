@@ -116,7 +116,15 @@ export default function PrivacyPage() {
               We retain your account and content data while your account is
               active, including text sources, brand-voice samples, generated
               outputs in your Library, and photos or pack assets you upload for
-              generation. You can delete your account in-app from{" "}
+              generation.{" "}
+              <strong className="font-medium text-foreground">
+                Rendered video clips:
+              </strong>{" "}
+              media files are deleted 30 days after render. Clip metadata
+              (caption, overlay text, tags, timing) is retained until account
+              deletion, at which point it is removed by cascade. Metadata is not
+              sufficient to reconstruct the video. You can delete your account
+              in-app from{" "}
               <a
                 href="/account#danger"
                 className="text-foreground underline underline-offset-4"
