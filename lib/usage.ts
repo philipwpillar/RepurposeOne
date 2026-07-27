@@ -150,6 +150,11 @@ export async function checkBundlePrepareRateLimit(
  * Burst limit for POST /api/bundles/generate.
  * Counts on created_at only — lifecycle/orphan sweeps must not touch metering
  * (updated_at is written by background jobs).
+ *
+ * Known gap: generate against an already-prepared bundle claims a row created
+ * in an earlier window, so it is not counted here. Acceptable because H1
+ * reserves generation quota before any vision spend; revisit if prepare and
+ * generate are ever decoupled further.
  */
 export async function checkBundleGenerateRateLimit(
   supabase: SupabaseClient,
