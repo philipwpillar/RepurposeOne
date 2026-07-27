@@ -48,7 +48,11 @@ Wake (immediate poll): `POST http://localhost:8080/wake` with header `x-wake-sec
 
 ## Stuck `rendering` rows
 
-If the worker is killed mid-render (SIGKILL, OOM), the clip row may remain `rendering` with no automatic sweeper in v1. Reset manually:
+**Manual-only in v1** — there is no automatic recovery. If the worker is killed mid-render (SIGKILL, OOM) or exits between claim and status update, the clip row may remain `rendering` indefinitely. The Vercel cron sweeper (`sweep-pending-repurposes`, PR #76) settles aged `bundles` / `repurposes` only — it does **not** touch `bundle_clips`.
+
+**Incident log:** 27 Jul 2026 — one clip on bundle `d4dc2a7c-…` stayed `rendering` ~30 minutes after claim; required a manual reset to `pending` before the worker finished it. Distinct from the earlier OOM failure mode (which left rows as `failed`).
+
+Reset manually:
 
 ```sql
 UPDATE bundle_clips
@@ -57,6 +61,8 @@ WHERE id = '<clip_id>' AND render_status = 'rendering';
 ```
 
 Or mark failed if both attempts are exhausted.
+
+**If this recurs:** extend the worker lifecycle (or the Vercel sweeper) to reset `bundle_clips` where `render_status = 'rendering'` and `updated_at < now() - interval '15 minutes'` back to `pending` for one retry, then fail.
 
 ## Font
 
