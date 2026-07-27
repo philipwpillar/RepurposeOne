@@ -146,6 +146,35 @@ export async function checkBundlePrepareRateLimit(
   };
 }
 
+/**
+ * Burst limit for POST /api/bundles/generate.
+ * Counts on created_at only — lifecycle/orphan sweeps must not touch metering
+ * (updated_at is written by background jobs).
+ */
+export async function checkBundleGenerateRateLimit(
+  supabase: SupabaseClient,
+  userId: string,
+  plan: Plan
+): Promise<{ allowed: boolean; retryAfterSeconds: number }> {
+  const windowStart = subMinutes(new Date(), RATE_LIMIT.windowMinutes);
+
+  const { count, error } = await supabase
+    .from("bundles")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .gte("created_at", formatISO(windowStart));
+
+  if (error) {
+    throw new Error(`Failed to check bundle generate rate limit: ${error.message}`);
+  }
+
+  const used = count ?? 0;
+  return {
+    allowed: used < rateLimitMaxForPlan(plan),
+    retryAfterSeconds: RATE_LIMIT.windowMinutes * 60,
+  };
+}
+
 export class QuotaExceededError extends Error {
   constructor(message = "quota_exceeded") {
     super(message);
