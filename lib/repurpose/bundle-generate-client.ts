@@ -119,9 +119,16 @@ export function uploadToSignedUrl(params: {
         resolve();
         return;
       }
+      const body = (xhr.responseText || "").trim();
+      console.error("Signed upload failed", {
+        status: xhr.status,
+        body: body || null,
+      });
       reject(
         new BundleUploadError(
-          `Upload failed (${xhr.status}). Check your connection and try again.`
+          body
+            ? `Upload failed (${xhr.status}): ${body}`
+            : `Upload failed (${xhr.status}).`
         )
       );
     };
