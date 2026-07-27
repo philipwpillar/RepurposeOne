@@ -1,17 +1,21 @@
 import { claimNextClip, processClaimedClip } from "./clip-jobs";
 import { loadConfig } from "./config";
-import { runLifecycleSweep } from "./lifecycle";
+import { reclaimRenderingAfterMs, runLifecycleSweep } from "./lifecycle";
 import { renderClip } from "./render";
 import { createHealthServer } from "./server";
 import { createServiceClient } from "./supabase";
 import type { HealthSnapshot } from "./types";
 
-const LIFECYCLE_INTERVAL_MS = 60 * 60 * 1000;
-
 async function main(): Promise<void> {
   const config = loadConfig();
   const supabase = createServiceClient(config);
   const startedAt = Date.now();
+
+  // Run often enough to reclaim stuck renders soon after the 3× timeout margin.
+  const lifecycleIntervalMs = Math.min(
+    reclaimRenderingAfterMs(config.renderTimeoutMs) / 3,
+    10 * 60 * 1000
+  );
 
   let lastPollAt: string | null = null;
   let clipsRendered = 0;
@@ -77,7 +81,7 @@ async function main(): Promise<void> {
       lastError = message;
       console.error(`[lifecycle] ${message}`);
     });
-  }, LIFECYCLE_INTERVAL_MS);
+  }, lifecycleIntervalMs);
 
   runLifecycleSweep(supabase, config).catch((err) => {
     console.error(
@@ -86,7 +90,7 @@ async function main(): Promise<void> {
   });
 
   console.info(
-    `[worker] started poll=${config.pollIntervalMs}ms renderTimeout=${config.renderTimeoutMs}ms`
+    `[worker] started poll=${config.pollIntervalMs}ms renderTimeout=${config.renderTimeoutMs}ms lifecycle=${Math.round(lifecycleIntervalMs)}ms reclaimAfter=${reclaimRenderingAfterMs(config.renderTimeoutMs)}ms`
   );
 
   await pollOnce();

@@ -9,6 +9,13 @@ export const maxDuration = 60;
 const PENDING_ORPHAN_MAX_AGE_MS = 10 * 60 * 1000;
 
 /**
+ * Matches worker default: 3 × RENDER_TIMEOUT_MS (300000). Override with
+ * RENDER_TIMEOUT_MS on Vercel if the worker timeout is raised.
+ */
+const RENDERING_ORPHAN_MAX_AGE_MS =
+  3 * Number.parseInt(process.env.RENDER_TIMEOUT_MS ?? "300000", 10);
+
+/**
  * Distinguishable from generation failures / client aborts so ops can query:
  *   select * from repurposes where error_message like 'orphaned_pending:%'
  * Not exported — Next.js route modules may only export route handlers / config.
@@ -18,6 +25,9 @@ const ORPHANED_PENDING_ERROR =
 
 const ORPHANED_BUNDLE_ERROR =
   "orphaned_pending: settled by sweeper after 10m";
+
+const ORPHANED_RENDERING_ERROR =
+  "orphaned_rendering: reclaimed by sweeper after render timeout margin";
 
 function authorizeCron(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
@@ -36,13 +46,10 @@ function authorizeCron(request: Request): boolean {
 /**
  * GET /api/cron/sweep-pending-repurposes
  *
- * Settles stranded `repurposes` rows left in `pending` (e.g. client disconnect
- * on the non-streaming path before the row was updated to complete/failed).
- * Pending rows count toward monthly quota via DISTINCT generation_id — this
- * sweeper does not change that SQL; it only moves aged orphans to `failed`
- * so they stop consuming quota.
- *
- * Auth: Authorization: Bearer $CRON_SECRET (Vercel Cron injects this).
+ * Settles stranded `repurposes` / `bundles` orphans and reclaim stuck
+ * `bundle_clips.rendering` rows. Vercel Hobby only allows daily crons —
+ * schedule this endpoint more frequently via GitHub Actions (or Pro cron /
+ * external scheduler) using Authorization: Bearer $CRON_SECRET.
  */
 export async function GET(request: Request) {
   if (!authorizeCron(request)) {
@@ -113,11 +120,69 @@ export async function GET(request: Request) {
     );
   }
 
+  // H2 backup (also runs in the ffmpeg worker lifecycle). Does not touch
+  // bundles.updated_at for in-flight analyzing rows beyond the orphan settle above.
+  const renderingCutoff = Number.isFinite(RENDERING_ORPHAN_MAX_AGE_MS)
+    ? new Date(Date.now() - RENDERING_ORPHAN_MAX_AGE_MS).toISOString()
+    : new Date(Date.now() - 15 * 60 * 1000).toISOString();
+
+  const { data: stuckClips, error: stuckSelectError } = await admin
+    .from("bundle_clips")
+    .select("id, attempt_count, updated_at")
+    .eq("render_status", "rendering")
+    .lt("updated_at", renderingCutoff)
+    .limit(200);
+
+  if (stuckSelectError) {
+    console.error(
+      "sweep-pending-repurposes: stuck rendering select failed",
+      stuckSelectError
+    );
+    return NextResponse.json(
+      { error: "Failed to select stuck rendering clips" },
+      { status: 500 }
+    );
+  }
+
+  let clipsReclaimed = 0;
+  for (const clip of stuckClips ?? []) {
+    const terminal = (clip.attempt_count ?? 0) >= 2;
+    const { data: updated, error: reclaimError } = await admin
+      .from("bundle_clips")
+      .update({
+        render_status: terminal ? "failed" : "pending",
+        error_message: ORPHANED_RENDERING_ERROR,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", clip.id)
+      .eq("render_status", "rendering")
+      .eq("updated_at", clip.updated_at)
+      .select("id")
+      .maybeSingle();
+
+    if (reclaimError) {
+      console.error(
+        `sweep-pending-repurposes: reclaim failed for ${clip.id}`,
+        reclaimError
+      );
+      continue;
+    }
+    if (updated) clipsReclaimed += 1;
+  }
+
+  if (clipsReclaimed > 0) {
+    console.info(
+      `sweep-pending-repurposes: reclaimed ${clipsReclaimed} stuck rendering clip(s)`
+    );
+  }
+
   return NextResponse.json({
     ok: true,
     settled,
     bundles_settled: bundlesSettled,
+    clips_reclaimed: clipsReclaimed,
     cutoff: cutoffIso,
+    rendering_cutoff: renderingCutoff,
     error_message: ORPHANED_PENDING_ERROR,
   });
 }
