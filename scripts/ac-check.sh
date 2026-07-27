@@ -74,11 +74,12 @@ run_floor(){
   NOW_HEX=$(n '(text|bg|border|ring|fill|stroke|from|via|to|shadow|outline|placeholder|accent|caret|divide)-\[#' $A $C)
   assert "no NET Tailwind arbitrary hex added" "$NOW_HEX" le "$BASE_HEX"
   echo "── FENCE (assert only if the PR touches Studio) ──"
-  assert "class GenerateApiError"           "$(n 'class GenerateApiError' "$W")" eq 1
+  assert "GenerateApiError"                 "$(n 'GenerateApiError' "$W")" eq 8
   assert "callGenerateApi"                  "$(n 'callGenerateApi' "$W")" eq 3
   assert "callPhotoGenerateApi"             "$(n 'callPhotoGenerateApi' "$W")" eq 2
   assert "PhotoGenerateApiError"            "$(n 'PhotoGenerateApiError' "$W")" eq 2
   assert "setUsedCount(apiErr.usage.used)"  "$(n 'setUsedCount\(apiErr\.usage\.used\)' "$W")" eq 1
+  assert "setUsedCount(usage.used)"         "$(n 'setUsedCount\(usage\.used\)' "$W")" eq 3
 }
 run_0(){ echo "── PHASE 0 ──"
   assert "@vercel/analytics+speed-insights" "$(n '@vercel/analytics|@vercel/speed-insights' app/layout.tsx package.json)" ge 2

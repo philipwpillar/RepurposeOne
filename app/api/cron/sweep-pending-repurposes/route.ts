@@ -9,11 +9,11 @@ export const maxDuration = 60;
 const PENDING_ORPHAN_MAX_AGE_MS = 10 * 60 * 1000;
 
 /**
- * Matches worker default: 3 × RENDER_TIMEOUT_MS (300000). Override with
- * RENDER_TIMEOUT_MS on Vercel if the worker timeout is raised.
+ * Backup only — the ffmpeg worker reclaims accurately at 3× its own
+ * RENDER_TIMEOUT_MS. That variable lives on Railway, not Vercel, so deriving
+ * it here would silently drift. Deliberately generous.
  */
-const RENDERING_ORPHAN_MAX_AGE_MS =
-  3 * Number.parseInt(process.env.RENDER_TIMEOUT_MS ?? "300000", 10);
+const RENDERING_ORPHAN_MAX_AGE_MS = 60 * 60 * 1000;
 
 /**
  * Distinguishable from generation failures / client aborts so ops can query:
@@ -120,11 +120,11 @@ export async function GET(request: Request) {
     );
   }
 
-  // H2 backup (also runs in the ffmpeg worker lifecycle). Does not touch
-  // bundles.updated_at for in-flight analyzing rows beyond the orphan settle above.
-  const renderingCutoff = Number.isFinite(RENDERING_ORPHAN_MAX_AGE_MS)
-    ? new Date(Date.now() - RENDERING_ORPHAN_MAX_AGE_MS).toISOString()
-    : new Date(Date.now() - 15 * 60 * 1000).toISOString();
+  // H2 backup (also runs in the ffmpeg worker lifecycle). Fixed 60m threshold —
+  // do not derive from Railway's RENDER_TIMEOUT_MS (absent on Vercel).
+  const renderingCutoff = new Date(
+    Date.now() - RENDERING_ORPHAN_MAX_AGE_MS
+  ).toISOString();
 
   const { data: stuckClips, error: stuckSelectError } = await admin
     .from("bundle_clips")
