@@ -9,6 +9,11 @@ function metaObject(value: unknown): Record<string, unknown> {
   return {};
 }
 
+function truncateErrorTail(message: string, maxLen = 500): string {
+  if (message.length <= maxLen) return message;
+  return message.slice(-maxLen);
+}
+
 export async function claimNextClip(
   supabase: SupabaseClient
 ): Promise<BundleClipRow | null> {
@@ -73,7 +78,7 @@ export async function markClipFailed(
     .from("bundle_clips")
     .update({
       render_status: "failed",
-      error_message: message.slice(0, 500),
+      error_message: truncateErrorTail(message),
       updated_at: new Date().toISOString(),
     })
     .eq("id", clipId);
@@ -117,7 +122,7 @@ export async function handleRenderFailure(
     .from("bundle_clips")
     .update({
       render_status: "pending",
-      error_message: message.slice(0, 500),
+      error_message: truncateErrorTail(message),
       updated_at: new Date().toISOString(),
     })
     .eq("id", clip.id);
