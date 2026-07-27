@@ -23,6 +23,33 @@ function isAuthPath(pathname: string): boolean {
   );
 }
 
+/**
+ * Resolve a user-supplied `redirect` param to a same-origin URL.
+ *
+ * Returns a URL (not a string) deliberately: returning a path string and
+ * letting the caller re-resolve it reintroduces the bug — `/..//evil.com`
+ * normalises to pathname `//evil.com`, which passes an origin check here
+ * and then becomes protocol-relative at `new URL(dest, base)`.
+ */
+function safeRedirectUrl(
+  candidate: string | null,
+  requestUrl: string,
+  origin: string
+): URL {
+  const fallback = new URL("/dashboard", requestUrl);
+  if (!candidate || !candidate.startsWith("/") || candidate.startsWith("//")) {
+    return fallback;
+  }
+  try {
+    const resolved = new URL(candidate, requestUrl);
+    if (resolved.origin !== origin) return fallback;
+    if (resolved.pathname.startsWith("//")) return fallback;
+    return resolved;
+  } catch {
+    return fallback;
+  }
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -61,9 +88,13 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (isAuthPath(pathname) && user) {
-    const redirect = request.nextUrl.searchParams.get("redirect");
-    const destination = redirect && redirect.startsWith("/") ? redirect : "/dashboard";
-    return NextResponse.redirect(new URL(destination, request.url));
+    return NextResponse.redirect(
+      safeRedirectUrl(
+        request.nextUrl.searchParams.get("redirect"),
+        request.url,
+        request.nextUrl.origin
+      )
+    );
   }
 
   return supabaseResponse;
