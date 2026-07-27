@@ -69,31 +69,41 @@ export async function loadClipAsset(
   return (data as BundleAssetRow | null) ?? null;
 }
 
+/**
+ * Terminal writes CAS on render_status=rendering + claimed updated_at so a
+ * reclaim sweep (or second replica) cannot be overwritten by a stale renderer.
+ */
 export async function markClipFailed(
   supabase: SupabaseClient,
-  clipId: string,
+  clip: BundleClipRow,
   message: string
-): Promise<void> {
-  const { error } = await supabase
+): Promise<boolean> {
+  const { data, error } = await supabase
     .from("bundle_clips")
     .update({
       render_status: "failed",
       error_message: truncateErrorTail(message),
       updated_at: new Date().toISOString(),
     })
-    .eq("id", clipId);
+    .eq("id", clip.id)
+    .eq("render_status", "rendering")
+    .eq("updated_at", clip.updated_at)
+    .select("id")
+    .maybeSingle();
 
   if (error) {
-    throw new Error(`Failed to mark clip ${clipId} failed: ${error.message}`);
+    throw new Error(`Failed to mark clip ${clip.id} failed: ${error.message}`);
   }
+
+  return Boolean(data);
 }
 
 export async function markClipComplete(
   supabase: SupabaseClient,
-  clipId: string,
+  clip: BundleClipRow,
   outputStoragePath: string
-): Promise<void> {
-  const { error } = await supabase
+): Promise<boolean> {
+  const { data, error } = await supabase
     .from("bundle_clips")
     .update({
       render_status: "complete",
@@ -101,11 +111,17 @@ export async function markClipComplete(
       error_message: null,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", clipId);
+    .eq("id", clip.id)
+    .eq("render_status", "rendering")
+    .eq("updated_at", clip.updated_at)
+    .select("id")
+    .maybeSingle();
 
   if (error) {
-    throw new Error(`Failed to mark clip ${clipId} complete: ${error.message}`);
+    throw new Error(`Failed to mark clip ${clip.id} complete: ${error.message}`);
   }
+
+  return Boolean(data);
 }
 
 export async function handleRenderFailure(
@@ -114,21 +130,36 @@ export async function handleRenderFailure(
   message: string
 ): Promise<void> {
   if (clip.attempt_count >= 2) {
-    await markClipFailed(supabase, clip.id, message);
+    const wrote = await markClipFailed(supabase, clip, message);
+    if (!wrote) {
+      console.info(
+        `[clip ${clip.id}] skipped failed write — claim no longer owned`
+      );
+    }
     return;
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("bundle_clips")
     .update({
       render_status: "pending",
       error_message: truncateErrorTail(message),
       updated_at: new Date().toISOString(),
     })
-    .eq("id", clip.id);
+    .eq("id", clip.id)
+    .eq("render_status", "rendering")
+    .eq("updated_at", clip.updated_at)
+    .select("id")
+    .maybeSingle();
 
   if (error) {
     throw new Error(`Failed to reset clip ${clip.id} to pending: ${error.message}`);
+  }
+
+  if (!data) {
+    console.info(
+      `[clip ${clip.id}] skipped pending reset — claim no longer owned`
+    );
   }
 }
 
@@ -164,8 +195,14 @@ export async function processClaimedClip(params: {
   const preflightError = await preflightClip(supabase, clip, asset);
 
   if (preflightError) {
-    await markClipFailed(supabase, clip.id, preflightError);
-    console.info(`[clip ${clip.id}] preflight failed: ${preflightError}`);
+    const wrote = await markClipFailed(supabase, clip, preflightError);
+    if (!wrote) {
+      console.info(
+        `[clip ${clip.id}] preflight failed but claim lost: ${preflightError}`
+      );
+    } else {
+      console.info(`[clip ${clip.id}] preflight failed: ${preflightError}`);
+    }
     return false;
   }
 
@@ -175,7 +212,13 @@ export async function processClaimedClip(params: {
 
   try {
     const outputPath = await renderClip({ supabase, config, clip, asset });
-    await markClipComplete(supabase, clip.id, outputPath);
+    const wrote = await markClipComplete(supabase, clip, outputPath);
+    if (!wrote) {
+      console.info(
+        `[clip ${clip.id}] render finished but claim no longer owned — skipping complete`
+      );
+      return false;
+    }
     console.info(`[clip ${clip.id}] render complete → ${outputPath}`);
     return true;
   } catch (err) {

@@ -1,0 +1,32 @@
+# Hobby Vercel only allows one cron fire per day. This workflow hits the
+# existing sweep endpoint every 10 minutes so pending/analyzing orphans and
+# stuck rendering clips are settled without coupling Studio billing recovery
+# to the Railway ffmpeg worker.
+#
+# Required repo secret: CRON_SECRET (same value as Vercel CRON_SECRET)
+# Required repo variable (or hardcode): APP_URL e.g. https://repurpose-one-seven.vercel.app
+name: Sweep pending orphans
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call sweep endpoint
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          APP_URL: ${{ vars.APP_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "Missing secrets.CRON_SECRET"
+            exit 1
+          fi
+          BASE_URL="${APP_URL:-https://repurpose-one-seven.vercel.app}"
+          curl -fsS -X GET \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${BASE_URL%/}/api/cron/sweep-pending-repurposes"
