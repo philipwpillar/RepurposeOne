@@ -1,5 +1,7 @@
 -- Paginated library source groups (M3). Avoids loading every complete
 -- repurpose row into the grouped Library view.
+-- Preview content is selected per group so the page does not need a second
+-- hydrate query that can starve later groups under a global LIMIT.
 
 create or replace function public.count_library_source_groups(p_user_id uuid)
 returns bigint
@@ -23,7 +25,10 @@ begin
 end;
 $$;
 
-create or replace function public.list_library_source_groups(
+-- DROP required: return shape changed (added preview_content).
+drop function if exists public.list_library_source_groups(uuid, integer, integer);
+
+create function public.list_library_source_groups(
   p_user_id uuid,
   p_limit integer,
   p_offset integer
@@ -32,7 +37,8 @@ returns table (
   source_hash text,
   latest_created_at timestamptz,
   formats text[],
-  repurpose_count integer
+  repurpose_count integer,
+  preview_content text
 )
 language plpgsql
 security definer
@@ -57,7 +63,8 @@ begin
     r.source_hash,
     max(r.created_at) as latest_created_at,
     array_agg(distinct r.target_format order by r.target_format) as formats,
-    count(*)::integer as repurpose_count
+    count(*)::integer as repurpose_count,
+    (array_agg(r.input_content order by r.created_at desc))[1] as preview_content
   from public.repurposes r
   where r.user_id = p_user_id
     and r.status = 'complete'

@@ -44,12 +44,6 @@ interface SourceGroupCard extends SourceGroupIndex {
   preview: string;
 }
 
-type HydrateRow = {
-  source_hash: string | null;
-  input_content: string;
-  created_at: string;
-};
-
 function sourcePreview(content: string): string {
   const trimmed = content.trim().replace(/\s+/g, " ");
   if (!trimmed) return "No preview";
@@ -131,6 +125,8 @@ export default async function LibraryPage({
     }
   } else {
     // Paginated group index via RPCs — never loads full history into Node.
+    // Preview comes from the list RPC (per-hash latest input_content) so a
+    // global hydrate LIMIT cannot starve later groups.
     const { data: groupCount, error: countError } = await supabase.rpc(
       "count_library_source_groups",
       { p_user_id: user.id }
@@ -163,40 +159,16 @@ export default async function LibraryPage({
       latest_created_at: string;
       formats: TargetFormat[];
       repurpose_count: number;
+      preview_content: string | null;
     };
 
-    const pageSlice: SourceGroupIndex[] = ((groupRows ?? []) as GroupRpcRow[]).map(
-      (row) => ({
+    sourceGroups = ((groupRows ?? []) as GroupRpcRow[]).map((row) => {
+      const content = row.preview_content ?? "";
+      return {
         sourceHash: row.source_hash,
         latestCreatedAt: row.latest_created_at,
         formats: row.formats ?? [],
         repurposeCount: row.repurpose_count,
-      })
-    );
-    const visibleHashes = pageSlice.map((g) => g.sourceHash);
-
-    const hydrateByHash = new Map<string, HydrateRow>();
-    if (visibleHashes.length > 0) {
-      const { data: hydrateRows } = await supabase
-        .from("repurposes")
-        .select("source_hash, input_content, created_at")
-        .in("source_hash", visibleHashes)
-        .eq("user_id", user.id)
-        .eq("status", "complete")
-        .order("created_at", { ascending: false })
-        .limit(visibleHashes.length * 4);
-
-      for (const row of (hydrateRows ?? []) as HydrateRow[]) {
-        if (!row.source_hash || hydrateByHash.has(row.source_hash)) continue;
-        hydrateByHash.set(row.source_hash, row);
-      }
-    }
-
-    sourceGroups = pageSlice.map((g) => {
-      const hydrated = hydrateByHash.get(g.sourceHash);
-      const content = hydrated?.input_content ?? "";
-      return {
-        ...g,
         title: deriveSourceTitle(content),
         preview: sourcePreview(content),
       };
