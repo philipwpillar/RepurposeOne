@@ -5,7 +5,11 @@ import path from "node:path";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { WorkerConfig } from "./config";
 import { buildOutputStoragePath, isSafeStoragePath } from "./paths";
-import { prewrapOverlayText } from "./text";
+import {
+  OVERLAY_BOX_BORDER_W,
+  OVERLAY_FONT_SIZE,
+  prewrapOverlayText,
+} from "./text";
 import type { BundleAssetRow, BundleClipRow } from "./types";
 
 function escapeFilterPath(filePath: string): string {
@@ -160,7 +164,7 @@ export async function renderClip(params: {
       hdrTonemap,
       "scale=1080:1920:force_original_aspect_ratio=increase",
       "crop=1080:1920",
-      `drawtext=fontfile=${fontfile}:textfile=${textfile}:fontsize=80:fontcolor=white:line_spacing=8:box=1:boxcolor=0x0A0F2E@0.65:boxborderw=18:x=(w-text_w)/2:y=h*0.72`,
+      `drawtext=fontfile=${fontfile}:textfile=${textfile}:fontsize=${OVERLAY_FONT_SIZE}:fontcolor=white:line_spacing=8:box=1:boxcolor=0x0A0F2E@0.65:boxborderw=${OVERLAY_BOX_BORDER_W}:x=max(0\\,(w-text_w)/2):y=h*0.72`,
     ].join(",");
 
     await runCommand(
