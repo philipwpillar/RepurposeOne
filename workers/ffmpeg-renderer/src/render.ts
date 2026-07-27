@@ -40,16 +40,17 @@ function runCommand(
       reject(err);
     });
 
-    child.on("close", (code) => {
+    child.on("close", (code, signal) => {
       clearTimeout(timer);
       if (timedOut) {
         reject(new Error(`${command} timed out after ${timeoutMs}ms`));
         return;
       }
       if (code !== 0) {
+        const output = stderr.trim() || stdout.trim();
         reject(
           new Error(
-            `${command} exited with code ${code}: ${stderr.trim() || stdout.trim()}`
+            `${command} exited with code ${code} signal ${signal ?? "none"}: ${output}`
           )
         );
         return;
