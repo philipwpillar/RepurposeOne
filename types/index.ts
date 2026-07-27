@@ -9,6 +9,7 @@ import {
   PHOTO_CTA_MAX_LENGTH,
   PHOTO_ACCEPTED_MIMES,
 } from "@/lib/image/constants";
+import { VIDEO_MAX_BYTES } from "@/lib/video/constants";
 
 // ---------------------------------------------------------------------------
 // Plan & usage
@@ -436,7 +437,7 @@ export type BundleGenerateErrorResponse = z.infer<
 /** Brief 3a — prepare signed uploads before generate. */
 export const BundlePrepareVideoSchema = z.object({
   filename: z.string().min(1).max(255),
-  size_bytes: z.number().int().positive().max(500 * 1024 * 1024),
+  size_bytes: z.number().int().positive().max(VIDEO_MAX_BYTES),
   duration_s: z.number().min(15).max(180),
 });
 

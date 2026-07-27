@@ -14,6 +14,10 @@ import {
   videoMimeFromFilename,
 } from "@/lib/video/storage-path";
 import {
+  VIDEO_MAX_BYTES,
+  VIDEO_TOO_LARGE_MESSAGE,
+} from "@/lib/video/constants";
+import {
   BundlePrepareRequestSchema,
   type BundlePrepareErrorResponse,
 } from "@/types";
@@ -67,6 +71,15 @@ export async function POST(request: Request) {
   }
 
   const { videos } = parsed.data;
+
+  for (const video of videos) {
+    if (video.size_bytes > VIDEO_MAX_BYTES) {
+      return errorResponse(400, {
+        error: VIDEO_TOO_LARGE_MESSAGE,
+        code: "validation_error",
+      });
+    }
+  }
 
   let plan;
   try {

@@ -326,11 +326,28 @@ export async function runBundleGeneration(
   });
   addTokens(totals, stage2);
 
+  if (videos.length > 0) {
+    console.info(
+      `[bundle] stage-2 raw clip_specs: ${stage2.data.clip_specs.length}`,
+      stage2.data.clip_specs.map((s) => ({
+        video_index: s.video_index,
+        start_s: s.start_s,
+        end_s: s.end_s,
+      }))
+    );
+  }
+
   const durations = videos.map((v) => v.duration_s);
   const clip_specs =
     videos.length > 0
       ? applyClipSpecBackstops(stage2.data.clip_specs, durations)
       : [];
+
+  if (videos.length > 0 && stage2.data.clip_specs.length > 0 && clip_specs.length === 0) {
+    console.warn(
+      "[bundle] stage-2 proposed clip_specs but backstops dropped all windows"
+    );
+  }
 
   const pack: BundlePack = {
     ...stage2.data,

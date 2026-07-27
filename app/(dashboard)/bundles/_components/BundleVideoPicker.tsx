@@ -5,6 +5,7 @@ import { Film, Loader2, X } from "lucide-react";
 import { buildContactSheets } from "@/lib/video/contact-sheets";
 import {
   VIDEO_MAX_BYTES,
+  VIDEO_MAX_MB,
   VIDEO_TOO_LARGE_MESSAGE,
   VIDEO_TOO_LONG_MESSAGE,
   VIDEO_UNSUPPORTED_MESSAGE,
@@ -124,7 +125,7 @@ export default function BundleVideoPicker({
               : "Choose video"}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          15s–3 min · ≤500 MB · H.264 on desktop; HEVC on iPhone
+          15s–3 min · ≤{VIDEO_MAX_MB} MB · H.264 on desktop; HEVC on iPhone
         </p>
       </button>
     </div>
