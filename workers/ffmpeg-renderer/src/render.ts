@@ -154,7 +154,10 @@ export async function renderClip(params: {
 
     const fontfile = escapeFilterPath(config.fontPath);
     const textfile = escapeFilterPath(overlayPath);
+    const hdrTonemap =
+      "zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p";
     const vf = [
+      hdrTonemap,
       "scale=1080:1920:force_original_aspect_ratio=increase",
       "crop=1080:1920",
       `drawtext=fontfile=${fontfile}:textfile=${textfile}:fontsize=80:fontcolor=white:line_spacing=8:box=1:boxcolor=0x0A0F2E@0.65:boxborderw=18:x=(w-text_w)/2:y=h*0.72`,
@@ -172,12 +175,16 @@ export async function renderClip(params: {
         sourcePath,
         "-vf",
         vf,
+        "-threads",
+        "1",
         "-c:v",
         "libx264",
         "-preset",
-        "medium",
+        "veryfast",
         "-crf",
         "20",
+        "-x264-params",
+        "threads=1:lookahead-threads=1:rc-lookahead=10",
         "-pix_fmt",
         "yuv420p",
         "-r",
