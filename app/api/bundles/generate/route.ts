@@ -12,12 +12,14 @@ import { resolveDefaultBrandVoice } from "@/lib/repurpose/brand-voice";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
+  checkBundleGenerateRateLimit,
   checkRateLimit,
   checkUsageLimit,
   getUpgradeMessage,
   getUserPlan,
   QuotaExceededError,
   reserveBundleUnderCap,
+  reservePendingRepurpose,
 } from "@/lib/usage";
 import { bundleMediaObjectExists } from "@/lib/video/storage-verify";
 import {
@@ -231,6 +233,29 @@ export async function POST(request: Request) {
     });
   }
 
+  let bundleRateCheck;
+  try {
+    bundleRateCheck = await checkBundleGenerateRateLimit(
+      supabase,
+      user.id,
+      plan
+    );
+  } catch (err) {
+    console.error("Bundle generate rate limit check failed:", err);
+    return errorResponse(500, {
+      error: "Failed to check rate limits",
+      code: "internal_error",
+    });
+  }
+
+  if (!bundleRateCheck.allowed) {
+    return errorResponse(429, {
+      error: `Too many Moment Bundle requests. Please wait ${Math.ceil(bundleRateCheck.retryAfterSeconds / 60)} minutes before trying again.`,
+      code: "rate_limited",
+      retry_after_seconds: bundleRateCheck.retryAfterSeconds,
+    });
+  }
+
   let usageCheck;
   try {
     usageCheck = await checkUsageLimit(supabase, user.id);
@@ -424,6 +449,78 @@ export async function POST(request: Request) {
     assets = insertedAssets;
   }
 
+  // Reserve generation quota under advisory lock BEFORE vision spend.
+  // Shared generation_id preserves DISTINCT billing unit (idempotent count).
+  const reservedByFormat = new Map<TargetFormat, string>();
+  const reservedIds: string[] = [];
+
+  const failReservedAndBundle = async (message: string) => {
+    if (reservedIds.length > 0) {
+      await admin
+        .from("repurposes")
+        .update({
+          status: "failed",
+          error_message: message,
+        })
+        .in("id", reservedIds)
+        .eq("user_id", user.id);
+    }
+    await admin
+      .from("bundles")
+      .update({
+        status: "failed",
+        error_message: message,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", bundle.id)
+      .eq("user_id", user.id);
+  };
+
+  try {
+    for (const targetFormat of formats) {
+      const reserved = await reservePendingRepurpose(admin, {
+        userId: user.id,
+        limit: usageCheck.usage.limit,
+        inputType: "paste",
+        inputContent: requestData.context,
+        brandVoiceId,
+        targetFormat,
+        generationId: bundle.generation_id,
+      });
+      reservedIds.push(reserved.id);
+      reservedByFormat.set(targetFormat, reserved.id);
+    }
+
+    if (reservedIds.length > 0) {
+      const { error: linkError } = await admin
+        .from("repurposes")
+        .update({ bundle_id: bundle.id })
+        .in("id", reservedIds)
+        .eq("user_id", user.id);
+      if (linkError) {
+        throw new Error(linkError.message);
+      }
+    }
+  } catch (err) {
+    if (err instanceof QuotaExceededError) {
+      await failReservedAndBundle("quota_exceeded");
+      return errorResponse(402, {
+        error: "Monthly repurpose limit reached",
+        code: "limit_exceeded",
+        usage: usageCheck.usage,
+        upgrade_message: getUpgradeMessage(usageCheck.usage.plan),
+      });
+    }
+    console.error("Failed to reserve bundle format rows:", err);
+    await failReservedAndBundle(
+      err instanceof Error ? err.message : "Failed to reserve formats"
+    );
+    return errorResponse(500, {
+      error: "Failed to reserve generation quota",
+      code: "internal_error",
+    });
+  }
+
   let orchestration;
   try {
     orchestration = await runBundleGeneration({
@@ -438,15 +535,9 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     const message = toUserFacingBundleError(err);
-    await admin
-      .from("bundles")
-      .update({
-        status: "failed",
-        error_message: err instanceof Error ? err.message : message,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", bundle.id)
-      .eq("user_id", user.id);
+    await failReservedAndBundle(
+      err instanceof Error ? err.message : message
+    );
 
     console.error(`Bundle analysis failed for ${bundle.id}:`, err);
 
@@ -626,14 +717,22 @@ export async function POST(request: Request) {
 
         if (clipsInsertError || !insertedClips) {
           console.error("Failed to insert bundle_clips:", clipsInsertError);
-        } else {
-          responseClipSpecs = pack.clip_specs.map((spec, index) => {
-            const rowPos = clipSpecIndexes.indexOf(index);
-            if (rowPos < 0) return spec;
-            const clipId = insertedClips[rowPos]?.id as string | undefined;
-            return clipId ? { ...spec, clip_id: clipId } : spec;
+          await failReservedAndBundle(
+            clipsInsertError?.message ?? "Failed to persist bundle clips"
+          );
+          return errorResponse(502, {
+            error:
+              "We couldn't save your clip suggestions. Please try again — this attempt won't count toward your monthly limit.",
+            code: "generation_failed",
           });
         }
+
+        responseClipSpecs = pack.clip_specs.map((spec, index) => {
+          const rowPos = clipSpecIndexes.indexOf(index);
+          if (rowPos < 0) return spec;
+          const clipId = insertedClips[rowPos]?.id as string | undefined;
+          return clipId ? { ...spec, clip_id: clipId } : spec;
+        });
       }
     }
   } else if (pack.clip_specs.length > 0) {
@@ -648,6 +747,14 @@ export async function POST(request: Request) {
 
   const inputContent = `${pack.post_brief}\n\n${requestData.context}`;
 
+  if (reservedIds.length > 0) {
+    await admin
+      .from("repurposes")
+      .update({ input_content: inputContent })
+      .in("id", reservedIds)
+      .eq("user_id", user.id);
+  }
+
   const formatOutcomes = await Promise.all(
     formats.map(async (targetFormat) => {
       const exemplarsText = await fetchVoiceExemplarsText(
@@ -656,25 +763,10 @@ export async function POST(request: Request) {
         targetFormat
       );
 
-      const { data: repurpose, error: insertError } = await admin
-        .from("repurposes")
-        .insert({
-          user_id: user.id,
-          input_type: "paste",
-          input_content: inputContent,
-          brand_voice_id: brandVoiceId,
-          target_format: targetFormat,
-          status: "pending",
-          generation_id: bundle.generation_id,
-          bundle_id: bundle.id,
-        })
-        .select("id")
-        .single();
-
-      if (insertError || !repurpose) {
+      const repurposeId = reservedByFormat.get(targetFormat);
+      if (!repurposeId) {
         console.error(
-          `Failed to insert repurpose for format ${targetFormat}:`,
-          insertError
+          `Missing reserved repurpose for format ${targetFormat} on bundle ${bundle.id}`
         );
         return null;
       }
@@ -698,7 +790,7 @@ export async function POST(request: Request) {
             completion_tokens: result.completionTokens ?? null,
             model: result.model,
           })
-          .eq("id", repurpose.id)
+          .eq("id", repurposeId)
           .eq("user_id", user.id);
 
         if (updateError) {
@@ -707,7 +799,7 @@ export async function POST(request: Request) {
 
         return {
           result: {
-            id: repurpose.id,
+            id: repurposeId,
             target_format: targetFormat,
             status: "complete" as const,
             output: result.output,
@@ -727,7 +819,7 @@ export async function POST(request: Request) {
             status: "failed",
             error_message: message,
           })
-          .eq("id", repurpose.id)
+          .eq("id", repurposeId)
           .eq("user_id", user.id);
 
         console.error(
@@ -737,7 +829,7 @@ export async function POST(request: Request) {
 
         return {
           result: {
-            id: repurpose.id,
+            id: repurposeId,
             target_format: targetFormat,
             status: "failed" as const,
             output: null,
