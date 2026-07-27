@@ -44,13 +44,6 @@ interface SourceGroupCard extends SourceGroupIndex {
   preview: string;
 }
 
-type IndexRow = {
-  id: string;
-  source_hash: string | null;
-  created_at: string;
-  target_format: TargetFormat;
-};
-
 type HydrateRow = {
   source_hash: string | null;
   input_content: string;
@@ -137,53 +130,61 @@ export default async function LibraryPage({
       flatItems = (data ?? []) as FlatLibraryItem[];
     }
   } else {
-    // Query 1 — light group index (no input_content / output).
-    const { data: indexRows } = await supabase
-      .from("repurposes")
-      .select("id, source_hash, created_at, target_format")
-      .eq("user_id", user.id)
-      .eq("status", "complete")
-      .order("created_at", { ascending: false });
+    // Paginated group index via RPCs — never loads full history into Node.
+    const { data: groupCount, error: countError } = await supabase.rpc(
+      "count_library_source_groups",
+      { p_user_id: user.id }
+    );
 
-    const groups = new Map<string, SourceGroupIndex>();
-    for (const item of (indexRows ?? []) as IndexRow[]) {
-      const hash = item.source_hash;
-      if (!hash) continue;
-      const existing = groups.get(hash);
-      if (existing) {
-        existing.repurposeCount += 1;
-        if (!existing.formats.includes(item.target_format)) {
-          existing.formats.push(item.target_format);
-        }
-      } else {
-        groups.set(hash, {
-          sourceHash: hash,
-          latestCreatedAt: item.created_at,
-          formats: [item.target_format],
-          repurposeCount: 1,
-        });
-      }
+    if (countError) {
+      console.error("count_library_source_groups failed:", countError);
     }
 
-    const ordered = Array.from(groups.values());
-    totalItems = ordered.length;
+    totalItems = typeof groupCount === "number" ? groupCount : Number(groupCount) || 0;
     totalPages = Math.max(1, Math.ceil(totalItems / LIBRARY_PAGE_SIZE));
     page = clampLibraryPage(pageParam, totalPages);
 
-    const start = (page - 1) * LIBRARY_PAGE_SIZE;
-    const pageSlice = ordered.slice(start, start + LIBRARY_PAGE_SIZE);
+    const offset = (page - 1) * LIBRARY_PAGE_SIZE;
+    const { data: groupRows, error: groupError } = await supabase.rpc(
+      "list_library_source_groups",
+      {
+        p_user_id: user.id,
+        p_limit: LIBRARY_PAGE_SIZE,
+        p_offset: offset,
+      }
+    );
+
+    if (groupError) {
+      console.error("list_library_source_groups failed:", groupError);
+    }
+
+    type GroupRpcRow = {
+      source_hash: string;
+      latest_created_at: string;
+      formats: TargetFormat[];
+      repurpose_count: number;
+    };
+
+    const pageSlice: SourceGroupIndex[] = ((groupRows ?? []) as GroupRpcRow[]).map(
+      (row) => ({
+        sourceHash: row.source_hash,
+        latestCreatedAt: row.latest_created_at,
+        formats: row.formats ?? [],
+        repurposeCount: row.repurpose_count,
+      })
+    );
     const visibleHashes = pageSlice.map((g) => g.sourceHash);
 
     const hydrateByHash = new Map<string, HydrateRow>();
     if (visibleHashes.length > 0) {
-      // Query 2 — hydrate visible page only.
       const { data: hydrateRows } = await supabase
         .from("repurposes")
         .select("source_hash, input_content, created_at")
         .in("source_hash", visibleHashes)
         .eq("user_id", user.id)
         .eq("status", "complete")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(visibleHashes.length * 4);
 
       for (const row of (hydrateRows ?? []) as HydrateRow[]) {
         if (!row.source_hash || hydrateByHash.has(row.source_hash)) continue;
