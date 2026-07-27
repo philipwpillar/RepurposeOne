@@ -58,6 +58,10 @@ function toUserFacingBundleError(err: unknown): string {
     return "Bundle generation timed out. Try again with fewer photos — this attempt won't count toward your monthly limit.";
   }
 
+  if (msg.includes("429") || msg.includes("provider returned error")) {
+    return "The AI service is temporarily busy. Please wait a minute and try again.";
+  }
+
   if (msg.includes("rate") && msg.includes("limit")) {
     return "The AI service is temporarily busy. Please wait a minute and try again.";
   }

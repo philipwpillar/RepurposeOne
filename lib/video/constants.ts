@@ -2,7 +2,14 @@
 
 export const VIDEO_MIN_DURATION_S = 15;
 export const VIDEO_MAX_DURATION_S = 180;
-export const VIDEO_MAX_BYTES = 500 * 1024 * 1024;
+
+/** Client + server must share this env (NEXT_PUBLIC_ prefix). Default 45 MB. */
+export const VIDEO_MAX_MB = Number.parseInt(
+  process.env.NEXT_PUBLIC_VIDEO_MAX_MB ?? "45",
+  10
+);
+
+export const VIDEO_MAX_BYTES = VIDEO_MAX_MB * 1024 * 1024;
 
 /** Longest edge for each sampled frame tile (sheet cell size). */
 export const FRAME_MAX_EDGE_PX = 340;
@@ -18,8 +25,7 @@ export const SHEET_JPEG_QUALITY = 0.7;
 
 export const SEEK_TIMEOUT_MS = 10_000;
 
-export const VIDEO_TOO_LARGE_MESSAGE =
-  "This video is too large (max 500 MB). Export at 1080p and retry.";
+export const VIDEO_TOO_LARGE_MESSAGE = `This video is too large (max ${VIDEO_MAX_MB} MB). Export at 1080p and retry.`;
 
 export const VIDEO_TOO_LONG_MESSAGE =
   "This video is too long (max 3 minutes). Trim it and try again.";

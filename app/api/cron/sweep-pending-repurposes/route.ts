@@ -16,6 +16,9 @@ const PENDING_ORPHAN_MAX_AGE_MS = 10 * 60 * 1000;
 const ORPHANED_PENDING_ERROR =
   "orphaned_pending: settled by sweeper after 10m";
 
+const ORPHANED_BUNDLE_ERROR =
+  "orphaned_pending: settled by sweeper after 10m";
+
 function authorizeCron(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
   if (!secret) return false;
@@ -84,9 +87,36 @@ export async function GET(request: Request) {
     );
   }
 
+  const { data: bundleData, error: bundleError } = await admin
+    .from("bundles")
+    .update({
+      status: "failed",
+      error_message: ORPHANED_BUNDLE_ERROR,
+      updated_at: new Date().toISOString(),
+    })
+    .in("status", ["pending", "analyzing"])
+    .lt("created_at", cutoffIso)
+    .select("id");
+
+  if (bundleError) {
+    console.error("sweep-pending-repurposes: bundle update failed", bundleError);
+    return NextResponse.json(
+      { error: "Failed to sweep orphaned bundles" },
+      { status: 500 }
+    );
+  }
+
+  const bundlesSettled = bundleData?.length ?? 0;
+  if (bundlesSettled > 0) {
+    console.info(
+      `sweep-pending-repurposes: settled ${bundlesSettled} orphaned bundle(s) older than ${cutoffIso}`
+    );
+  }
+
   return NextResponse.json({
     ok: true,
     settled,
+    bundles_settled: bundlesSettled,
     cutoff: cutoffIso,
     error_message: ORPHANED_PENDING_ERROR,
   });
