@@ -23,23 +23,24 @@ function isAuthPath(pathname: string): boolean {
   );
 }
 
-/** Same-origin path only — rejects protocol-relative `//evil.com` open redirects. */
-function safeInternalPath(
+/** Same-origin redirect only — return a resolved URL so callers never re-resolve. */
+function safeRedirectUrl(
   candidate: string | null,
   requestUrl: string,
   origin: string
-): string {
+): URL {
+  const fallback = new URL("/dashboard", requestUrl);
   if (!candidate || !candidate.startsWith("/") || candidate.startsWith("//")) {
-    return "/dashboard";
+    return fallback;
   }
   try {
     const resolved = new URL(candidate, requestUrl);
-    if (resolved.origin !== origin) {
-      return "/dashboard";
-    }
-    return `${resolved.pathname}${resolved.search}${resolved.hash}`;
+    if (resolved.origin !== origin) return fallback;
+    // After normalisation, pathname can become "//evil.com" while origin still matches.
+    if (resolved.pathname.startsWith("//")) return fallback;
+    return resolved;
   } catch {
-    return "/dashboard";
+    return fallback;
   }
 }
 
@@ -81,12 +82,13 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (isAuthPath(pathname) && user) {
-    const destination = safeInternalPath(
-      request.nextUrl.searchParams.get("redirect"),
-      request.url,
-      request.nextUrl.origin
+    return NextResponse.redirect(
+      safeRedirectUrl(
+        request.nextUrl.searchParams.get("redirect"),
+        request.url,
+        request.nextUrl.origin
+      )
     );
-    return NextResponse.redirect(new URL(destination, request.url));
   }
 
   return supabaseResponse;
