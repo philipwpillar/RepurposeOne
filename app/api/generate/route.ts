@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { generateRepurpose, generateRepurposeFromImage } from "@/lib/ai/generate";
 import { fetchVoiceExemplarsText } from "@/lib/ai/exemplars";
 import { AI_CONFIG, planAllowsVision } from "@/lib/config";
@@ -341,6 +342,7 @@ export async function POST(request: Request) {
       .eq("user_id", user.id);
 
     console.error(`Generation failed for ${repurpose.id}:`, err);
+    Sentry.captureException(err);
 
     return errorResponse(500, {
       error: message,

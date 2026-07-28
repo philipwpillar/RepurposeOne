@@ -1,6 +1,7 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { streamObject } from "ai";
 import { after, NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { fetchVoiceExemplarsText } from "@/lib/ai/exemplars";
 import {
   buildBrandVoiceBlock,
@@ -451,6 +452,7 @@ export async function POST(request: Request) {
         const message =
           err instanceof Error ? err.message : "Generation failed";
         console.error(`Stream generation failed for ${repurpose.id}:`, err);
+        Sentry.captureException(err);
         await markFailed(message);
         try {
           send({

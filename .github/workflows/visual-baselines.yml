@@ -1,0 +1,43 @@
+# One-shot / on-demand: regenerate e2e/visual.spec.ts Linux baselines
+# inside the same Playwright image CI uses. Download the artifact and commit.
+#
+#   gh workflow run visual-baselines.yml --ref feat/phase-8-sentry-visual
+#   gh run download <id> -n visual-linux-baselines
+name: Visual baselines
+
+on:
+  workflow_dispatch:
+
+jobs:
+  baselines:
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.0-noble
+      options: --user 1001
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: Update visual.spec.ts snapshots
+        run: npx playwright test --project=visual --update-snapshots
+        env:
+          CI: true
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: visual-linux-baselines
+          path: e2e/**/*-snapshots/**/*-linux.png
+          if-no-files-found: error

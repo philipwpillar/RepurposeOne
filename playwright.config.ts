@@ -23,14 +23,24 @@ export default defineConfig({
         storageState: "e2e/.auth/user.json",
       },
       dependencies: ["setup"],
-      // Anon specs must not inherit the authenticated storageState.
-      testIgnore: [/.*\.setup\.ts/, /.*\.anon\.spec\.ts/],
+      // Anon + visual specs must not inherit authenticated storageState.
+      testIgnore: [/.*\.setup\.ts/, /.*\.anon\.spec\.ts/, /visual\.spec\.ts/],
     },
     {
       // Specs that must run signed OUT.
       name: "anon",
       use: { ...devices["Desktop Chrome"] },
       testMatch: /.*\.anon\.spec\.ts/,
+    },
+    {
+      // Visual baselines — empty storageState; run only in the Playwright
+      // Docker image (same tag used to generate *-linux.png snapshots).
+      name: "visual",
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: { cookies: [], origins: [] },
+      },
+      testMatch: /visual\.spec\.ts/,
     },
   ],
   webServer: process.env.PLAYWRIGHT_BASE_URL

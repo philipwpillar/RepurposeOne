@@ -42,8 +42,8 @@ jobs:
       - name: Acceptance criteria (floor)
         run: bash scripts/ac-check.sh floor
 
-      - name: Acceptance criteria (phase)
-        run: bash scripts/ac-check.sh 6
+      - name: Acceptance criteria (phase 8)
+        run: bash scripts/ac-check.sh 8
 
       - name: Acceptance criteria (wave 1)
         run: bash scripts/ac-check.sh wave1
@@ -54,8 +54,9 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
+      # Functional only — visual.spec.ts runs in the `visual` job (Playwright Docker).
       - name: Playwright (functional)
-        run: npx playwright test
+        run: npx playwright test --project=setup --project=chromium --project=anon
         env:
           CI: true
           E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
@@ -69,3 +70,42 @@ jobs:
         with:
           name: playwright-report
           path: playwright-report/
+
+  # Visual baselines for e2e/visual.spec.ts — MUST use the same image that
+  # generated the committed *-linux.png snapshots (font rasterisation parity).
+  visual:
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.0-noble
+      options: --user 1001
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          # HOLDING_MODE must stay unset so / is the real landing, not the holding rewrite.
+
+      - name: Playwright visual.spec.ts
+        run: npx playwright test --project=visual
+        env:
+          CI: true
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: Upload visual diff on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-diff
+          path: |
+            test-results/
+            e2e/**/*-snapshots/
