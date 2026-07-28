@@ -20,6 +20,7 @@ export type Plan = z.infer<typeof PlanSchema>;
 
 export const ProfileSchema = z.object({
   id: z.string().uuid(),
+  email: z.string().email().nullable().optional(),
   stripe_customer_id: z.string().nullable(),
   stripe_subscription_id: z.string().nullable(),
   plan: PlanSchema,
