@@ -26,10 +26,11 @@ const nextConfig: NextConfig = {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=()",
           },
-          // voiceora.io cutover (Phase 6): include preload for HSTS.
+          // Soft start on custom domain — short max-age, no includeSubDomains/preload
+          // until cutover is stable. Raise and add preload later deliberately.
           {
             key: "Strict-Transport-Security",
-            value: "max-age=63072000; includeSubDomains; preload",
+            value: "max-age=300",
           },
         ],
       },
