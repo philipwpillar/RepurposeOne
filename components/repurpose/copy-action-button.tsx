@@ -2,6 +2,7 @@
 
 import { Check, Copy, X } from "lucide-react";
 import type { CopyKey } from "./use-copy-to-clipboard";
+import { hapticImpact } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 
 interface CopyActionButtonProps {
@@ -30,11 +31,16 @@ export function CopyActionButton({
   const isCopied = copiedKey === copyKey;
   const isError = errorKey === copyKey;
 
+  const handleClick = () => {
+    onCopy();
+    void hapticImpact("Light");
+  };
+
   if (size === "icon") {
     return (
       <button
         type="button"
-        onClick={onCopy}
+        onClick={handleClick}
         disabled={disabled}
         aria-label={isCopied ? "Copied" : isError ? "Copy failed" : label}
         className={cn(
@@ -61,7 +67,7 @@ export function CopyActionButton({
   return (
     <button
       type="button"
-      onClick={onCopy}
+      onClick={handleClick}
       disabled={disabled}
       className={cn(baseClass, className)}
     >

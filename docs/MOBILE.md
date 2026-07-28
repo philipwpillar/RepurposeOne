@@ -39,6 +39,8 @@ This is an initiative on top of the live web product. It must **not** slow the r
 
 Scaffold is a stock Capacitor shell: `AppDelegate.swift` unmodified, **no** Push / App Groups / entitlements, default Capacitor icon + splash placeholders. Xcode entry point is `ios/App/App.xcodeproj` (no `.xcworkspace`, no `Podfile`).
 
+**Phase 6 (mobile UX):** `server.url` → `https://voiceora.io`; BottomTabs; `@capacitor/haptics` on copy/share/generate/tab; `app/manifest.ts`; Studio action bar clears tabs + safe-area.
+
 Verified web-layer: `tsc --noEmit` clean, `next build` clean (pre-existing `<img>` warning only), 27 files / +1580 −15 vs `0f266ef`, no forbidden files touched.
 
 ---
@@ -52,6 +54,8 @@ Phase numbers describe intended sequencing, not commitments to bundle everything
 - **Phase 2 — Monetise:** Safari-handoff to Stripe Checkout so users can subscribe from the app.
 - **Phase 3 — Engagement:** OneSignal push (generation-complete), share extension, and **"Open in Platform" deep links** (confirmed Phase 3 — not earlier).
 
+**Note:** Web acceptance Phase 6 shipped BottomTabs / haptics / domain cutover / manifest — that is the **web UX** half of "make it usable," not a substitute for native OAuth (still Phase 1 above).
+
 **Open sequencing decision:** Phase 1 mobile brief **vs. privacy-policy page first.** A privacy policy is a prerequisite before any "private/secure" claims can appear in App Store copy, given data flows through OpenRouter and Supabase. Recommend resolving before the next brief.
 
 ---
@@ -59,7 +63,7 @@ Phase numbers describe intended sequencing, not commitments to bundle everything
 ## 5. Constraints & gotchas
 
 1. **Free Apple ID limits.** Do **not** add Push Notifications or App Groups capabilities until a **paid** Apple Developer account exists — they break builds on a Personal Team. Push (Phase 3) is gated on enrollment.
-2. **Remote-URL mode.** The simulator/app shows whatever is deployed at `repurpose-one-seven.vercel.app`. Local web changes are invisible until pushed **and** deployed. Any WebView-facing fix (like safe-area) lands in the **web app**, not native files.
+2. **Remote-URL mode.** The simulator/app shows whatever is deployed at `voiceora.io`. Local web changes are invisible until pushed **and** deployed. Any WebView-facing fix (like safe-area) lands in the **web app**, not native files.
 3. **Google OAuth breaks in the default WKWebView.** Google blocks OAuth in embedded webviews; sign-in needs an in-app-browser / `ASWebAuthenticationSession` fix (Phase 1) before the app is usable for new users.
 4. **Capacitor 8 uses SPM.** Open `App.xcodeproj`, not `App.xcworkspace`; there is no `Podfile`. CocoaPods is installed on Phil's Mac for future briefs that may need it, but this project doesn't use it.
 5. **App Store review risk (payments).** The Safari-handoff / no-IAP model must be validated against **current** Apple review rules (external-purchase / anti-steering guidelines change frequently and vary by region). Confirm the current entitlement/allowance before submission — do not assume the handoff will pass review as-is.

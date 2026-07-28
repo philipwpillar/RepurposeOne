@@ -52,6 +52,7 @@ import {
   formatXThreadForCopy,
 } from "@/lib/format-output";
 import { voiceDisplayName } from "@/lib/repurpose/voice-display-name";
+import { hapticImpact } from "@/lib/haptics";
 import type {
   BrandVoiceInput,
   EmailOutput,
@@ -1026,7 +1027,7 @@ export default function RepurposeWorkspace({
     : inputSummary.trim().length >= INPUT_CONTENT_MIN_LENGTH;
 
   return (
-    <div className="mx-auto min-h-screen max-w-screen-md bg-background px-4 pb-28 pt-6">
+    <div className="mx-auto min-h-screen max-w-screen-md bg-background px-4 pb-40 pt-6 md:pb-28">
       <div className="mb-6">
         <h1 className="font-display text-2xl font-semibold tracking-tight">
           Content Studio
@@ -1334,7 +1335,7 @@ export default function RepurposeWorkspace({
         </StudioFormatResultCard>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-card/80 md:left-64">
+      <div className="fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-50 border-t border-border bg-card/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-card/80 md:bottom-0 md:left-64 md:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="mx-auto flex max-w-screen-md gap-3">
           {useStream && isAnyLoading ? (
             <Button
@@ -1350,7 +1351,10 @@ export default function RepurposeWorkspace({
               type="button"
               variant="outline"
               className="flex-1 rounded-xl"
-              onClick={() => void regenerateAll()}
+              onClick={() => {
+                void hapticImpact("Medium");
+                void regenerateAll();
+              }}
               disabled={isAnyLoading || atLimit || !canStartRun}
             >
               {isRegeneratingAll

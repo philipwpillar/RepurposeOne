@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'Voiceora',
   webDir: 'public',
   server: {
-    url: 'https://repurpose-one-seven.vercel.app',
+    url: 'https://voiceora.io',
     cleartext: false,
   },
 };
