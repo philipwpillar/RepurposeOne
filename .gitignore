@@ -113,6 +113,7 @@ next-env.d.ts
 *.cache
 tmp/
 temp/
+.tmp-*
 docs/CURSOR_TASK_generation_id.md
 
 # Capacitor / iOS
