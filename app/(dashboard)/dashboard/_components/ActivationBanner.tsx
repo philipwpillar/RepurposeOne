@@ -28,7 +28,7 @@ export default function ActivationBanner({ onDismiss }: ActivationBannerProps) {
           Your voice is set up — now see it work
         </p>
         <p className="mt-1 text-muted-foreground">
-          Paste any article into Studio and get four platform-native drafts in
+          Paste any article into Studio and get drafts for X, LinkedIn, Instagram, and email in
           seconds.
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-3">

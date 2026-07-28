@@ -177,7 +177,7 @@ export function buildDashboardNextActions(input: {
     actions.push({
       kind: "try_studio",
       title: "Try Studio with an example",
-      description: "See four platform drafts from one piece of content.",
+      description: "See drafts for X, LinkedIn, Instagram, and email from one piece of content.",
       href: "/studio?example=1",
       cta: "Try it now",
     });

@@ -6,7 +6,7 @@ export default function BundleUpgradeGate() {
     <div className="mx-auto max-w-lg space-y-6">
       <PageHeader
         title="Moment Bundles"
-        description="Turn a set of photos into captions, a posting order, and four platform posts — in one run."
+        description="Upload photos → get per-photo captions, a recommended posting order, and drafts for X, LinkedIn, Instagram, and email — in one run."
       />
 
       <UpgradePrompt gate="bundles" plan="pro" />

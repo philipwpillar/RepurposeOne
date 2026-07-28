@@ -19,6 +19,7 @@ import {
   type RepurposeOutput,
   type TargetFormat,
 } from "@/types";
+import { stripEmDashes } from "@/lib/ai/strip-em-dashes";
 
 type OpenRouterChatCompletionParams =
   OpenAI.Chat.Completions.ChatCompletionCreateParams & {
@@ -133,7 +134,7 @@ export async function generateRepurpose(
   }
 
   return {
-    output: validated.data,
+    output: stripEmDashes(validated.data),
     model,
     modelTier,
     tokensUsed: response.usage?.total_tokens,
@@ -214,7 +215,7 @@ export async function generateRepurposeFromImage(
   }
 
   return {
-    output: validated.data,
+    output: stripEmDashes(validated.data),
     model,
     modelTier: "strong",
     tokensUsed: response.usage?.total_tokens,
@@ -293,7 +294,7 @@ async function completeOpenRouterJsonOnce<T>(
   }
 
   return {
-    data: validated.data,
+    data: stripEmDashes(validated.data),
     model: input.model,
     tokensUsed: response.usage?.total_tokens,
     promptTokens: response.usage?.prompt_tokens,
