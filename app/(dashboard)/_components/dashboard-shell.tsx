@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { SignOutButton } from "@/components/app/sign-out-button";
+import { BottomTabs } from "@/components/bottom-tabs";
 import { PaymentFailedBanner } from "@/components/billing/payment-failed-banner";
 import { useShortcuts } from "@/components/shortcut-provider";
 import { RouteViewTransition } from "@/components/route-view-transition";
@@ -465,7 +466,7 @@ export function DashboardShell({
           tabIndex={-1}
           className={cn(
             "flex-1 outline-none",
-            isFullBleed ? "p-0" : "p-4 md:p-8"
+            isFullBleed ? "p-0 pb-14 md:pb-0" : "p-4 pb-20 md:p-8",
           )}
         >
           <RouteViewTransition>
@@ -475,7 +476,9 @@ export function DashboardShell({
         </main>
       </div>
 
-      {/* Mobile sidebar overlay — behaviour unchanged for 5A. */}
+      <BottomTabs />
+
+      {/* Mobile drawer for secondary nav (Brand Voice, Account, etc.). */}
       {mobileNavOpen ? (
         <div className="fixed inset-0 z-50 md:hidden" id="mobile-nav">
           <button

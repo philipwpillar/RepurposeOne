@@ -26,11 +26,10 @@ const nextConfig: NextConfig = {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=()",
           },
-          // No `preload` until voiceora.io cutover — near-irreversible and
-          // meaningless on the vercel.app apex we do not control.
+          // voiceora.io cutover (Phase 6): include preload for HSTS.
           {
             key: "Strict-Transport-Security",
-            value: "max-age=63072000; includeSubDomains",
+            value: "max-age=63072000; includeSubDomains; preload",
           },
         ],
       },

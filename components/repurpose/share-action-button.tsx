@@ -9,6 +9,7 @@ import {
   isNativeShareAvailable,
   linkedInFeedUrl,
 } from "@/lib/share/share-targets";
+import { hapticImpact } from "@/lib/haptics";
 import { useCopyToClipboard } from "./use-copy-to-clipboard";
 import { cn } from "@/lib/utils";
 
@@ -44,6 +45,7 @@ export function ShareActionButton({
 
     setBusy(true);
     try {
+      void hapticImpact("Medium");
       if (isNativeShareAvailable()) {
         const { Share } = await import("@capacitor/share");
         await Share.share({ text });

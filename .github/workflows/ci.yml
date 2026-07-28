@@ -43,7 +43,7 @@ jobs:
         run: bash scripts/ac-check.sh floor
 
       - name: Acceptance criteria (phase)
-        run: bash scripts/ac-check.sh 5
+        run: bash scripts/ac-check.sh 6
 
       - name: Contrast check
         run: npm run contrast-check

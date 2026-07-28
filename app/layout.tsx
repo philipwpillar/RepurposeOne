@@ -33,7 +33,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://repurpose-one-seven.vercel.app",
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://voiceora.io",
   ),
   title: {
     default: "Voiceora — content repurposing in your brand voice",

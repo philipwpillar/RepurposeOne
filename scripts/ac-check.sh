@@ -19,10 +19,12 @@ W='app/(dashboard)/studio/_components/RepurposeWorkspace.tsx'
 #  google-sign-in-button    — Google brand marks, fixed by Google branding guidelines
 #  app/dev/**               — dev-only harness, never shipped
 #  opengraph-image / icon / apple-icon — Satori (no stylesheet; CSS vars unavailable)
+#  app/manifest.ts — Web App Manifest requires literal hex theme/background colors
 HEXALLOW=(-g '!**/globals.css' -g '!app/global-error.tsx' -g '!app/loading.tsx' \
           -g '!components/landing/vo-logo-mark.tsx' -g '!app/dev/**' \
           -g '!components/auth/google-sign-in-button.tsx' \
-          -g '!app/opengraph-image.tsx' -g '!app/icon.tsx' -g '!app/apple-icon.tsx')
+          -g '!app/opengraph-image.tsx' -g '!app/icon.tsx' -g '!app/apple-icon.tsx' \
+          -g '!app/manifest.ts')
 
 # Files where raw <img> is legitimate: local object-URL/blob previews that
 # next/image cannot optimise, plus the dev harness.
