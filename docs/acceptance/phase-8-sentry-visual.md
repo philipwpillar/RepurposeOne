@@ -41,6 +41,8 @@ gh run download <run-id> -n visual-linux-baselines
 
 Never generate baselines on macOS or bare `ubuntu-latest` Chromium — fonts will not match the container.
 
+**Version parity:** `@playwright/test` (lockfile) and the Docker image tag (`mcr.microsoft.com/playwright:vX.Y.Z-noble` in `ci.yml` + `visual-baselines.yml`) must be bumped **together**. `npm ci` pins the browser via the lockfile today; nothing else enforces that the image tag stays in sync — a caret bump to a newer patch against a pinned image silently breaks all four baselines.
+
 ## Out of scope
 
 - Phase 7 (Voice Lab / templates)
