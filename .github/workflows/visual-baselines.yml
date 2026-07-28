@@ -7,6 +7,16 @@ name: Visual baselines
 
 on:
   workflow_dispatch:
+  # Allow generation from this feature branch before the workflow exists on main.
+  push:
+    branches:
+      - feat/phase-8-sentry-visual
+    paths:
+      - e2e/visual.spec.ts
+      - .github/workflows/visual-baselines.yml
+      - playwright.config.ts
+      - package.json
+      - package-lock.json
 
 jobs:
   baselines:
