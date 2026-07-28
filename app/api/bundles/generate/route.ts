@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { runBundleGeneration } from "@/lib/ai/bundle-generate";
 import { fetchVoiceExemplarsText } from "@/lib/ai/exemplars";
 import { generateRepurpose } from "@/lib/ai/generate";
@@ -540,6 +541,7 @@ export async function POST(request: Request) {
     );
 
     console.error(`Bundle analysis failed for ${bundle.id}:`, err);
+    Sentry.captureException(err);
 
     return errorResponse(502, {
       error: message,
