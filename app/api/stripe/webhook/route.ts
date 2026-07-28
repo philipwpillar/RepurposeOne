@@ -81,6 +81,11 @@ async function updateProfileByCustomerId(
 /**
  * Returns true when this invoice event should apply to payment_failed_* fields.
  * Scoped only to that field pair — subscription events are a separate stream.
+ *
+ * One watermark per customer (not per invoice): a failure on invoice B with an
+ * older event.created than a paid for invoice A would be ignored if A landed
+ * first. With one subscription per customer and monthly sequential invoices,
+ * overlapping open invoices are effectively impossible.
  */
 async function shouldApplyPaymentFailedEvent(
   customerId: string,
@@ -238,22 +243,41 @@ async function handleInvoicePaid(
   }
 
   const admin = createAdminClient();
-  const { error } = await admin
+
+  // Always advance the watermark when the guard passes — even if no failure
+  // row exists yet (paid-before-failed delivery). Bundling this into the
+  // banner-clear update would leave the watermark NULL and let a late failed
+  // event through.
+  const { error: watermarkError } = await admin
+    .from("profiles")
+    .update({
+      payment_failed_event_at: stripeEventCreatedIso(eventCreatedSeconds),
+    })
+    .eq("stripe_customer_id", customerId);
+
+  if (watermarkError) {
+    console.error(
+      `Failed to advance payment_failed_event_at for customer ${customerId}:`,
+      watermarkError
+    );
+    throw watermarkError;
+  }
+
+  const { error: clearError } = await admin
     .from("profiles")
     .update({
       payment_failed_at: null,
       payment_failed_invoice_id: null,
-      payment_failed_event_at: stripeEventCreatedIso(eventCreatedSeconds),
     })
     .eq("stripe_customer_id", customerId)
     .eq("payment_failed_invoice_id", invoice.id);
 
-  if (error) {
+  if (clearError) {
     console.error(
       `Failed to clear payment failure for customer ${customerId}:`,
-      error
+      clearError
     );
-    throw error;
+    throw clearError;
   }
 }
 
