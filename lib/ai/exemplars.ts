@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { stripEmDashes } from "@/lib/ai/strip-em-dashes";
 import { formatOutputForCopy } from "@/lib/format-output";
 import {
   RepurposeOutputSchema,
@@ -41,7 +42,7 @@ export function buildVoiceExemplars(rows: RatedRow[]): string {
     if (row.user_rating === 1 && positives.length < POSITIVE_LIMIT) {
       const output = resolveOutput(row);
       if (!output) continue;
-      const text = formatOutputForCopy(output).trim();
+      const text = stripEmDashes(formatOutputForCopy(output).trim());
       if (text) positives.push(truncate(text, POSITIVE_MAX_CHARS));
     }
   }
@@ -50,7 +51,7 @@ export function buildVoiceExemplars(rows: RatedRow[]): string {
     if (row.user_rating === -1 && negatives.length < NEGATIVE_LIMIT) {
       const output = resolveOutput(row);
       if (!output) continue;
-      const text = formatOutputForCopy(output).trim();
+      const text = stripEmDashes(formatOutputForCopy(output).trim());
       if (text) negatives.push(truncate(text, NEGATIVE_MAX_CHARS));
     }
   }

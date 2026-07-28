@@ -403,7 +403,7 @@ export default function BundleWorkspace({
         title={VIDEO_BUNDLES_DEV ? "Moment pack" : "Photo pack"}
         description={`Upload up to ${BUNDLE_MAX_PHOTOS} photos${
           VIDEO_BUNDLES_DEV ? " and 2 short videos" : ""
-        }, add context, and get captions, a posting order, and four platform posts in one run.`}
+        }, add context, and get captions, a posting order, and drafts for X, LinkedIn, Instagram, and email in one run.`}
       />
 
       <ol className="flex flex-wrap gap-2 text-xs text-muted-foreground">

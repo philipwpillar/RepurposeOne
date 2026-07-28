@@ -212,13 +212,24 @@ run_8(){ echo "── PHASE 8 ──"
   assert "Linux visual baselines committed" "$(find e2e -name '*-linux.png' 2>/dev/null | wc -l | tr -d ' ')" ge 4
   assert "acceptance note committed"        "$(f 'docs/acceptance/phase-8-*.md')" eq 1 ; }
 
+run_wave1(){ echo "── WAVE 1 ──"
+  # Em/en/horizontal-bar characters must not appear in model-facing prompts
+  # (few-shot would fight the ban rule). Baseline before Wave 1 was 44.
+  assert "prompts free of em/en dashes"     "$(n '—|–|―' lib/ai/prompts.ts)" eq 0
+  assert "stripEmDashes in ai layer"        "$(n 'stripEmDashes' lib/ai lib/repurpose)" ge 3
+  # Stream must sanitise partials AND the final object (not only onFinish).
+  assert "stream stripEmDashes partial+final" "$(n 'stripEmDashes' app/api/generate/stream/route.ts)" ge 2
+  assert "bundle copy not four-platform-posts" "$(n 'four platform posts' 'app/(dashboard)/bundles' components/repurpose lib/billing)" eq 0
+  assert "acceptance note committed"        "$(f 'docs/acceptance/wave-1-*.md')" eq 1 ; }
+
 case "$PHASE" in
   floor) run_floor ;;
   0) run_floor; run_0 ;;  1) run_floor; run_1 ;;  2) run_floor; run_2 ;;
   3) run_floor; run_3 ;;  4) run_floor; run_4 ;;  5) run_floor; run_5 ;;
   6) run_floor; run_6 ;;  7) run_floor; run_7 ;;  8) run_floor; run_8 ;;
-  all) run_floor; for p in 0 1 2 3 4 5 6 7 8; do run_$p; done ;;
-  *) echo "usage: bash scripts/ac-check.sh [floor|0-8|all]"; exit 2 ;;
+  wave1) run_floor; run_wave1 ;;
+  all) run_floor; for p in 0 1 2 3 4 5 6 7 8; do run_$p; done; run_wave1 ;;
+  *) echo "usage: bash scripts/ac-check.sh [floor|0-8|wave1|all]"; exit 2 ;;
 esac
 
 echo

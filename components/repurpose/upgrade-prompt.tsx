@@ -33,7 +33,7 @@ const GATE_COPY: Record<
   },
   bundles: {
     title: "Moment Bundles are on Pro Plus",
-    body: `Pro Plus (${planPriceLabel("pro_plus")}) includes up to ${BUNDLE_MONTHLY_LIMIT} Moment Bundles per month. Rendered video clips coming soon.`,
+    body: `Pro Plus (${planPriceLabel("pro_plus")}) includes up to ${BUNDLE_MONTHLY_LIMIT} Moment Bundle photo packs per month. Rendered video clips coming soon.`,
     cta: "Upgrade to Pro Plus →",
   },
   bundle_monthly_cap: {

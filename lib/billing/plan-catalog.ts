@@ -37,7 +37,7 @@ export const PAID_PLAN_CATALOG: PlanCatalogEntry[] = [
     id: "pro_plus",
     title: "Pro Plus",
     priceLabel: `£${PLAN_PRICES.pro_plus}/mo`,
-    summary: `Everything in Pro, plus Moment Bundles (up to ${BUNDLE_MONTHLY_LIMIT}/mo) and a higher burst limit. Rendered video clips coming soon.`,
+    summary: `Everything in Pro, plus Moment Bundles (up to ${BUNDLE_MONTHLY_LIMIT}/mo photo packs) and a higher burst limit. Rendered video clips coming soon.`,
     cta: "Upgrade to Pro Plus",
   },
 ];

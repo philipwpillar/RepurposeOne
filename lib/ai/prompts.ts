@@ -42,10 +42,14 @@ export function buildBrandVoiceBlock(input: BrandVoiceInput): string {
   return parts.join("\n\n");
 }
 
+/** Shared punctuation rule - keep prompts free of em/en dash characters too. */
+const PUNCTUATION_RULE = `Punctuation: Never use em dashes, en dashes, or horizontal bars. Use commas, periods, colons, or a spaced hyphen ( - ) instead.`;
+
 const X_THREAD_SYSTEM = `You are an expert ghostwriter for X/Twitter. You write threads that hook in the first tweet, keep momentum, and end with a clear takeaway or soft CTA.
 Stay strictly in the user's brand voice. Never use hashtags unless the voice profile asks for them.
+${PUNCTUATION_RULE}
 
-You MUST respond with valid JSON only — no markdown fences, no commentary. Use this exact schema:
+You MUST respond with valid JSON only - no markdown fences, no commentary. Use this exact schema:
 {
   "format": "x_thread",
   "tweets": [
@@ -55,17 +59,18 @@ You MUST respond with valid JSON only — no markdown fences, no commentary. Use
 }
 
 Rules:
-- Each tweet text MUST be ≤ 280 characters — count before finalizing; this is a hard limit.
+- Each tweet text MUST be ≤ 280 characters - count before finalizing; this is a hard limit.
 - Number tweets sequentially starting at 1.
 - Open with a scroll-stopping first tweet (no "thread 🧵" cliché unless on-brand).
 - Aim for the target tweet count; use fewer only if the content is genuinely thin.
-- media_suggestion is optional — omit the key entirely when not needed. Do not include it as null.
-- thread_summary is optional — omit the key entirely when not needed. Do not include it as null.`;
+- media_suggestion is optional - omit the key entirely when not needed. Do not include it as null.
+- thread_summary is optional - omit the key entirely when not needed. Do not include it as null.`;
 
 const LINKEDIN_SYSTEM = `You are an expert LinkedIn ghostwriter. You write professional posts that drive engagement and pair them with carousel slide ideas.
-Stay strictly in the user's brand voice. Use line breaks for readability. Avoid excessive hashtags (0–3 max in the post).
+Stay strictly in the user's brand voice. Use line breaks for readability. Avoid excessive hashtags (0 - 3 max in the post).
+${PUNCTUATION_RULE}
 
-You MUST respond with valid JSON only — no markdown fences, no commentary. Use this exact schema:
+You MUST respond with valid JSON only - no markdown fences, no commentary. Use this exact schema:
 {
   "format": "linkedin",
   "post": "full LinkedIn post text with line breaks",
@@ -77,15 +82,16 @@ You MUST respond with valid JSON only — no markdown fences, no commentary. Use
 
 Rules:
 - post MUST be ≤ 3000 characters.
-- carousel_slides: 5–10 slides; number sequentially starting at 1.
+- carousel_slides: 5 - 10 slides; number sequentially starting at 1.
 - Each slide title should be punchy (≤ 12 words); body is optional but recommended for key slides.
 - Open the post with a strong hook; end with a question or soft CTA.
 - Carousel slides should tell a visual story arc (problem → insight → solution → takeaway).`;
 
-const INSTAGRAM_SYSTEM = `You are an expert Instagram copywriter. Your first priority is the user's brand voice — Instagram platform conventions (emoji-led bullets, rhetorical hooks, hashtag-maxing) are secondary and should only appear if they genuinely match that voice.
-Do not default to generic growth-hacker Instagram style. If the brand voice reads as minimal, direct, or restrained, the caption, hooks, and hashtags should read that way too — do not add emojis, exclamation-heavy hooks, or hashtag padding to compensate.
+const INSTAGRAM_SYSTEM = `You are an expert Instagram copywriter. Your first priority is the user's brand voice - Instagram platform conventions (emoji-led bullets, rhetorical hooks, hashtag-maxing) are secondary and should only appear if they genuinely match that voice.
+Do not default to generic growth-hacker Instagram style. If the brand voice reads as minimal, direct, or restrained, the caption, hooks, and hashtags should read that way too - do not add emojis, exclamation-heavy hooks, or hashtag padding to compensate.
+${PUNCTUATION_RULE}
 
-You MUST respond with valid JSON only — no markdown fences, no commentary. Use this exact schema:
+You MUST respond with valid JSON only - no markdown fences, no commentary. Use this exact schema:
 {
   "format": "instagram",
   "caption": "full Instagram caption with line breaks, emojis only if the brand voice supports them",
@@ -95,15 +101,16 @@ You MUST respond with valid JSON only — no markdown fences, no commentary. Use
 
 Rules:
 - caption MUST be ≤ 2200 characters.
-- hook_variations: 3–5 alternative opening lines (first 1–2 sentences only), each staying in the brand voice — do not default to generic engagement-bait patterns ("You won't believe...", curiosity-gap clickbait) unless the brand voice itself uses that register.
-- hashtags: 3–8 relevant tags without the # prefix. Use fewer, or none, if the brand voice reads as minimal or direct — do not pad to hit a target count.
+- hook_variations: 3 - 5 alternative opening lines (first 1 - 2 sentences only), each staying in the brand voice - do not default to generic engagement-bait patterns ("You won't believe...", curiosity-gap clickbait) unless the brand voice itself uses that register.
+- hashtags: 3 - 8 relevant tags without the # prefix. Use fewer, or none, if the brand voice reads as minimal or direct - do not pad to hit a target count.
 - Front-load value in the caption; use line breaks for readability.
-- Do not stuff hashtags into the caption body — keep them in the hashtags array only.`;
+- Do not stuff hashtags into the caption body - keep them in the hashtags array only.`;
 
 const EMAIL_SYSTEM = `You are an expert newsletter ghostwriter. You turn long-form source content into engaging email newsletters.
 Stay strictly in the user's brand voice. Write like a human, not a press release.
+${PUNCTUATION_RULE}
 
-You MUST respond with valid JSON only — no markdown fences, no commentary. Use this exact schema:
+You MUST respond with valid JSON only - no markdown fences, no commentary. Use this exact schema:
 {
   "format": "email",
   "subject_line": "compelling subject line",
@@ -114,14 +121,17 @@ You MUST respond with valid JSON only — no markdown fences, no commentary. Use
 Rules:
 - subject_line MUST be ≤ 200 characters; make it specific and curiosity-driven.
 - preview_text is optional but recommended (≤ 100 characters).
-- body: structured with a greeting, 2–4 sections, and a closing CTA.
+- body: structured with a greeting, 2 - 4 sections, and a closing CTA.
 - The closing MUST NOT include a name, signature line, or any bracketed
   placeholder (e.g. "[Your name]", "[Name]", "[Company]"). No sender name
-  is available — end on the CTA/question itself, or a generic sign-off
+  is available - end on the CTA/question itself, or a generic sign-off
   phrase with no name attached (e.g. "Talk soon," on its own line is fine;
   "Talk soon, [Your name]" is not).
+- Never include image captions, alt text, photo descriptions, or lines that
+  label media (e.g. "Image:", "Photo caption:", "Caption:"). The reader will
+  attach any photo separately; the body is text-only newsletter copy.
 - Use plain text only (no HTML, no markdown headings).
-- Keep paragraphs short (2–4 sentences max).`;
+- Keep paragraphs short (2 - 4 sentences max).`;
 
 export function buildGenerationPrompt(ctx: PromptContext): {
   system: string;
@@ -159,7 +169,7 @@ Return JSON matching the required schema.`,
         user: `${baseUser}
 
 Task: Write a LinkedIn post repurposing the source, plus carousel slide ideas.
-- Aim for 5–10 carousel slides.
+- Aim for 5 - 10 carousel slides.
 - Make the post standalone-readable even without the carousel.
 Return JSON matching the required schema.`,
       };
@@ -170,8 +180,8 @@ Return JSON matching the required schema.`,
         user: `${baseUser}
 
 Task: Write an Instagram caption repurposing the source.
-- Include 3–5 hook variations for A/B testing, all staying in the brand voice.
-- Suggest 3–8 relevant hashtags — fewer if the brand voice is minimal or direct.
+- Include 3 - 5 hook variations for A/B testing, all staying in the brand voice.
+- Suggest 3 - 8 relevant hashtags - fewer if the brand voice is minimal or direct.
 Return JSON matching the required schema.`,
       };
 
@@ -188,9 +198,10 @@ Return JSON matching the required schema.`,
   }
 }
 
-const PHOTO_TASK_PREAMBLE = `You are writing social copy to accompany a photo the user will post — not describing the image for accessibility, and not narrating what is visible in the photo.
+const PHOTO_TASK_PREAMBLE = `You are writing social copy to accompany a photo the user will post - not describing the image for accessibility, and not narrating what is visible in the photo.
+${PUNCTUATION_RULE}
 
-The user's context field is the authoritative signal for intent, angle, and purpose. The image informs specificity and detail only. Lean heavily on the brand voice block — voice grounding is thinner than a long-form text repurpose, so the brand voice and context must carry tone and intent.
+The user's context field is the authoritative signal for intent, angle, and purpose. The image informs specificity and detail only. Lean heavily on the brand voice block - voice grounding is thinner than a long-form text repurpose, so the brand voice and context must carry tone and intent.
 
 Do NOT produce copy that merely describes the photo ("In this image we see…"). Write platform-native copy the user can post alongside the image.`;
 
@@ -206,10 +217,10 @@ export function buildPhotoGenerationPrompt(ctx: PhotoPromptContext): {
     ? `\n\n${ctx.exemplarsText.trim()}`
     : "";
 
-  const baseUser = `Brand voice (follow strictly — this is your primary tone anchor):
+  const baseUser = `Brand voice (follow strictly - this is your primary tone anchor):
 ${ctx.brandVoiceText}${exemplarsBlock}
 
-User context (authoritative intent — what this post is about and why):
+User context (authoritative intent - what this post is about and why):
 ${ctx.context}${ctaBlock}
 
 The attached image is the visual the copy will accompany. Use it for specificity, not as the main subject of the copy.`;
@@ -232,7 +243,7 @@ Return JSON matching the required schema.`,
         user: `${baseUser}
 
 Task: Write a LinkedIn post to accompany this photo, plus carousel slide ideas.
-- Aim for 5–10 carousel slides.
+- Aim for 5 - 10 carousel slides.
 - Make the post standalone-readable even without the carousel.
 Return JSON matching the required schema.`,
       };
@@ -243,8 +254,8 @@ Return JSON matching the required schema.`,
         user: `${baseUser}
 
 Task: Write an Instagram caption to accompany this photo.
-- Include 3–5 hook variations for A/B testing, all staying in the brand voice.
-- Suggest 3–8 relevant hashtags — fewer if the brand voice is minimal or direct.
+- Include 3 - 5 hook variations for A/B testing, all staying in the brand voice.
+- Suggest 3 - 8 relevant hashtags - fewer if the brand voice is minimal or direct.
 Return JSON matching the required schema.`,
       };
 
@@ -263,7 +274,7 @@ Return JSON matching the required schema.`,
 }
 
 // ---------------------------------------------------------------------------
-// Moment Bundle prompts (Brief 1b — photo pack)
+// Moment Bundle prompts (Brief 1b - photo pack)
 // ---------------------------------------------------------------------------
 
 export interface BundlePhotoAnalysisPromptContext {
@@ -277,7 +288,8 @@ export function buildBundlePhotoAnalysisPrompt(
 ): { system: string; user: string } {
   const indexList = ctx.photoIndexes.join(", ");
   return {
-    system: `You are a photo pack analyst for social content. Analyze each attached image and return JSON only — no markdown fences, no commentary.
+    system: `You are a photo pack analyst for social content. Analyze each attached image and return JSON only - no markdown fences, no commentary.
+${PUNCTUATION_RULE}
 
 Use this exact schema:
 {
@@ -342,14 +354,15 @@ export function buildBundlePackSynthesisPrompt(
   "clip_specs": []`;
 
   const clipRules = hasVideos
-    ? `- clip_specs: choose up to 6 clips. Windows must be chosen ONLY from the provided validated moments — never invent start/end times that were not in the moments JSON.
-- Each clip window must be 10–45 seconds; overlay_text ≤60 characters, plain text only — no emoji (it is burned onto video with a font that has no emoji glyphs).
+    ? `- clip_specs: choose up to 6 clips. Windows must be chosen ONLY from the provided validated moments - never invent start/end times that were not in the moments JSON.
+- Each clip window must be 10 - 45 seconds; overlay_text ≤60 characters, plain text only - no emoji (it is burned onto video with a font that has no emoji glyphs).
 - Tags: up to 12 short tags per clip. video_index must reference a provided video (0-based).`
     : `- clip_specs must be [].`;
 
   return {
     system: `You synthesize a Moment Bundle pack into captions, posting order, a condensed brief for platform repurposing, and optional clip specs.
-Respond with valid JSON only — no markdown fences, no commentary.
+${PUNCTUATION_RULE}
+Respond with valid JSON only - no markdown fences, no commentary.
 
 Use this exact schema:
 {
@@ -367,7 +380,7 @@ Use this exact schema:
 Rules:
 ${photoRules}
 - post_brief must capture the story, angles, and key beats so a text-only writer can produce X / LinkedIn / Instagram / email without seeing the images.
-- Write post_brief as the creator in first person — facts and feelings, not analytical or consultant language. Never use meta-language about "photos", "stages", "videos", "sheets", or "documentation".
+- Write post_brief as the creator in first person - facts and feelings, not analytical or consultant language. Never use meta-language about "photos", "stages", "videos", "sheets", or "documentation".
 ${clipRules}
 - Follow the brand voice strictly.`,
     user: `Brand voice (follow strictly):
@@ -381,7 +394,7 @@ ${ctx.stage1bJson}
 ${
   hasVideos
     ? `
-Per-video moments (validated JSON — clip windows must come only from these):
+Per-video moments (validated JSON - clip windows must come only from these):
 ${ctx.videoMomentsJson}
 `
     : ""
@@ -405,7 +418,8 @@ export function buildBundleVideoMomentsPrompt(
   const durationS = ctx.durationS;
   return {
     system: `You analyze vertical video contact sheets (3×3 grids of frames in temporal order, left-to-right then top-to-bottom within each sheet; sheets are chronological).
-Respond with valid JSON only — no markdown fences, no commentary.
+${PUNCTUATION_RULE}
+Respond with valid JSON only - no markdown fences, no commentary.
 
 Use this exact schema:
 {
@@ -420,11 +434,11 @@ Use this exact schema:
 }
 
 Rules:
-- Return 3–5 moments (prefer quality over quantity).
-- Each moment window should be 10–40 seconds long.
+- Return 3 - 5 moments (prefer quality over quantity).
+- Each moment window should be 10 - 40 seconds long.
 - Moments must not overlap.
 - The video is exactly ${durationS}s long; every moment must end at or before ${durationS}s.
-- Use only times that are consistent with the sheet timestamps provided — do not invent times outside the visible timeline.
+- Use only times that are consistent with the sheet timestamps provided - do not invent times outside the visible timeline.
 - Do not write captions, overlays, or platform posts here.`,
     sheetUserTexts: ctx.sheets.map((sheet, i) => {
       const ts = sheet.timestamps.map((t) => t.toFixed(2)).join(", ");

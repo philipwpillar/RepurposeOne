@@ -20,6 +20,11 @@ prompts (`buildBundlePhotoAnalysisPrompt`, video moments, pack synthesis). Studi
 - All formats return **structured JSON** validated by Zod (`types/index.ts` →
   `RepurposeOutputSchema`) before save. `response_format: { type: "json_object" }`
   is set on the API call.
+- **No em/en dashes in model-facing prompts or AI output.** Prompt text in
+  `lib/ai/prompts.ts` must not contain `—` / `–` / `―` (few-shot fights the ban).
+  Runtime sanitiser: `lib/ai/strip-em-dashes.ts` → `stripEmDashes()` applied to
+  Studio generate, streaming partials + final, bundle OpenRouter JSON, and
+  exemplar text injected into prompts. Never applied to user `input_content`.
 - When you change a prompt, bump its version and add a dated changelog line.
 
 ---
@@ -353,6 +358,9 @@ hard-coded names in this doc.
 
 ## Changelog
 
+- 2026-07-28 — Wave 1: ban em/en dashes in all system prompts + `stripEmDashes`
+  post-processor (Studio, stream partials/final, bundles, exemplars). Email:
+  forbid image captions / alt-text / media labels in body.
 - 2026-07-14 — Documented photo/vision path (`buildPhotoGenerationPrompt`),
   including authoritative-context framing. Docs only; no prompt code changes.
 - 2026-07-02 — v2. Email: forbade bracketed sign-off placeholders (no

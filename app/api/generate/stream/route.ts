@@ -6,6 +6,7 @@ import {
   buildBrandVoiceBlock,
   buildGenerationPrompt,
 } from "@/lib/ai/prompts";
+import { stripEmDashes } from "@/lib/ai/strip-em-dashes";
 import {
   AI_CONFIG,
   OPENROUTER_ALLOWED_PROVIDERS,
@@ -376,10 +377,12 @@ export async function POST(request: Request) {
       if (settled) return;
       settled = true;
 
+      const cleaned = stripEmDashes(object as RepurposeOutput);
+
       const { error: updateError } = await admin
         .from("repurposes")
         .update({
-          output: object as RepurposeOutput,
+          output: cleaned,
           status: "complete",
           error_message: null,
           tokens_used: usage.totalTokens ?? null,
@@ -415,7 +418,7 @@ export async function POST(request: Request) {
 
         for await (const partial of result.partialObjectStream) {
           if (request.signal.aborted) break;
-          send({ type: "partial", object: partial });
+          send({ type: "partial", object: stripEmDashes(partial) });
         }
 
         if (request.signal.aborted) {
@@ -430,12 +433,13 @@ export async function POST(request: Request) {
         }
 
         const object = await result.object;
+        const cleaned = stripEmDashes(object);
         const { usage } = await checkUsageLimit(supabase, user.id);
         const tokenUsage = await result.usage;
 
         send({
           type: "done",
-          output: object,
+          output: cleaned,
           usage,
           model,
           tokens_used: tokenUsage.totalTokens ?? undefined,
