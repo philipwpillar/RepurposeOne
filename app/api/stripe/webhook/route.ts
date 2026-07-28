@@ -14,6 +14,7 @@ type ProfileBillingUpdates = {
   plan?: Plan;
   payment_failed_at?: string | null;
   payment_failed_invoice_id?: string | null;
+  payment_failed_event_at?: string | null;
 };
 
 function getSupabaseUserId(session: Stripe.Checkout.Session): string | null {
@@ -25,6 +26,10 @@ function getStripeCustomerId(
 ): string | null {
   if (!customer) return null;
   return typeof customer === "string" ? customer : customer.id;
+}
+
+function stripeEventCreatedIso(eventCreatedSeconds: number): string {
+  return new Date(eventCreatedSeconds * 1000).toISOString();
 }
 
 async function updateProfileByUserId(
@@ -73,27 +78,35 @@ async function updateProfileByCustomerId(
   }
 }
 
-async function clearPaymentFailedIfInvoiceMatches(
+/**
+ * Returns true when this invoice event should apply to payment_failed_* fields.
+ * Scoped only to that field pair — subscription events are a separate stream.
+ */
+async function shouldApplyPaymentFailedEvent(
   customerId: string,
-  invoiceId: string
-) {
+  eventCreatedSeconds: number
+): Promise<boolean> {
   const admin = createAdminClient();
-  const { error } = await admin
+  const { data, error } = await admin
     .from("profiles")
-    .update({
-      payment_failed_at: null,
-      payment_failed_invoice_id: null,
-    })
+    .select("payment_failed_event_at")
     .eq("stripe_customer_id", customerId)
-    .eq("payment_failed_invoice_id", invoiceId);
+    .maybeSingle();
 
   if (error) {
     console.error(
-      `Failed to clear payment failure for customer ${customerId}:`,
+      `Failed to read payment_failed_event_at for customer ${customerId}:`,
       error
     );
     throw error;
   }
+
+  if (!data?.payment_failed_event_at) return true;
+
+  const storedMs = Date.parse(data.payment_failed_event_at);
+  if (Number.isNaN(storedMs)) return true;
+
+  return eventCreatedSeconds * 1000 >= storedMs;
 }
 
 async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
@@ -178,10 +191,23 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   });
 }
 
-async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
+async function handleInvoicePaymentFailed(
+  invoice: Stripe.Invoice,
+  eventCreatedSeconds: number
+) {
   const customerId = getStripeCustomerId(invoice.customer);
   if (!customerId) {
     console.error("invoice.payment_failed: missing customer id", invoice.id);
+    return;
+  }
+
+  if (!(await shouldApplyPaymentFailedEvent(customerId, eventCreatedSeconds))) {
+    console.info(
+      "invoice.payment_failed: ignoring older event",
+      customerId,
+      invoice.id,
+      eventCreatedSeconds
+    );
     return;
   }
 
@@ -190,14 +216,45 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   await updateProfileByCustomerId(customerId, {
     payment_failed_at: new Date().toISOString(),
     payment_failed_invoice_id: invoice.id,
+    payment_failed_event_at: stripeEventCreatedIso(eventCreatedSeconds),
   });
 }
 
-async function handleInvoicePaid(invoice: Stripe.Invoice) {
+async function handleInvoicePaid(
+  invoice: Stripe.Invoice,
+  eventCreatedSeconds: number
+) {
   const customerId = getStripeCustomerId(invoice.customer);
   if (!customerId) return;
 
-  await clearPaymentFailedIfInvoiceMatches(customerId, invoice.id);
+  if (!(await shouldApplyPaymentFailedEvent(customerId, eventCreatedSeconds))) {
+    console.info(
+      "invoice.paid: ignoring older payment-failure event",
+      customerId,
+      invoice.id,
+      eventCreatedSeconds
+    );
+    return;
+  }
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("profiles")
+    .update({
+      payment_failed_at: null,
+      payment_failed_invoice_id: null,
+      payment_failed_event_at: stripeEventCreatedIso(eventCreatedSeconds),
+    })
+    .eq("stripe_customer_id", customerId)
+    .eq("payment_failed_invoice_id", invoice.id);
+
+  if (error) {
+    console.error(
+      `Failed to clear payment failure for customer ${customerId}:`,
+      error
+    );
+    throw error;
+  }
 }
 
 export async function POST(request: Request) {
@@ -234,10 +291,16 @@ export async function POST(request: Request) {
         await handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
         break;
       case "invoice.payment_failed":
-        await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
+        await handleInvoicePaymentFailed(
+          event.data.object as Stripe.Invoice,
+          event.created
+        );
         break;
       case "invoice.paid":
-        await handleInvoicePaid(event.data.object as Stripe.Invoice);
+        await handleInvoicePaid(
+          event.data.object as Stripe.Invoice,
+          event.created
+        );
         break;
     }
   } catch (err) {

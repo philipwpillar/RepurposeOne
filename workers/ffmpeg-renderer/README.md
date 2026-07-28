@@ -48,11 +48,14 @@ Wake (immediate poll): `POST http://localhost:8080/wake` with header `x-wake-sec
 
 ## Stuck `rendering` rows
 
-**Manual-only in v1** — there is no automatic recovery. If the worker is killed mid-render (SIGKILL, OOM) or exits between claim and status update, the clip row may remain `rendering` indefinitely. The Vercel cron sweeper (`sweep-pending-repurposes`, PR #76) settles aged `bundles` / `repurposes` only — it does **not** touch `bundle_clips`.
+The worker lifecycle (boot + periodic) reclaims clips stuck in `rendering`
+after `3 × RENDER_TIMEOUT_MS` (default 15 minutes): CAS on `updated_at`,
+reset to `pending` if attempts remain, else `failed` with
+`orphaned_rendering: reclaimed by worker`. The Vercel/GitHub
+`sweep-pending-repurposes` cron is a slower backup (60m threshold) for the
+same class of rows, plus Studio/bundle pending orphans.
 
-**Incident log:** 27 Jul 2026 — one clip on bundle `d4dc2a7c-…` stayed `rendering` ~30 minutes after claim; required a manual reset to `pending` before the worker finished it. Distinct from the earlier OOM failure mode (which left rows as `failed`).
-
-Reset manually:
+Manual reset is only needed if reclaim is disabled or misconfigured:
 
 ```sql
 UPDATE bundle_clips
@@ -60,9 +63,9 @@ SET render_status = 'pending', updated_at = now()
 WHERE id = '<clip_id>' AND render_status = 'rendering';
 ```
 
-Or mark failed if both attempts are exhausted.
-
-**If this recurs:** extend the worker lifecycle (or the Vercel sweeper) to reset `bundle_clips` where `render_status = 'rendering'` and `updated_at < now() - interval '15 minutes'` back to `pending` for one retry, then fail.
+**Incident log:** 27 Jul 2026 — one clip on bundle `d4dc2a7c-…` stayed
+`rendering` ~30 minutes after claim (pre-reclaim). Distinct from the earlier
+OOM failure mode (which left rows as `failed`).
 
 ## Font
 
