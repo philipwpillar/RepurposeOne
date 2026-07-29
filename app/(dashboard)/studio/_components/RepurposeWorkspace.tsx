@@ -24,6 +24,7 @@ import type { InputMode, PhotoInputReady } from "@/types/photo-input";
 import type { Plan } from "@/types";
 import InputModeTabs from "./InputModeTabs";
 import PhotoInputSection from "./PhotoInputSection";
+import StudioTemplatePicker from "./StudioTemplatePicker";
 import TextSourceCard from "./TextSourceCard";
 import VoiceSetupBanner from "./VoiceSetupBanner";
 import StudioFormatPicker from "./StudioFormatPicker";
@@ -1053,11 +1054,17 @@ export default function RepurposeWorkspace({
           onReadyChange={setPhotoInput}
         />
       ) : (
-        <TextSourceCard
-          inputSummary={inputSummary}
-          isLoading={isAnyLoading}
-          onUpdate={handleTextInputUpdate}
-        />
+        <>
+          <StudioTemplatePicker
+            disabled={isAnyLoading}
+            onApply={(body) => setInputSummary(body)}
+          />
+          <TextSourceCard
+            inputSummary={inputSummary}
+            isLoading={isAnyLoading}
+            onUpdate={handleTextInputUpdate}
+          />
+        </>
       )}
 
       <ProcessingTrustNote />

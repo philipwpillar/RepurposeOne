@@ -45,6 +45,9 @@ jobs:
       - name: Acceptance criteria (phase 8)
         run: bash scripts/ac-check.sh 8
 
+      - name: Acceptance criteria (phase 7)
+        run: bash scripts/ac-check.sh 7
+
       - name: Acceptance criteria (wave 1)
         run: bash scripts/ac-check.sh wave1
 

@@ -32,7 +32,7 @@ export default function PrivacyPage() {
           Privacy Policy
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Last updated: 25 July 2026
+          Last updated: 29 July 2026
         </p>
 
         <div className="mt-10 space-y-8 text-foreground">
@@ -86,6 +86,27 @@ export default function PrivacyPage() {
                 technical logs via our hosting provider, Vercel.
               </li>
             </ul>
+          </section>
+
+
+          <section>
+            <h2 className="text-xl font-semibold">Landing page demo</h2>
+            <p className="mt-3 leading-relaxed text-muted-foreground">
+              Visitors without an account can try the Voice Lab demo on our
+              homepage. Text they paste is sent to our AI provider via
+              OpenRouter (DeepInfra, United States) solely to generate a sample
+              X thread in a preset voice. We do not store the pasted text or
+              the generated output.
+            </p>
+            <p className="mt-3 leading-relaxed text-muted-foreground">
+              To prevent abuse, we record a salted hash of the visitor&apos;s IP
+              address and a timestamp for rate limiting. These records are
+              deleted after 48 hours. Our legal basis for this processing is
+              legitimate interest (demonstrating the product and preventing
+              abuse). This involves a transfer of personal data to the United
+              States; we rely on appropriate safeguards for international
+              transfers.
+            </p>
           </section>
 
           <section>

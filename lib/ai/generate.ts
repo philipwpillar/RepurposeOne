@@ -36,6 +36,8 @@ export interface GenerateInput {
   modelTier?: ModelTier;
   /** Optional voice exemplars prompt block (Brief S2). */
   exemplarsText?: string;
+  /** Optional completion token ceiling (public demo). */
+  maxTokens?: number;
 }
 
 export interface GenerateResult {
@@ -111,6 +113,10 @@ export async function generateRepurpose(
       { role: "user", content: user },
     ],
   };
+
+  if (input.maxTokens != null) {
+    completionParams.max_tokens = input.maxTokens;
+  }
 
   const response = await client.chat.completions.create(completionParams);
 
