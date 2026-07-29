@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, Mail } from "lucide-react";
@@ -28,6 +28,22 @@ interface AuthFormProps {
   initialError?: string;
 }
 
+const RESEND_COOLDOWN_SEC = 60;
+
+function mapOtpError(message: string): string {
+  const lower = message.toLowerCase();
+  if (lower.includes("expired")) {
+    return "That code has expired. Resend a new one and try again.";
+  }
+  if (lower.includes("invalid") || lower.includes("otp")) {
+    return "That code didn't work. Check it and try again.";
+  }
+  if (lower.includes("too many") || lower.includes("rate")) {
+    return "Too many attempts. Wait a minute and try again.";
+  }
+  return message;
+}
+
 export function AuthForm({
   mode,
   redirectTo = "/dashboard",
@@ -36,19 +52,31 @@ export function AuthForm({
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [otpCode, setOtpCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(initialError ?? "");
-  const [message, setMessage] = useState("");
-  const [awaitingEmail, setAwaitingEmail] = useState(false);
+  const [awaitingOtp, setAwaitingOtp] = useState(false);
+  const [resendSeconds, setResendSeconds] = useState(0);
 
   const isSignUp = mode === "sign-up";
   const showGoogle = isGoogleAuthEnabled() && !isNativePlatform();
+
+  useEffect(() => {
+    if (resendSeconds <= 0) return;
+    const timer = setInterval(() => {
+      setResendSeconds((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendSeconds]);
+
+  const startResendCooldown = useCallback(() => {
+    setResendSeconds(RESEND_COOLDOWN_SEC);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
-    setMessage("");
 
     const supabase = createClient();
 
@@ -57,7 +85,9 @@ export function AuthForm({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
+          // Keep ConfirmationURL working until the email template also includes
+          // {{ .Token }}. Either path completes signup.
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent("/onboarding")}`,
         },
       });
 
@@ -72,13 +102,12 @@ export function AuthForm({
       } = await supabase.auth.getSession();
 
       if (session) {
-        router.push(redirectTo);
+        router.push("/onboarding");
         router.refresh();
       } else {
-        setAwaitingEmail(true);
-        setMessage(
-          "Check your email for a confirmation link, then sign in to continue."
-        );
+        setAwaitingOtp(true);
+        setOtpCode("");
+        startResendCooldown();
       }
     } else {
       const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -99,28 +128,119 @@ export function AuthForm({
     setLoading(false);
   }
 
-  if (awaitingEmail) {
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    const token = otpCode.trim();
+    if (token.length < 6) {
+      setError("Enter the 6-digit code from your email.");
+      setLoading(false);
+      return;
+    }
+
+    const supabase = createClient();
+    const { error: verifyError } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: "signup",
+    });
+
+    if (verifyError) {
+      setError(mapOtpError(verifyError.message));
+      setLoading(false);
+      return;
+    }
+
+    router.push("/onboarding");
+    router.refresh();
+    setLoading(false);
+  }
+
+  async function handleResendCode() {
+    if (resendSeconds > 0) return;
+
+    setError("");
+    const supabase = createClient();
+    const { error: resendError } = await supabase.auth.resend({
+      type: "signup",
+      email,
+    });
+
+    if (resendError) {
+      setError(mapOtpError(resendError.message));
+      return;
+    }
+
+    startResendCooldown();
+  }
+
+  if (awaitingOtp) {
     return (
       <div className="vo-auth-confirm space-y-4">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgba(45,212,191,0.15)]">
           <Mail className="h-5 w-5 text-[color:var(--teal)]" aria-hidden />
         </div>
         <h1 className="font-display text-xl font-semibold tracking-tight">
-          Check your inbox
+          Enter your code
         </h1>
         <p className="text-sm text-muted-foreground">
-          We sent a confirmation link to{" "}
-          <span className="font-medium text-foreground">{email}</span>. Open it,
-          then sign in to finish setup.
+          We sent a 6-digit code to{" "}
+          <span className="font-medium text-foreground">{email}</span>. Paste it
+          below to finish creating your account.
         </p>
-        {message ? (
-          <p className="text-xs text-muted-foreground" role="status">
-            {message}
-          </p>
-        ) : null}
-        <Button asChild variant="outline" className="w-full border-white/15 bg-transparent text-foreground hover:bg-white/5">
-          <Link href="/sign-in">Back to sign in</Link>
-        </Button>
+
+        <form onSubmit={handleVerifyOtp} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="otp-code">Confirmation code</Label>
+            <Input
+              id="otp-code"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]*"
+              maxLength={6}
+              placeholder="123456"
+              value={otpCode}
+              onChange={(event) =>
+                setOtpCode(event.target.value.replace(/\D/g, "").slice(0, 6))
+              }
+              required
+            />
+          </div>
+
+          {error ? (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          ) : null}
+
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading && <Loader2 className="animate-spin" />}
+            Verify and continue
+          </Button>
+        </form>
+
+        <div className="flex flex-col gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full border-white/15 bg-transparent text-foreground hover:bg-white/5"
+            disabled={resendSeconds > 0 || loading}
+            onClick={() => void handleResendCode()}
+          >
+            {resendSeconds > 0
+              ? `Resend code in ${resendSeconds}s`
+              : "Resend code"}
+          </Button>
+          <Button
+            asChild
+            variant="ghost"
+            className="w-full text-muted-foreground"
+          >
+            <Link href="/sign-in">Back to sign in</Link>
+          </Button>
+        </div>
       </div>
     );
   }

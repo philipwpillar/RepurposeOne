@@ -229,14 +229,28 @@ run_wave1(){ echo "── WAVE 1 ──"
   assert "bundle copy not four-platform-posts" "$(n 'four platform posts' 'app/(dashboard)/bundles' components/repurpose lib/billing)" eq 0
   assert "acceptance note committed"        "$(f 'docs/acceptance/wave-1-*.md')" eq 1 ; }
 
+run_wave2(){ echo "── WAVE 2 ──"
+  assert "capacitor browser installed"      "$(n '@capacitor/browser' package.json lib components)" ge 2
+  assert "capacitor app installed"          "$(n '@capacitor/app' package.json lib components)" ge 2
+  assert "native oauth deep-link handler"     "$(n 'appUrlOpen' app components lib)" ge 1
+  assert "url scheme registered in plist"   "$(n 'CFBundleURLTypes' ios/App/App/Info.plist)" ge 1
+  assert "otp verify wired"                 "$(n 'verifyOtp' components/auth)" ge 1
+  assert "otp resend control"               "$(n 'resend|Resend' components/auth/auth-form.tsx)" ge 1
+  assert "dropdown primitive added"         "$(f 'components/ui/dropdown-menu.tsx')" eq 1
+  assert "account menu in shell"            "$(n 'AccountMenu' 'app/(dashboard)/_components/dashboard-shell.tsx')" ge 1
+  assert "no dead upgrade route"            "$(n '"/upgrade"' app components)" eq 0
+  assert "no child mode scaffolding"        "$(n -i 'child_mode|childMode|ChildMode' app components lib supabase)" eq 0
+  assert "acceptance note committed"        "$(f 'docs/acceptance/wave-2-*.md')" eq 1 ; }
+
 case "$PHASE" in
   floor) run_floor ;;
   0) run_floor; run_0 ;;  1) run_floor; run_1 ;;  2) run_floor; run_2 ;;
   3) run_floor; run_3 ;;  4) run_floor; run_4 ;;  5) run_floor; run_5 ;;
   6) run_floor; run_6 ;;  7) run_floor; run_7 ;;  8) run_floor; run_8 ;;
   wave1) run_floor; run_wave1 ;;
-  all) run_floor; for p in 0 1 2 3 4 5 6 7 8; do run_$p; done; run_wave1 ;;
-  *) echo "usage: bash scripts/ac-check.sh [floor|0-8|wave1|all]"; exit 2 ;;
+  wave2) run_floor; run_wave2 ;;
+  all) run_floor; for p in 0 1 2 3 4 5 6 7 8; do run_$p; done; run_wave1; run_wave2 ;;
+  *) echo "usage: bash scripts/ac-check.sh [floor|0-8|wave1|wave2|all]"; exit 2 ;;
 esac
 
 echo

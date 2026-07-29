@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { isGoogleAuthEnabled } from "@/lib/auth-config";
+import { startNativeGoogleOAuth } from "@/lib/auth/native-oauth";
 import { isNativePlatform } from "@/lib/platform";
 import { Button } from "@/components/ui/button";
 
@@ -19,6 +20,7 @@ export function GoogleSignInButton({
   const [loading, setLoading] = useState(false);
   const googleEnabled = isGoogleAuthEnabled();
 
+  // Keep hidden on native until Phil verifies CFBundleURLTypes + Xcode flow.
   if (isNativePlatform()) return null;
 
   async function handleGoogleSignIn() {
@@ -26,6 +28,13 @@ export function GoogleSignInButton({
 
     setLoading(true);
     const supabase = createClient();
+
+    if (isNativePlatform()) {
+      const { error } = await startNativeGoogleOAuth(supabase, redirectTo);
+      if (error) onError?.(error);
+      setLoading(false);
+      return;
+    }
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
