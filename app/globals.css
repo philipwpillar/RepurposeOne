@@ -349,9 +349,6 @@ body {
 html.vo-sidebar-collapsed .vo-sidebar {
   width: 4rem;
 }
-html.vo-sidebar-collapsed .vo-topbar-usage {
-  display: flex;
-}
 
 ::view-transition-old(vo-main),
 ::view-transition-new(vo-main) {
