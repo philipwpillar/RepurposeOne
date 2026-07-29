@@ -25,7 +25,6 @@ import { PaymentFailedBanner } from "@/components/billing/payment-failed-banner"
 import { useShortcuts } from "@/components/shortcut-provider";
 import { RouteViewTransition } from "@/components/route-view-transition";
 import { Button } from "@/components/ui/button";
-import { planLabel } from "@/lib/plan-label";
 import { cn } from "@/lib/utils";
 
 export interface DashboardUser {
@@ -192,68 +191,6 @@ interface DashboardShellProps {
   paymentFailed?: boolean;
 }
 
-function UsageIndicator({ usage, compact = false }: { usage: UsageInfo; compact?: boolean }) {
-  const atLimit = usage.used >= usage.limit;
-  const usagePercent = Math.min(100, (usage.used / usage.limit) * 100);
-
-  if (compact) {
-    return (
-      <div className="flex items-center gap-2 text-sm">
-        <span
-          className={cn("font-medium", atLimit ? "text-destructive" : "text-foreground")}
-          title={`${planLabel(usage.plan)} · ${usage.used} of ${usage.limit} generations this month`}
-        >
-          {usage.used} / {usage.limit}
-        </span>
-        <Link
-          href="/account#plans"
-          className="text-xs font-medium text-primary hover:text-primary/80"
-        >
-          Upgrade
-        </Link>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-2 rounded-xl border border-border bg-secondary px-3 py-2.5">
-      <div className="flex items-center justify-between text-xs">
-        <span className="font-medium text-muted-foreground">Monthly usage</span>
-        <span className={cn("font-semibold", atLimit ? "text-destructive" : "text-foreground")}>
-          {usage.used} / {usage.limit}
-        </span>
-      </div>
-      <div
-        className="h-1.5 overflow-hidden rounded-full bg-background"
-        role="progressbar"
-        aria-valuenow={usage.used}
-        aria-valuemin={0}
-        aria-valuemax={usage.limit}
-        aria-label="Monthly generation usage"
-      >
-        <div
-          className={cn(
-            "h-full rounded-full transition-all",
-            atLimit ? "bg-destructive" : "bg-primary"
-          )}
-          style={{ width: `${usagePercent}%` }}
-        />
-      </div>
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] text-muted-foreground">
-          {planLabel(usage.plan)} · generations
-        </span>
-        <Link
-          href="/account#plans"
-          className="text-[11px] font-medium text-primary hover:text-primary/80"
-        >
-          Upgrade →
-        </Link>
-      </div>
-    </div>
-  );
-}
-
 const SIDEBAR_COLLAPSED_KEY = "vo-sidebar-collapsed";
 
 export function DashboardShell({
@@ -345,9 +282,6 @@ export function DashboardShell({
             collapsed && "items-center"
           )}
         >
-          <div className={cn(collapsed && "hidden")}>
-            <UsageIndicator usage={usage} />
-          </div>
           <div
             className={cn(
               "flex items-center gap-3 rounded-xl bg-secondary px-3 py-2.5",
@@ -419,11 +353,7 @@ export function DashboardShell({
                 ⌘K
               </kbd>
             </Button>
-            {/* Usage only when sidebar is collapsed — class toggled by boot script / toggle. */}
-            <div className="vo-topbar-usage hidden">
-              <UsageIndicator usage={usage} compact />
-            </div>
-            <AccountMenu user={user} />
+            <AccountMenu user={user} usage={usage} />
           </div>
         </header>
 
@@ -482,20 +412,6 @@ export function DashboardShell({
                 onNavigate={() => setMobileNavOpen(false)}
               />
             </nav>
-
-            <div className="space-y-3 border-t border-border p-4">
-              <UsageIndicator usage={usage} />
-              <div className="flex items-center gap-3 rounded-xl bg-secondary px-3 py-2.5">
-                <UserAvatar user={user} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-foreground">{user.name}</p>
-                  {user.email ? (
-                    <p className="truncate text-xs text-muted-foreground">{user.email}</p>
-                  ) : null}
-                </div>
-              </div>
-              <SignOutButton />
-            </div>
           </aside>
         </div>
       ) : null}
