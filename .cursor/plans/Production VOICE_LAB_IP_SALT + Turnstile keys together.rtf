@@ -1,0 +1,152 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2870
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 HelveticaNeue-Bold;\f1\fnil\fcharset0 HelveticaNeue;\f2\fnil\fcharset0 LucidaGrande;
+\f3\fnil\fcharset134 PingFangSC-Regular;}
+{\colortbl;\red255\green255\blue255;\red7\green64\blue128;\red51\green51\blue51;}
+{\*\expandedcolortbl;;\cssrgb\c0\c32852\c57488;\cssrgb\c26052\c26052\c26052;}
+\paperw11905\paperh16837\margl1133\margr1133\margb1133\margt1133
+\deftab720
+\pard\pardeftab720\sl312\slmult1\sa220\partightenfactor0
+
+\f0\b\fs42 \cf2 \up0 \nosupersub \ulnone Production VOICE_LAB_IP_SALT + Turnstile keys together\
+\pard\pardeftab720\sl312\slmult1\sa100\partightenfactor0
+
+\f1\b0\fs22 \cf3 \
+Here\'92s the Production setup, end to end. Do it **once**, when you\'92re ready for the holding page to come down \'97 not before.\
+\
+---\
+\
+## Why \'93together\'94\
+\
+| Variable | If missing on Production |\
+|----------|--------------------------|\
+| `VOICE_LAB_IP_SALT` | Demo returns **503** (route refuses to run without salt) |\
+| Both Turnstile keys | Demo still works, but **no bot check** |\
+| Only site key, no secret | Client asks for a token; server skips verify 
+\f2 \uc0\u8594 
+\f1  messy |\
+| Only secret, no site key | Client never sends a token; server rejects 
+\f2 \uc0\u8594 
+\f1  **403** |\
+\
+So set all three in one sitting, then redeploy Production.\
+\
+---\
+\
+## 1. Create a Cloudflare Turnstile site\
+\
+1. Go to [https://dash.cloudflare.com](https://dash.cloudflare.com) 
+\f2 \uc0\u8594 
+\f1  **Turnstile** (or search \'93Turnstile\'94)\
+2. **Add site**\
+3. Name: e.g. `Voiceora Voice Lab`\
+4. Domains: `voiceora.io` (and `www.voiceora.io` if you use it)\
+5. Widget mode: **Invisible** (matches the app)\
+6. Create 
+\f2 \uc0\u8594 
+\f1  copy:\
+   - **Site Key** 
+\f2 \uc0\u8594 
+\f1  becomes `NEXT_PUBLIC_TURNSTILE_SITE_KEY`\
+   - **Secret Key** 
+\f2 \uc0\u8594 
+\f1  becomes `TURNSTILE_SECRET_KEY`\
+\
+Keep the secret private (like an API key).\
+\
+---\
+\
+## 2. Generate the IP salt (on your Mac)\
+\
+```bash\
+openssl rand -hex 32\
+```\
+\
+Copy the long hex string. That\'92s `VOICE_LAB_IP_SALT`.  \
+Store it somewhere safe (1Password / notes). Don\'92t rotate casually later \'97 every visitor\'92s bucket is keyed off it.\
+\
+---\
+\
+## 3. Add all three on Vercel \'97 Production only\
+\
+1. [vercel.com](https://vercel.com) 
+\f2 \uc0\u8594 
+\f1  your **RepurposeOne / Voiceora** project  \
+2. **Settings** 
+\f2 \uc0\u8594 
+\f1  **Environment Variables**  \
+3. Add each of these. For each one, check **only Production** (leave Preview / Development unchecked unless you want them there too):\
+\
+| Name | Value | Notes |\
+|------|--------|--------|\
+| `VOICE_LAB_IP_SALT` | output of `openssl rand -hex 32` | Secret \'97 not `NEXT_PUBLIC_` |\
+| `TURNSTILE_SECRET_KEY` | Cloudflare secret key | Secret |\
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Cloudflare site key | Public (baked into the client bundle) |\
+\
+4. Save all three.\
+\
+If you already added `VOICE_LAB_IP_SALT` on **Preview** earlier, that\'92s fine \'97 add a **separate** Production entry (or edit and also enable Production). Same value or a new one for Prod is fine; Production just needs *some* salt before real traffic.\
+\
+---\
+\
+## 4. Redeploy Production\
+\
+Env vars apply on the **next** deploy:\
+\
+- Vercel 
+\f2 \uc0\u8594 
+\f1  **Deployments** 
+\f2 \uc0\u8594 
+\f1  latest Production 
+\f2 \uc0\u8594 
+\f1  **
+\f3 \'a1\'ad
+\f1 ** 
+\f2 \uc0\u8594 
+\f1  **Redeploy**  \
+  or push any commit to `main`\
+\
+Without a redeploy, Production still runs without the new vars.\
+\
+---\
+\
+## 5. Quick smoke check (after holding page is down)\
+\
+1. Open `https://voiceora.io/#voice-lab`\
+2. Paste text 
+\f2 \uc0\u8594 
+\f1  **Try it**\
+3. Expect a live X thread (or a clear error), not a blank section\
+4. Optional: Supabase 
+\f2 \uc0\u8594 
+\f1  `voice_lab_hits` \'97 new rows with `ip_hash` after a few tries\
+\
+If Try it says \'93Couldn't verify \'97 refresh and try again,\'94 Turnstile keys are mismatched or domains don\'92t include `voiceora.io`.\
+\
+---\
+\
+## Minimal checklist\
+\
+```\
+
+\f2 \uc0\u9633 
+\f1  Cloudflare Turnstile site for voiceora.io (Invisible)\
+
+\f2 \uc0\u9633 
+\f1  openssl rand -hex 32 
+\f2 \uc0\u8594 
+\f1  VOICE_LAB_IP_SALT\
+
+\f2 \uc0\u9633 
+\f1  Vercel Production: all three vars (Production only)\
+
+\f2 \uc0\u9633 
+\f1  Redeploy Production\
+
+\f2 \uc0\u9633 
+\f1  (Then) take holding page down\
+
+\f2 \uc0\u9633 
+\f1  Smoke-test #voice-lab\
+```\
+\
+You don\'92t need to touch Preview for this. Migration is already done. This is the last Voice Lab ops gate before public.}
