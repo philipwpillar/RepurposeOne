@@ -20,9 +20,12 @@ export default function InputModeTabs({
       onValueChange={(next) => onChange(next as InputMode)}
       className="mb-5"
     >
-      <TabsList aria-label="Input mode" className="grid w-full grid-cols-2">
+      <TabsList aria-label="Input mode" className="grid w-full grid-cols-3">
         <TabsTrigger value="paste" disabled={disabled}>
           Paste text
+        </TabsTrigger>
+        <TabsTrigger value="link" disabled={disabled}>
+          Link
         </TabsTrigger>
         <TabsTrigger value="photo" disabled={disabled}>
           Upload photo

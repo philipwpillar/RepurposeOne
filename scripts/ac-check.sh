@@ -242,6 +242,16 @@ run_wave2(){ echo "── WAVE 2 ──"
   assert "no child mode scaffolding"        "$(n -i 'child_mode|childMode|ChildMode' app components lib supabase)" eq 0
   assert "acceptance note committed"        "$(f 'docs/acceptance/wave-2-*.md')" eq 1 ; }
 
+run_wave3(){ echo "── WAVE 3 ──"
+  assert "ingest url route exists"          "$(f 'app/api/ingest/url/route.ts')" eq 1
+  assert "ssrf helper present"              "$(n 'assertSafeIngestUrl|isBlockedIp' lib/ingest)" ge 2
+  assert "manual redirect hop revalidation" "$(n 'redirect: \"manual\"|INGEST_MAX_REDIRECTS' lib/ingest)" ge 2
+  assert "readability extract wired"        "$(n 'Readability' lib/ingest app/api/ingest)" ge 1
+  assert "link input mode"                  "$(n '\"link\"' types/photo-input.ts 'app/(dashboard)/studio')" ge 2
+  assert "link source card"                 "$(f 'app/(dashboard)/studio/_components/LinkSourceCard.tsx')" eq 1
+  assert "ingest route nodejs runtime"      "$(n 'runtime = \"nodejs\"' app/api/ingest/url/route.ts)" eq 1
+  assert "acceptance note committed"        "$(f 'docs/acceptance/wave-3-*.md')" eq 1 ; }
+
 case "$PHASE" in
   floor) run_floor ;;
   0) run_floor; run_0 ;;  1) run_floor; run_1 ;;  2) run_floor; run_2 ;;
@@ -249,8 +259,9 @@ case "$PHASE" in
   6) run_floor; run_6 ;;  7) run_floor; run_7 ;;  8) run_floor; run_8 ;;
   wave1) run_floor; run_wave1 ;;
   wave2) run_floor; run_wave2 ;;
-  all) run_floor; for p in 0 1 2 3 4 5 6 7 8; do run_$p; done; run_wave1; run_wave2 ;;
-  *) echo "usage: bash scripts/ac-check.sh [floor|0-8|wave1|wave2|all]"; exit 2 ;;
+  wave3) run_floor; run_wave3 ;;
+  all) run_floor; for p in 0 1 2 3 4 5 6 7 8; do run_$p; done; run_wave1; run_wave2; run_wave3 ;;
+  *) echo "usage: bash scripts/ac-check.sh [floor|0-8|wave1|wave2|wave3|all]"; exit 2 ;;
 esac
 
 echo

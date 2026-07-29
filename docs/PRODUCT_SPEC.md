@@ -43,6 +43,7 @@ Primary objective: **speed to first revenue.** Every decision is weighed against
 - **Inputs:**
   - Paste text — **shipped**
   - Photo upload with guided context (Creator/Pro/Pro Plus) — **shipped**
+  - Article / URL link ingest (Readability extract → paste pipeline) — **shipped (Wave 3a)**
   - Upload `.txt` / `.pdf` (basic parsing) — **deferred (post-launch)**
   - Voice into Moment Bundle context — **native OS/keyboard dictation** (server ASR withdrawn, PR #46)
   - Video-as-input for Studio — sequenced **after** Moment Bundle video path

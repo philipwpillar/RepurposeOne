@@ -1,6 +1,6 @@
 import type { PhotoMimeType } from "@/lib/image/constants";
 
-export type InputMode = "paste" | "photo";
+export type InputMode = "paste" | "link" | "photo";
 
 export interface PhotoInputState {
   imageBase64: string | null;

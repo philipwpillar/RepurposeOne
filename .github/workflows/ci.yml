@@ -54,6 +54,9 @@ jobs:
       - name: Acceptance criteria (wave 2)
         run: bash scripts/ac-check.sh wave2
 
+      - name: Acceptance criteria (wave 3)
+        run: bash scripts/ac-check.sh wave3
+
       - name: Contrast check
         run: npm run contrast-check
 
