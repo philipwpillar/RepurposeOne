@@ -23,6 +23,7 @@ import {
 import type { InputMode, PhotoInputReady } from "@/types/photo-input";
 import type { Plan } from "@/types";
 import InputModeTabs from "./InputModeTabs";
+import LinkSourceCard from "./LinkSourceCard";
 import PhotoInputSection from "./PhotoInputSection";
 import StudioTemplatePicker from "./StudioTemplatePicker";
 import TextSourceCard from "./TextSourceCard";
@@ -618,14 +619,26 @@ export default function RepurposeWorkspace({
   );
 
   const isPhotoMode = inputMode === "photo";
+  const isLinkMode = inputMode === "link";
   const canGeneratePhoto =
     isPhotoMode && photoInput !== null && planAllowsVision(userPlan);
+
+  const modeLabel = (mode: InputMode) => {
+    if (mode === "photo") return "Upload photo";
+    if (mode === "link") return "Link";
+    return "Paste text";
+  };
 
   const requestModeChange = (mode: InputMode) => {
     if (mode === inputMode) return;
 
-    if (mode === "paste" && photoInput) {
-      setPendingMode(mode);
+    // Photo ↔ text modes need a clear confirm; paste ↔ link share inputSummary.
+    if (mode === "paste" || mode === "link") {
+      if (photoInput) {
+        setPendingMode(mode);
+        return;
+      }
+      setInputMode(mode);
       return;
     }
 
@@ -639,7 +652,7 @@ export default function RepurposeWorkspace({
 
   const confirmModeChange = () => {
     if (!pendingMode) return;
-    if (pendingMode === "paste") {
+    if (pendingMode === "paste" || pendingMode === "link") {
       setPhotoInput(null);
     }
     if (pendingMode === "photo") {
@@ -1053,6 +1066,13 @@ export default function RepurposeWorkspace({
           disabled={isAnyLoading}
           onReadyChange={setPhotoInput}
         />
+      ) : isLinkMode ? (
+        <LinkSourceCard
+          inputSummary={inputSummary}
+          isLoading={isAnyLoading}
+          onExtracted={(sourceText) => setInputSummary(sourceText)}
+          onUpdateText={handleTextInputUpdate}
+        />
       ) : (
         <>
           <StudioTemplatePicker
@@ -1389,11 +1409,11 @@ export default function RepurposeWorkspace({
 
       <ModeSwitchDialog
         open={pendingMode !== null}
-        targetLabel={pendingMode === "photo" ? "Upload photo" : "Paste text"}
+        targetLabel={pendingMode ? modeLabel(pendingMode) : "another mode"}
         clearDescription={
-          pendingMode === "paste"
-            ? "Switching to paste text will clear your photo and context."
-            : "Switching to photo upload will clear your pasted source text."
+          pendingMode === "photo"
+            ? "Switching to photo upload will clear your source text."
+            : "Switching away from photo will clear your photo and context."
         }
         onConfirm={confirmModeChange}
         onCancel={() => setPendingMode(null)}
