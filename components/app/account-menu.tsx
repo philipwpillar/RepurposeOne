@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import type { DashboardUser } from "@/app/(dashboard)/_components/dashboard-shell";
 import { UserAvatar } from "@/components/app/user-avatar";
-import { createClient } from "@/lib/supabase/client";
+import { useSignOut } from "@/components/app/use-sign-out";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -20,14 +19,7 @@ interface AccountMenuProps {
 }
 
 export function AccountMenu({ user }: AccountMenuProps) {
-  const router = useRouter();
-
-  async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/sign-in");
-    router.refresh();
-  }
+  const signOut = useSignOut();
 
   return (
     <DropdownMenu>
@@ -54,7 +46,7 @@ export function AccountMenu({ user }: AccountMenuProps) {
           className="gap-2 text-muted-foreground"
           onSelect={(event) => {
             event.preventDefault();
-            void handleSignOut();
+            void signOut();
           }}
         >
           <LogOut className="h-4 w-4" aria-hidden="true" />

@@ -84,6 +84,11 @@ export function AuthForm({
       const { error: signUpError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          // Keep ConfirmationURL working until the email template also includes
+          // {{ .Token }}. Either path completes signup.
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent("/onboarding")}`,
+        },
       });
 
       if (signUpError) {

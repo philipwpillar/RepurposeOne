@@ -1,7 +1,5 @@
 "use client";
 
-import { App } from "@capacitor/app";
-import { Browser } from "@capacitor/browser";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isNativePlatform } from "@/lib/platform";
 
@@ -13,15 +11,21 @@ export const NATIVE_OAUTH_REDIRECT = "com.voiceora.io://auth/callback";
  * (server.url: https://voiceora.io). Exchange must happen in that same webview
  * so @supabase/ssr cookies land on voiceora.io — not via app/auth/callback/route.ts
  * and not inside SFSafariViewController alone.
+ *
+ * Capacitor plugins are dynamic-imported (see lib/haptics.ts) so public auth
+ * pages never ship a static native dependency into the web bundle.
  */
 export async function startNativeGoogleOAuth(
   supabase: SupabaseClient,
   nextPath: string
 ): Promise<{ error?: string }> {
+  pendingNextPath = nextPath.startsWith("/") ? nextPath : "/dashboard";
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${NATIVE_OAUTH_REDIRECT}?next=${encodeURIComponent(nextPath)}`,
+      // Bare URL — no query string — so Supabase allowlist matches exactly.
+      redirectTo: NATIVE_OAUTH_REDIRECT,
       skipBrowserRedirect: true,
     },
   });
@@ -29,22 +33,19 @@ export async function startNativeGoogleOAuth(
   if (error) return { error: error.message };
   if (!data.url) return { error: "Google sign-in did not return a URL." };
 
+  const { Browser } = await import("@capacitor/browser");
   await Browser.open({ url: data.url });
   return {};
 }
 
 export function parseNativeOAuthCallbackUrl(rawUrl: string): {
   code: string | null;
-  next: string;
 } {
   try {
     const url = new URL(rawUrl);
-    const code = url.searchParams.get("code");
-    const next = url.searchParams.get("next") ?? "/dashboard";
-    const safeNext = next.startsWith("/") ? next : "/dashboard";
-    return { code, next: safeNext };
+    return { code: url.searchParams.get("code") };
   } catch {
-    return { code: null, next: "/dashboard" };
+    return { code: null };
   }
 }
 
@@ -54,6 +55,7 @@ export type NativeOAuthExchangeHandler = (
 ) => Promise<void>;
 
 let exchangeHandler: NativeOAuthExchangeHandler | null = null;
+let pendingNextPath = "/dashboard";
 
 export function setNativeOAuthExchangeHandler(
   handler: NativeOAuthExchangeHandler | null
@@ -64,18 +66,35 @@ export function setNativeOAuthExchangeHandler(
 export function registerNativeOAuthDeepLinkListener(): () => void {
   if (!isNativePlatform()) return () => {};
 
-  const listenerPromise = App.addListener("appUrlOpen", async ({ url }) => {
-    if (!url.startsWith(NATIVE_OAUTH_REDIRECT)) return;
-    if (!exchangeHandler) return;
+  let remove: (() => void) | null = null;
+  let cancelled = false;
 
-    const { code, next } = parseNativeOAuthCallbackUrl(url);
-    if (!code) return;
+  void (async () => {
+    const { App } = await import("@capacitor/app");
+    const { Browser } = await import("@capacitor/browser");
 
-    await Browser.close().catch(() => undefined);
-    await exchangeHandler(code, next);
-  });
+    const handle = await App.addListener("appUrlOpen", async ({ url }) => {
+      if (!url.startsWith(NATIVE_OAUTH_REDIRECT)) return;
+      if (!exchangeHandler) return;
+
+      const { code } = parseNativeOAuthCallbackUrl(url);
+      if (!code) return;
+
+      await Browser.close().catch(() => undefined);
+      await exchangeHandler(code, pendingNextPath);
+    });
+
+    if (cancelled) {
+      await handle.remove();
+      return;
+    }
+    remove = () => {
+      void handle.remove();
+    };
+  })();
 
   return () => {
-    void listenerPromise.then((handle) => handle.remove());
+    cancelled = true;
+    remove?.();
   };
 }
