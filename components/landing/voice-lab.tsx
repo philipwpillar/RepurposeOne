@@ -9,12 +9,9 @@ import {
   VOICE_LAB_MAX_CHARS,
   VOICE_LAB_MIN_CHARS,
 } from "@/lib/landing/voice-lab-config";
-import {
-  VOICE_LAB_FALLBACK_LABEL,
-  VOICE_LAB_FALLBACK_THREADS,
-} from "@/lib/landing/voice-lab-demo";
 
 const LIVE_LABEL = "Generated live · sample voice, your text";
+const IDLE_LABEL = "Live demo · sample voice, your text";
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 declare global {
@@ -41,11 +38,24 @@ function prefersReducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
+function errorMessageForStatus(status: number): string {
+  if (status === 429) {
+    return "You've had a few goes — sign up free to keep going.";
+  }
+  if (status === 403) {
+    return "Couldn't verify — refresh and try again.";
+  }
+  if (status === 503) {
+    return "Demo is temporarily unavailable. Please try again shortly.";
+  }
+  return "Couldn't generate from that text. Please try again.";
+}
+
 export function VoiceLab() {
   const [inputText, setInputText] = useState(VOICE_LAB_DEFAULT_INPUT);
   const [currentVoice, setCurrentVoice] = useState(0);
   const [display, setDisplay] = useState("");
-  const [statusLabel, setStatusLabel] = useState(LIVE_LABEL);
+  const [statusLabel, setStatusLabel] = useState(IDLE_LABEL);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [liveAnnouncement, setLiveAnnouncement] = useState("");
   const [reduced, setReduced] = useState(false);
@@ -79,6 +89,14 @@ export function VoiceLab() {
     }, 14);
   }, []);
 
+  const failGeneration = useCallback((message: string) => {
+    clearTypeTimer();
+    setDisplay("");
+    setLiveAnnouncement("");
+    setStatusLabel(IDLE_LABEL);
+    setStatusMessage(message);
+  }, []);
+
   const runGeneration = useCallback(
     async (turnstileToken?: string) => {
       const trimmed = inputText.trim();
@@ -91,7 +109,7 @@ export function VoiceLab() {
 
       setLoading(true);
       setStatusMessage(null);
-      setStatusLabel(LIVE_LABEL);
+      setStatusLabel(IDLE_LABEL);
 
       try {
         const response = await fetch("/api/voice-lab", {
@@ -104,35 +122,24 @@ export function VoiceLab() {
           }),
         });
 
-        if (response.status === 429) {
-          setStatusMessage(
-            "You've had a few goes — sign up free to keep going."
-          );
-          return;
-        }
-
-        if (response.status === 403) {
-          setStatusMessage("Couldn't verify — refresh and try again.");
-          return;
-        }
-
         if (!response.ok) {
-          throw new Error("generation_failed");
+          failGeneration(errorMessageForStatus(response.status));
+          return;
         }
 
         const data = (await response.json()) as { text?: string };
         if (!data.text?.trim()) {
-          throw new Error("empty_response");
+          failGeneration("Couldn't generate from that text. Please try again.");
+          return;
         }
 
         typeText(data.text, reduced);
         setLiveAnnouncement(data.text);
         setStatusLabel(LIVE_LABEL);
       } catch {
-        const fallback = VOICE_LAB_FALLBACK_THREADS[currentVoice] ?? VOICE_LAB_FALLBACK_THREADS[0];
-        typeText(fallback, reduced);
-        setLiveAnnouncement(fallback);
-        setStatusLabel(VOICE_LAB_FALLBACK_LABEL);
+        failGeneration(
+          "Couldn't reach the demo. Check your connection and try again."
+        );
       } finally {
         setLoading(false);
         pendingRunRef.current = false;
@@ -141,7 +148,7 @@ export function VoiceLab() {
         }
       }
     },
-    [currentVoice, inputText, reduced, typeText]
+    [currentVoice, failGeneration, inputText, reduced, typeText]
   );
 
   const handleTryIt = () => {
@@ -182,7 +189,7 @@ export function VoiceLab() {
           if (pendingRunRef.current) {
             pendingRunRef.current = false;
             setLoading(false);
-            setStatusMessage("Couldn't verify — refresh and try again.");
+            failGeneration("Couldn't verify — refresh and try again.");
           }
         },
       }
@@ -194,7 +201,7 @@ export function VoiceLab() {
         turnstileWidgetIdRef.current = null;
       }
     };
-  }, [runGeneration, turnstileReady]);
+  }, [failGeneration, runGeneration, turnstileReady]);
 
   return (
     <section className="voice-lab" id="voice-lab">

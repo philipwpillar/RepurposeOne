@@ -203,6 +203,7 @@ run_7(){ echo "── PHASE 7 ──"
   assert "voice-lab input cap enforced"       "$(n 'VOICE_LAB_MAX_CHARS' app components lib)" ge 3
   assert "turnstile verification present"   "$(n 'TURNSTILE_SECRET_KEY' app/api/voice-lab/route.ts lib/landing/turnstile.ts)" ge 1
   assert "voice-lab honesty label updated"  "$(n 'Illustrative demo' components/landing)" eq 0
+  assert "no silent curated fallback"       "$(n 'VOICE_LAB_FALLBACK|voice-lab-demo' components/landing lib/landing)" eq 0
   assert "demo privacy notice present"      "$(n 'DeepInfra' components/landing/voice-lab.tsx app/privacy/page.tsx)" ge 2
   assert "voice-lab calls a real route"     "$(n 'fetch\(' components/landing/voice-lab.tsx)" ge 1
   assert "no numeric social proof"          "$(n '\b[0-9]{1,3}(,[0-9]{3})+\s*(users|creators|customers|teams|makers)\b|★{3,}|[0-9]+% of (users|creators)' $A $C)" eq 0
