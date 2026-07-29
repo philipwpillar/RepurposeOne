@@ -20,14 +20,25 @@ function isPlausibleIp(value: string | undefined | null): value is string {
   return IPV4_RE.test(trimmed) || IPV6_RE.test(trimmed);
 }
 
+/** Proxies append — rightmost plausible hop is the trusted client IP. */
+function lastPlausibleIpFromList(headerValue: string): string | null {
+  const parts = headerValue.split(",").map((part) => part.trim());
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const candidate = parts[i];
+    if (isPlausibleIp(candidate)) return candidate;
+  }
+  return null;
+}
+
 /**
  * Vercel-aware client IP resolution. Prefer platform headers; fail closed when absent.
+ * Comma-separated headers use the last plausible entry (append semantics).
  */
 export function resolveVoiceLabClientIp(request: Request): string | null {
   const vercelForwarded = request.headers.get("x-vercel-forwarded-for");
   if (vercelForwarded) {
-    const candidate = vercelForwarded.split(",")[0]?.trim();
-    if (isPlausibleIp(candidate)) return candidate;
+    const candidate = lastPlausibleIpFromList(vercelForwarded);
+    if (candidate) return candidate;
   }
 
   const realIp = request.headers.get("x-real-ip")?.trim();
@@ -35,8 +46,8 @@ export function resolveVoiceLabClientIp(request: Request): string | null {
 
   const xff = request.headers.get("x-forwarded-for");
   if (xff) {
-    const candidate = xff.split(",")[0]?.trim();
-    if (isPlausibleIp(candidate)) return candidate;
+    const candidate = lastPlausibleIpFromList(xff);
+    if (candidate) return candidate;
   }
 
   return null;

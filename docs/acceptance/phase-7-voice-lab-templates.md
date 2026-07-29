@@ -19,7 +19,7 @@ bash scripts/ac-check.sh wave1
 | Live demo API | `POST /api/voice-lab` calls `generateRepurpose()` — fast tier, `x_thread`, 4 tweets, `max_tokens` 400 |
 | Caps | `VOICE_LAB_MAX_CHARS` (1500) enforced client + server |
 | Rate limit | `voice_lab_hits` table; 5/hour, 20/day per salted IP hash; fail closed without IP |
-| IP trust | Prefer `x-vercel-forwarded-for`, then `x-real-ip`, then `x-forwarded-for` (first hop) |
+| IP trust | Prefer `x-vercel-forwarded-for`, then `x-real-ip`, then `x-forwarded-for`; comma-separated values use the **last** plausible hop |
 | Turnstile | Env-gated — verify when `TURNSTILE_SECRET_KEY` set; skip when unset (local/CI) |
 | Privacy | Point-of-input notice + privacy policy section (DeepInfra, 48h IP-hash retention) |
 | Honesty | Live label: “Generated live · sample voice, your text”; fallback restores honest label |
@@ -31,7 +31,21 @@ bash scripts/ac-check.sh wave1
 
 1. Set together on Vercel Production: `VOICE_LAB_IP_SALT` (`openssl rand -hex 32`), `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`.
 2. Apply migration `20260729120000_voice_lab_hits.sql` manually.
-3. **Preview IP-spoof check:** curl `/api/voice-lab` clean vs `-H "x-forwarded-for: 1.2.3.4"` — same `ip_hash` in `voice_lab_hits`.
+3. **Preview IP-spoof check (required before merge):** on Preview, POST four times with the same body and confirm all four produce the **same** `ip_hash` in `voice_lab_hits`:
+   ```bash
+   curl -X POST "$PREVIEW/api/voice-lab" -H "Content-Type: application/json" \
+     -d '{"text":"We just shipped photo input. Upload one image and add context.","voice":0}'
+   curl -X POST "$PREVIEW/api/voice-lab" -H "Content-Type: application/json" \
+     -H "x-forwarded-for: 1.2.3.4" \
+     -d '{"text":"We just shipped photo input. Upload one image and add context.","voice":0}'
+   curl -X POST "$PREVIEW/api/voice-lab" -H "Content-Type: application/json" \
+     -H "x-real-ip: 5.6.7.8" \
+     -d '{"text":"We just shipped photo input. Upload one image and add context.","voice":0}'
+   curl -X POST "$PREVIEW/api/voice-lab" -H "Content-Type: application/json" \
+     -H "x-vercel-forwarded-for: 9.10.11.12" \
+     -d '{"text":"We just shipped photo input. Upload one image and add context.","voice":0}'
+   ```
+   If any spoofed header yields a different hash, that header is client-controllable — drop it from the resolution chain before merge.
 4. Watch OpenRouter spend for 48h after public.
 
 ## Visual baselines
