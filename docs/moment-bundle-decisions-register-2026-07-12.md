@@ -34,3 +34,10 @@ Settled decisions amending/confirming `docs/plans/moment-bundle-implementation-p
 - Protected fence in `RepurposeWorkspace.tsx` (ratified 2026-07-23): `GenerateApiError`, `PhotoGenerateApiError`, `callGenerateApi`, `callPhotoGenerateApi`, `resolveGenerateError`, and usage sync via `setUsedCount(apiErr.usage.used)` / success `setUsedCount(usage.used)`. Round-1 consolidated the former two literal `setUsedCount(err.usage.used)` branches into `resolveGenerateError` — behavior preserved. Brief 0a's plan-gate expressions (`planAllowsVision`) remain the only other sanctioned edits in that file until further notice. Verification grep should target `resolveGenerateError` and `setUsedCount(apiErr.usage.used)`, not the obsolete `setUsedCount(err.usage.used)` pattern.
 - Two-push gate: feature branch + PR, no merge; Claude verifies via fresh clone before Phil's go-ahead.
 - Sequencing: **Stripe live-mode activation precedes all implementation briefs.** Brief 0a may be executed by Cursor in parallel with Phil's Stripe afternoon only because it is revenue-adjacent plumbing with zero product surface.
+
+## Wave 2 decisions (2026-07-29)
+
+| # | Decision |
+|---|----------|
+| W2-1 | **Child Mode — cancelled** (not deferred). UK Age Appropriate Design Code applies to the whole service once under-16s are knowingly served; a PIN is not GDPR Article 8 parental consent; audience is founders/creators, not minors. No `profiles.child_mode`, PIN storage, or content-filter scaffolding. |
+| W2-2 | **X / Twitter sign-in — deferred** with trigger: revisit in **Wave 4** when X publishing needs a developer app. Blocker: X OAuth does not reliably return email; Supabase requires email (`profiles.email`, Stripe, OTP, deletion, payment-failed banner all load-bearing). |

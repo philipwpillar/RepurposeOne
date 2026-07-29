@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { UsageInfo } from "@/types";
@@ -19,6 +18,8 @@ import {
 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { SignOutButton } from "@/components/app/sign-out-button";
+import { AccountMenu } from "@/components/app/account-menu";
+import { UserAvatar } from "@/components/app/user-avatar";
 import { BottomTabs } from "@/components/bottom-tabs";
 import { PaymentFailedBanner } from "@/components/billing/payment-failed-banner";
 import { useShortcuts } from "@/components/shortcut-provider";
@@ -80,42 +81,6 @@ function breadcrumbFor(pathname: string): { section: string; context?: string } 
   }
 
   return { section };
-}
-
-function UserAvatar({ user, size = "md" }: { user: DashboardUser; size?: "sm" | "md" }) {
-  const px = size === "sm" ? 32 : 36;
-  const sizeClass = size === "sm" ? "h-8 w-8 text-xs" : "h-9 w-9 text-sm";
-
-  if (user.avatarUrl) {
-    return (
-      <Image
-        src={user.avatarUrl}
-        alt=""
-        width={px}
-        height={px}
-        className={cn(sizeClass, "rounded-full object-cover ring-2 ring-background")}
-      />
-    );
-  }
-
-  const initials = user.name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-
-  return (
-    <div
-      aria-hidden="true"
-      className={cn(
-        sizeClass,
-        "flex items-center justify-center rounded-full bg-primary/20 font-medium text-primary ring-2 ring-background"
-      )}
-    >
-      {initials}
-    </div>
-  );
 }
 
 function NavLinkItem({
@@ -458,6 +423,7 @@ export function DashboardShell({
             <div className="vo-topbar-usage hidden">
               <UsageIndicator usage={usage} compact />
             </div>
+            <AccountMenu user={user} />
           </div>
         </header>
 
