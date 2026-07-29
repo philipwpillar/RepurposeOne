@@ -245,11 +245,11 @@ run_wave2(){ echo "── WAVE 2 ──"
 run_wave3(){ echo "── WAVE 3 ──"
   assert "ingest url route exists"          "$(f 'app/api/ingest/url/route.ts')" eq 1
   assert "ssrf helper present"              "$(n 'assertSafeIngestUrl|isBlockedIp' lib/ingest)" ge 2
-  assert "manual redirect hop revalidation" "$(n 'redirect: \"manual\"|INGEST_MAX_REDIRECTS' lib/ingest)" ge 2
+  assert "manual redirect hop revalidation" "$(n 'redirect: "manual"|INGEST_MAX_REDIRECTS' lib/ingest)" ge 2
   assert "readability extract wired"        "$(n 'Readability' lib/ingest app/api/ingest)" ge 1
-  assert "link input mode"                  "$(n '\"link\"' types/photo-input.ts 'app/(dashboard)/studio')" ge 2
+  assert "link input mode"                  "$(n '"link"' types/photo-input.ts 'app/(dashboard)/studio')" ge 2
   assert "link source card"                 "$(f 'app/(dashboard)/studio/_components/LinkSourceCard.tsx')" eq 1
-  assert "ingest route nodejs runtime"      "$(n 'runtime = \"nodejs\"' app/api/ingest/url/route.ts)" eq 1
+  assert "ingest route nodejs runtime"      "$(n 'runtime = "nodejs"' app/api/ingest/url/route.ts)" eq 1
   assert "acceptance note committed"        "$(f 'docs/acceptance/wave-3-*.md')" eq 1 ; }
 
 case "$PHASE" in

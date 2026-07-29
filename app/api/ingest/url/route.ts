@@ -6,6 +6,7 @@ import { SsrfError } from "@/lib/ingest/ssrf";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
+export const maxDuration = 30;
 
 const IngestUrlBodySchema = z.object({
   url: z.string().min(1).max(2048),

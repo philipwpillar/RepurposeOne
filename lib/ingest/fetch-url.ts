@@ -38,108 +38,111 @@ export async function fetchHtmlForIngest(rawUrl: string): Promise<{
 }> {
   let current = await assertSafeIngestUrl(rawUrl);
 
-  for (let hop = 0; hop <= INGEST_MAX_REDIRECTS; hop++) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), INGEST_FETCH_TIMEOUT_MS);
+  // One deadline across all redirect hops (not 8s per hop).
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), INGEST_FETCH_TIMEOUT_MS);
 
-    let response: Response;
-    try {
-      response = await fetch(current.toString(), {
-        method: "GET",
-        redirect: "manual",
-        signal: controller.signal,
-        headers: {
-          Accept: "text/html,application/xhtml+xml;q=0.9,*/*;q=0.8",
-          "User-Agent": INGEST_USER_AGENT,
-        },
-      });
-    } catch (err) {
-      if (err instanceof Error && err.name === "AbortError") {
-        throw new IngestFetchError(
-          "That page took too long to respond. Try pasting the text instead."
-        );
-      }
-      throw new IngestFetchError(
-        "Could not fetch that URL. Try pasting the text instead."
-      );
-    } finally {
-      clearTimeout(timer);
-    }
-
-    // 3xx with Location — validate next hop and continue
-    if (response.status >= 300 && response.status < 400) {
-      const location = response.headers.get("location");
-      if (!location) {
-        throw new IngestFetchError(
-          "That page returned a redirect we could not follow."
-        );
-      }
-      if (hop === INGEST_MAX_REDIRECTS) {
-        throw new IngestFetchError(
-          "That page redirected too many times. Try pasting the text instead."
-        );
-      }
-      let next: URL;
+  try {
+    for (let hop = 0; hop <= INGEST_MAX_REDIRECTS; hop++) {
+      let response: Response;
       try {
-        next = new URL(location, current);
-      } catch {
-        throw new SsrfError("That page redirected to an invalid URL.");
+        response = await fetch(current.toString(), {
+          method: "GET",
+          redirect: "manual",
+          signal: controller.signal,
+          headers: {
+            Accept: "text/html,application/xhtml+xml;q=0.9,*/*;q=0.8",
+            "User-Agent": INGEST_USER_AGENT,
+          },
+        });
+      } catch (err) {
+        if (err instanceof Error && err.name === "AbortError") {
+          throw new IngestFetchError(
+            "That page took too long to respond. Try pasting the text instead."
+          );
+        }
+        throw new IngestFetchError(
+          "Could not fetch that URL. Try pasting the text instead."
+        );
       }
-      current = await assertSafeIngestUrl(next.toString());
-      continue;
-    }
 
-    if (!response.ok) {
-      throw new IngestFetchError(
-        `That page returned ${response.status}. Try pasting the text instead.`
-      );
-    }
+      // 3xx with Location — validate next hop and continue
+      if (response.status >= 300 && response.status < 400) {
+        const location = response.headers.get("location");
+        if (!location) {
+          throw new IngestFetchError(
+            "That page returned a redirect we could not follow."
+          );
+        }
+        if (hop === INGEST_MAX_REDIRECTS) {
+          throw new IngestFetchError(
+            "That page redirected too many times. Try pasting the text instead."
+          );
+        }
+        let next: URL;
+        try {
+          next = new URL(location, current);
+        } catch {
+          throw new SsrfError("That page redirected to an invalid URL.");
+        }
+        current = await assertSafeIngestUrl(next.toString());
+        continue;
+      }
 
-    const contentType = response.headers.get("content-type");
-    if (!isHtmlContentType(contentType)) {
-      throw new IngestFetchError(
-        "That URL did not return an HTML page. Try pasting the text instead."
-      );
-    }
+      if (!response.ok) {
+        throw new IngestFetchError(
+          `That page returned ${response.status}. Try pasting the text instead.`
+        );
+      }
 
-    const contentLength = response.headers.get("content-length");
-    if (contentLength && Number(contentLength) > INGEST_MAX_HTML_BYTES) {
-      throw new IngestFetchError(
-        "That page is too large to extract. Try pasting the text instead."
-      );
-    }
+      const contentType = response.headers.get("content-type");
+      if (!isHtmlContentType(contentType)) {
+        throw new IngestFetchError(
+          "That URL did not return an HTML page. Try pasting the text instead."
+        );
+      }
 
-    const reader = response.body?.getReader();
-    if (!reader) {
-      throw new IngestFetchError(
-        "Could not read that page. Try pasting the text instead."
-      );
-    }
-
-    const chunks: Uint8Array[] = [];
-    let total = 0;
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      if (!value) continue;
-      total += value.byteLength;
-      if (total > INGEST_MAX_HTML_BYTES) {
-        await reader.cancel().catch(() => undefined);
+      const contentLength = response.headers.get("content-length");
+      if (contentLength && Number(contentLength) > INGEST_MAX_HTML_BYTES) {
         throw new IngestFetchError(
           "That page is too large to extract. Try pasting the text instead."
         );
       }
-      chunks.push(value);
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new IngestFetchError(
+          "Could not read that page. Try pasting the text instead."
+        );
+      }
+
+      const chunks: Uint8Array[] = [];
+      let total = 0;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (!value) continue;
+        total += value.byteLength;
+        if (total > INGEST_MAX_HTML_BYTES) {
+          await reader.cancel().catch(() => undefined);
+          throw new IngestFetchError(
+            "That page is too large to extract. Try pasting the text instead."
+          );
+        }
+        chunks.push(value);
+      }
+
+      const html = new TextDecoder("utf-8", { fatal: false }).decode(
+        Buffer.concat(chunks.map((c) => Buffer.from(c)))
+      );
+
+      return { finalUrl: current.toString(), html };
     }
 
-    const html = new TextDecoder("utf-8", { fatal: false }).decode(
-      Buffer.concat(chunks.map((c) => Buffer.from(c)))
+    throw new IngestFetchError(
+      "That page redirected too many times. Try pasting the text instead."
     );
-
-    return { finalUrl: current.toString(), html };
+  } finally {
+    clearTimeout(timer);
   }
-
-  throw new IngestFetchError(
-    "That page redirected too many times. Try pasting the text instead."
-  );
 }
