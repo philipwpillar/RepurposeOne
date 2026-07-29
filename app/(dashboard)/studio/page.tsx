@@ -1,15 +1,15 @@
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { checkUsageLimit } from "@/lib/usage";
-import { STUDIO_EXAMPLE_INPUT } from "@/lib/repurpose/studio-example";
+import { STUDIO_EXAMPLE_INPUT, getStudioTemplate } from "@/lib/repurpose/templates";
 import RepurposeWorkspace from "./_components/RepurposeWorkspace";
 
 export default async function StudioPage({
   searchParams,
 }: {
-  searchParams: Promise<{ example?: string; reuse?: string }>;
+  searchParams: Promise<{ example?: string; reuse?: string; template?: string }>;
 }) {
-  const { example, reuse } = await searchParams;
+  const { example, reuse, template } = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -31,8 +31,19 @@ export default async function StudioPage({
 
   const defaultVoice = voices?.[0] ?? null;
 
-  let initialInput = example === "1" ? STUDIO_EXAMPLE_INPUT : "";
-  let workspaceKey = example === "1" ? "example" : "blank";
+  let initialInput = "";
+  let workspaceKey = "blank";
+
+  if (template?.trim()) {
+    const picked = getStudioTemplate(template.trim());
+    if (picked) {
+      initialInput = picked.body;
+      workspaceKey = `template-${picked.id}`;
+    }
+  } else if (example === "1") {
+    initialInput = STUDIO_EXAMPLE_INPUT;
+    workspaceKey = "example";
+  }
 
   if (reuse?.trim()) {
     const { data: reused } = await supabase

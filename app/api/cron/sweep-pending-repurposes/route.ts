@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
+import { purgeExpiredVoiceLabHits } from "@/lib/landing/voice-lab-rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -47,7 +48,8 @@ function authorizeCron(request: Request): boolean {
  * GET /api/cron/sweep-pending-repurposes
  *
  * Settles stranded `repurposes` / `bundles` orphans and reclaim stuck
- * `bundle_clips.rendering` rows. Vercel Hobby only allows daily crons —
+ * `bundle_clips.rendering` rows, and purge expired `voice_lab_hits` (48h).
+ * Vercel Hobby only allows daily crons —
  * schedule this endpoint more frequently via GitHub Actions (or Pro cron /
  * external scheduler) using Authorization: Bearer $CRON_SECRET.
  */
@@ -176,11 +178,31 @@ export async function GET(request: Request) {
     );
   }
 
+  let voiceLabHitsPurged = 0;
+  try {
+    voiceLabHitsPurged = await purgeExpiredVoiceLabHits(admin);
+    if (voiceLabHitsPurged > 0) {
+      console.info(
+        `sweep-pending-repurposes: purged ${voiceLabHitsPurged} voice_lab_hits row(s) older than 48h`
+      );
+    }
+  } catch (purgeErr) {
+    console.error(
+      "sweep-pending-repurposes: voice_lab_hits purge failed",
+      purgeErr
+    );
+    return NextResponse.json(
+      { error: "Failed to purge voice_lab_hits" },
+      { status: 500 }
+    );
+  }
+
   return NextResponse.json({
     ok: true,
     settled,
     bundles_settled: bundlesSettled,
     clips_reclaimed: clipsReclaimed,
+    voice_lab_hits_purged: voiceLabHitsPurged,
     cutoff: cutoffIso,
     rendering_cutoff: renderingCutoff,
     error_message: ORPHANED_PENDING_ERROR,

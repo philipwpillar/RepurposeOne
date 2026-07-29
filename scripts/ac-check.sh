@@ -196,8 +196,15 @@ run_6(){ echo "── PHASE 6 ──"
   assert "app/manifest.ts"                  "$(f 'app/manifest.ts')" eq 1
   assert "acceptance note committed"        "$(f 'docs/acceptance/phase-6-*.md')" eq 1 ; }
 run_7(){ echo "── PHASE 7 ──"
+  assert "voice-lab route exists"             "$(f 'app/api/voice-lab/route.ts')" eq 1
+  assert "voice-lab calls real AI pipeline"   "$(n 'generateRepurpose' app/api/voice-lab/route.ts)" ge 1
+  assert "voice-lab rate limit is DB-backed"  "$(n 'voice_lab_hits' app/api/voice-lab lib)" ge 2
+  assert "voice-lab hashes the IP"          "$(n 'createHash|sha256' app/api/voice-lab/route.ts lib/landing/voice-lab-rate-limit.ts)" ge 1
+  assert "voice-lab input cap enforced"       "$(n 'VOICE_LAB_MAX_CHARS' app components lib)" ge 3
+  assert "turnstile verification present"   "$(n 'TURNSTILE_SECRET_KEY' app/api/voice-lab/route.ts lib/landing/turnstile.ts)" ge 1
+  assert "voice-lab honesty label updated"  "$(n 'Illustrative demo' components/landing)" eq 0
+  assert "demo privacy notice present"      "$(n 'DeepInfra' components/landing/voice-lab.tsx app/privacy/page.tsx)" ge 2
   assert "voice-lab calls a real route"     "$(n 'fetch\(' components/landing/voice-lab.tsx)" ge 1
-  assert "voice-lab demo route exists"      "$(f 'app/api/voice-lab/route.ts')" eq 1
   assert "no numeric social proof"          "$(n '\b[0-9]{1,3}(,[0-9]{3})+\s*(users|creators|customers|teams|makers)\b|★{3,}|[0-9]+% of (users|creators)' $A $C)" eq 0
   assert "studio templates module"          "$(f 'lib/repurpose/templates.ts')" eq 1
   assert "hex gate still clean"             "$(n '#[0-9A-Fa-f]{3,8}\b' $A $C "${HEXALLOW[@]}")" eq 0

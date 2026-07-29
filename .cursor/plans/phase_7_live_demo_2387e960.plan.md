@@ -4,22 +4,22 @@ overview: "Re-plan Phase 7: replace curated Voice Lab with a live public demo th
 todos:
   - id: p7-migration-rate-limit
     content: voice_lab_hits migration (RLS + revoke grants) + DB rate-limit helper; extend sweeper with named 48h retention step
-    status: pending
+    status: completed
   - id: p7-api-live
     content: POST /api/voice-lab via generateRepurpose; resolve client IP via x-vercel-forwarded-for first; Turnstile gated; optional maxTokens
-    status: pending
+    status: completed
   - id: p7-voice-lab-ui
     content: "Rewrite voice-lab.tsx: textarea, Try it, fetch, live honesty + DeepInfra notice, failure/fallback paths"
-    status: pending
+    status: completed
   - id: p7-privacy
     content: Privacy policy section for anonymous demo + IP-hash retention
-    status: pending
+    status: completed
   - id: p7-templates
     content: lib/repurpose/templates.ts + Studio ?template= and Try-a-template UI; keep ?example=1
-    status: pending
+    status: completed
   - id: p7-ci-pr
     content: Tighten run_7; acceptance note; Preview curl IP-spoof check before merge; CI keep 8+add 7; visual regen if needed; push PR
-    status: pending
+    status: completed
 isProject: false
 ---
 
