@@ -35,12 +35,26 @@ export type Profile = z.infer<typeof ProfileSchema>;
 // Brand voice
 // ---------------------------------------------------------------------------
 
+export const VoiceRangeSchema = z.object({
+  summary: z.string().trim().min(10).max(1000),
+  sampleMarkers: z
+    .array(
+      z.object({
+        index: z.number().int().min(0).max(2),
+        position: z.string().trim().min(2).max(120),
+      })
+    )
+    .max(3),
+});
+export type VoiceRange = z.infer<typeof VoiceRangeSchema>;
+
 export const BrandVoiceSchema = z.object({
   id: z.string().uuid(),
   user_id: z.string().uuid(),
   name: z.string().nullable().optional(),
   samples: z.array(z.string()),
   description: z.string().nullable(),
+  voice_range: VoiceRangeSchema.nullable().optional(),
   is_default: z.boolean(),
   created_at: z.string(),
   updated_at: z.string().optional(),
@@ -57,6 +71,26 @@ export const BrandVoiceInputSchema = z.object({
   { message: "Provide at least one sample or a description" }
 );
 export type BrandVoiceInput = z.infer<typeof BrandVoiceInputSchema>;
+
+export const BrandVoiceWizardRequestSchema = z.object({
+  audience: z.string().trim().min(2).max(500),
+  tone_words: z.string().trim().min(2).max(300),
+  do_more: z.string().trim().max(500),
+  avoid: z.string().trim().max(500),
+  samples: z.array(z.string().trim().min(20).max(2000)).min(1).max(3),
+});
+export type BrandVoiceWizardRequest = z.infer<
+  typeof BrandVoiceWizardRequestSchema
+>;
+
+export const BrandVoiceWizardDraftSchema = z.object({
+  name: z.string().trim().min(2).max(60),
+  description: z.string().trim().min(10).max(2000),
+  voice_range: VoiceRangeSchema,
+});
+export type BrandVoiceWizardDraft = z.infer<
+  typeof BrandVoiceWizardDraftSchema
+>;
 
 // ---------------------------------------------------------------------------
 // Repurpose input / output

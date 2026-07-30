@@ -21,12 +21,17 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { voiceDisplayName } from "@/lib/repurpose/voice-display-name";
-import { BrandVoiceInputSchema, type BrandVoice } from "@/types";
+import {
+  BrandVoiceInputSchema,
+  type BrandVoice,
+  type BrandVoiceWizardDraft,
+} from "@/types";
+import { BrandVoiceWizard } from "./BrandVoiceWizard";
 
 const SAMPLE_FIELD_COUNT = 3;
 const EMPTY_SAMPLES = () => Array.from({ length: SAMPLE_FIELD_COUNT }, () => "");
 const VOICE_SELECT =
-  "id, user_id, name, samples, description, is_default, created_at, updated_at";
+  "id, user_id, name, samples, description, voice_range, is_default, created_at, updated_at";
 const PENDING_DELETE_MS = 6000;
 
 type PendingDelete = {
@@ -136,6 +141,50 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
   const refreshList = useCallback(() => {
     router.refresh();
   }, [router]);
+
+  const handleWizardAccept = async (
+    draft: BrandVoiceWizardDraft,
+    samples: string[],
+    shouldSetDefault: boolean
+  ) => {
+    setActionError(null);
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      throw new Error("You must be signed in to save a brand voice.");
+    }
+
+    if (shouldSetDefault) {
+      await clearUserDefault(supabase, user.id);
+    }
+
+    const { data, error } = await supabase
+      .from("brand_voices")
+      .insert({
+        user_id: user.id,
+        name: draft.name,
+        samples,
+        description: draft.description,
+        voice_range: draft.voice_range,
+        is_default: shouldSetDefault,
+      })
+      .select(VOICE_SELECT)
+      .single();
+
+    if (error) throw error;
+
+    setVoices((previous) => {
+      const next = shouldSetDefault
+        ? previous.map((voice) => ({ ...voice, is_default: false }))
+        : [...previous];
+      return sortVoices([data as BrandVoice, ...next]);
+    });
+    refreshList();
+    toast.success("Brand voice saved");
+  };
 
   const handleSave = async () => {
     setFormError(null);
@@ -403,14 +452,20 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
             : `${voices.length} voice${voices.length === 1 ? "" : "s"}`}
         </p>
         {formMode === null && (
-          <Button
-            type="button"
-            onClick={openCreateForm}
-            className="bg-primary hover:bg-primary/90"
-          >
-            <Plus className="h-4 w-4" />
-            New voice
-          </Button>
+          <div className="flex flex-wrap justify-end gap-2">
+            <BrandVoiceWizard
+              defaultAsDefault={voices.length === 0}
+              onAccept={handleWizardAccept}
+            />
+            <Button
+              type="button"
+              onClick={openCreateForm}
+              className="bg-primary hover:bg-primary/90"
+            >
+              <Plus className="h-4 w-4" />
+              New voice
+            </Button>
+          </div>
         )}
       </div>
 

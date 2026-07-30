@@ -14,7 +14,7 @@ export default async function BrandVoicePage() {
   const { data: voices } = await supabase
     .from("brand_voices")
     .select(
-      "id, user_id, name, samples, description, is_default, created_at, updated_at"
+      "id, user_id, name, samples, description, voice_range, is_default, created_at, updated_at"
     )
     .eq("user_id", user.id)
     .order("is_default", { ascending: false })
