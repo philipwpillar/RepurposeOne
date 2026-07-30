@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { extractArticleText, IngestExtractError } from "@/lib/ingest/extract";
 import { fetchHtmlForIngest, IngestFetchError } from "@/lib/ingest/fetch-url";
+import { normalizeIngestUrl } from "@/lib/ingest/normalize-url";
 import { SsrfError } from "@/lib/ingest/ssrf";
 import { createClient } from "@/lib/supabase/server";
 
@@ -50,8 +51,10 @@ export async function POST(request: Request) {
     );
   }
 
+  const normalizedUrl = normalizeIngestUrl(parsed.data.url);
+
   try {
-    const { finalUrl, html } = await fetchHtmlForIngest(parsed.data.url);
+    const { finalUrl, html } = await fetchHtmlForIngest(normalizedUrl);
     const { title, sourceText } = extractArticleText(html, finalUrl);
     return NextResponse.json({
       title,
