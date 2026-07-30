@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { VoLogoMark, VoMarkDefs } from "@/components/landing/vo-logo-mark";
+import { BrandLockup } from "@/components/landing/vo-logo-mark";
 
 export const metadata: Metadata = {
   title: {
@@ -14,16 +14,12 @@ export const metadata: Metadata = {
 export default function TermsPage() {
   return (
     <main className="min-h-screen bg-background">
-      <VoMarkDefs />
       <header className="border-b border-border px-6 py-4">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="inline-flex items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <VoLogoMark size={26} />
-          <span className="font-display text-lg font-semibold tracking-tight">
-            Voiceora
-          </span>
+          <BrandLockup size={26} wordmarkClassName="text-lg" />
         </Link>
       </header>
 

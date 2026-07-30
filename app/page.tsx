@@ -17,7 +17,7 @@ import { LandingPricing } from "@/components/landing/landing-pricing";
 import { ProofOutputs } from "@/components/landing/proof-outputs";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
 import { VoiceLab } from "@/components/landing/voice-lab";
-import { VoLogoMark, VoMarkDefs } from "@/components/landing/vo-logo-mark";
+import { VoLogoMark } from "@/components/landing/vo-logo-mark";
 import { PLAN_LIMITS } from "@/lib/config";
 import "./landing.css";
 
@@ -35,15 +35,13 @@ export default async function HomePage() {
 
   return (
     <main className="vo-landing">
-      <VoMarkDefs />
-
       <section className="hero">
         <div className="aurora-glow" aria-hidden="true" />
         <div className="wrap">
           <nav>
             <div className="nav-inner">
               <div className="brand">
-                <VoLogoMark />
+                <VoLogoMark size={30} priority />
                 <span className="name">Voiceora</span>
               </div>
               <div style={{ display: "flex", gap: "8px" }}>
