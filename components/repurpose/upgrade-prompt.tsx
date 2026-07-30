@@ -57,7 +57,7 @@ function promptCopy(
 
   if (gate === "rate_limit") {
     return {
-      title: "Slow down — too many requests",
+      title: "Slow down - too many requests",
       body: "Please wait a few minutes before generating again.",
     };
   }
@@ -88,7 +88,7 @@ export function UpgradePrompt({
         <p className="mt-1 text-amber-800/90">{message ?? copy.body}</p>
         {billingHint ? (
           <p className="mt-1 text-xs text-amber-800/75">
-            This attempt wasn&apos;t billed — you can retry safely.
+            This attempt wasn&apos;t billed - you can retry safely.
           </p>
         ) : null}
         {copy.cta ? (

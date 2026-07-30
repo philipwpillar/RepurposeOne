@@ -233,7 +233,7 @@ export function VoiceLab() {
       <div className="wrap">
         <p className="zone-title">The part other tools skip</p>
         <h2 className="big">
-          Same idea. <span className="grad">Different voice.</span>
+          Same Idea. <span className="grad">Different Voice.</span>
         </h2>
         <p className="lab-sub">
           Most AI content sounds like the same person wrote all of it. Paste your

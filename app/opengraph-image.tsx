@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "Voiceora — one piece of content, every platform, your voice";
+export const alt = "Voiceora - One Piece of Content. Every Platform. Your Voice.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -57,7 +57,7 @@ export default function OgImage() {
               marginTop: 28,
             }}
           >
-            One piece of content.
+            One Piece of Content.
           </div>
           <div
             style={{
@@ -69,7 +69,7 @@ export default function OgImage() {
               letterSpacing: "-0.03em",
             }}
           >
-            Every platform.
+            Every Platform.
           </div>
           <div
             style={{
@@ -84,7 +84,7 @@ export default function OgImage() {
               color: "transparent",
             }}
           >
-            Your voice.
+            Your Voice.
           </div>
         </div>
       </div>

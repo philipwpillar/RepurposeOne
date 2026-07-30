@@ -51,7 +51,7 @@ export default function BundleVideoPicker({
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-medium text-muted-foreground">
-          Add videos (up to {MAX_VIDEOS}) — preview / dev
+          Add videos (up to {MAX_VIDEOS}) - preview / dev
         </p>
         {progressLabel && (
           <p className="flex items-center gap-1.5 text-xs text-primary">
@@ -125,7 +125,7 @@ export default function BundleVideoPicker({
               : "Choose video"}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          15s–3 min · ≤{VIDEO_MAX_MB} MB · H.264 on desktop; HEVC on iPhone
+          15s-3 min · ≤{VIDEO_MAX_MB} MB · H.264 on desktop; HEVC on iPhone
         </p>
       </button>
     </div>

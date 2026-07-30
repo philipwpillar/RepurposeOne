@@ -34,7 +34,7 @@ import {
 
 export const maxDuration = 280;
 
-/** ~4MB raw body — headroom under Vercel limits for 8 photos + ≤8 sheets. */
+/** ~4MB raw body - headroom under Vercel limits for 8 photos + ≤8 sheets. */
 const MAX_BODY_BYTES = 4_000_000;
 
 const ALL_FORMATS: TargetFormat[] = [
@@ -53,13 +53,13 @@ function errorResponse(
 
 function toUserFacingBundleError(err: unknown): string {
   if (!(err instanceof Error)) {
-    return "Bundle generation failed unexpectedly. Please try again — this attempt won't count toward your monthly limit.";
+    return "Bundle generation failed unexpectedly. Please try again - this attempt won't count toward your monthly limit.";
   }
 
   const msg = err.message.toLowerCase();
 
   if (msg.includes("timeout") || msg.includes("timed out")) {
-    return "Bundle generation timed out. Try again with fewer photos — this attempt won't count toward your monthly limit.";
+    return "Bundle generation timed out. Try again with fewer photos - this attempt won't count toward your monthly limit.";
   }
 
   if (msg.includes("429") || msg.includes("provider returned error")) {
@@ -75,10 +75,10 @@ function toUserFacingBundleError(err: unknown): string {
     msg.includes("validation") ||
     msg.includes("parse")
   ) {
-    return "The AI returned an unexpected format. Please try again — this attempt won't count toward your monthly limit.";
+    return "The AI returned an unexpected format. Please try again - this attempt won't count toward your monthly limit.";
   }
 
-  return "We couldn't generate your Moment Bundle. Please try again — this attempt won't count toward your monthly limit.";
+  return "We couldn't generate your Moment Bundle. Please try again - this attempt won't count toward your monthly limit.";
 }
 
 function mimeFromFilename(filename?: string): PhotoMimeType {
@@ -383,7 +383,7 @@ export async function POST(request: Request) {
 
     bundle = updated;
   } else {
-    // N2 — atomically reserve under monthly cap for new (non-prepared) bundles
+    // N2 - atomically reserve under monthly cap for new (non-prepared) bundles
     try {
       bundle = await reserveBundleUnderCap(admin, {
         userId: user.id,
@@ -667,7 +667,7 @@ export async function POST(request: Request) {
         verifiedAssetIds.add(assetId);
       } else {
         console.info(
-          `[bundle] video asset ${assetId} missing from storage — clips not persisted`
+          `[bundle] video asset ${assetId} missing from storage - clips not persisted`
         );
       }
     }
@@ -692,7 +692,7 @@ export async function POST(request: Request) {
         if (!assetId || !verifiedAssetIds.has(assetId)) {
           if (!assetId) {
             console.info(
-              `[bundle] clip_spec video_index ${spec.video_index} has no uploaded asset — not persisted`
+              `[bundle] clip_spec video_index ${spec.video_index} has no uploaded asset - not persisted`
             );
           }
           return;
@@ -725,7 +725,7 @@ export async function POST(request: Request) {
           );
           return errorResponse(502, {
             error:
-              "We couldn't save your clip suggestions. Please try again — this attempt won't count toward your monthly limit.",
+              "We couldn't save your clip suggestions. Please try again - this attempt won't count toward your monthly limit.",
             code: "generation_failed",
           });
         }
@@ -742,7 +742,7 @@ export async function POST(request: Request) {
     for (const spec of pack.clip_specs) {
       if (!videos[spec.video_index]?.asset_id) {
         console.info(
-          `[bundle] clip_spec video_index ${spec.video_index} has no uploaded asset — not persisted`
+          `[bundle] clip_spec video_index ${spec.video_index} has no uploaded asset - not persisted`
         );
       }
     }

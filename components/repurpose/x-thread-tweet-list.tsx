@@ -15,7 +15,7 @@ interface XThreadTweetListProps extends FeedbackProps {
   threadSummary?: string | null;
   variant?: "studio" | "library";
   showCopyAll?: boolean;
-  /** Full thread output — required when feedback props are present so edits can be saved. */
+  /** Full thread output - required when feedback props are present so edits can be saved. */
   output?: XThreadOutput;
 }
 

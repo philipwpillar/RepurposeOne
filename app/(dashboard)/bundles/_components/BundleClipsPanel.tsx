@@ -106,7 +106,7 @@ export default function BundleClipsPanel({
       </div>
       {pollTimedOut && (
         <p className="text-xs text-muted-foreground">
-          Still working — check back shortly.
+          Still working - check back shortly.
         </p>
       )}
       <ul className="space-y-3">
@@ -125,7 +125,7 @@ export default function BundleClipsPanel({
               className="rounded-xl border border-border/80 bg-background px-3 py-3"
             >
               <p className="text-xs font-medium text-muted-foreground">
-                Video {clip.video_index + 1} · {formatMmSs(clip.start_s)}–
+                Video {clip.video_index + 1} · {formatMmSs(clip.start_s)}-
                 {formatMmSs(clip.end_s)}
               </p>
               {clip.overlay_text && (

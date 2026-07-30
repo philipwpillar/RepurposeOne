@@ -35,7 +35,7 @@ function copyTextForItem(item: FlatLibraryItem): string {
 
 /**
  * Flat Library list with bulk select + Copy all.
- * Selection is component state only — clears on unmount / navigation.
+ * Selection is component state only - clears on unmount / navigation.
  */
 export function LibraryBulkFlatList({ items }: { items: FlatLibraryItem[] }) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
