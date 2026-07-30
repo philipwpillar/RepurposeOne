@@ -92,12 +92,16 @@ run_floor(){
   assert "setUsedCount(usage.used) success" "$(n 'setUsedCount\(usage\.used\)' "$W")" ge 3
   assert "no obsolete setUsedCount(err…)"   "$(n 'setUsedCount\(err\.usage\.used\)' "$W")" eq 0
   # Voice variant adjective denylist - only when the catalog/tests exist (#107+).
+  # Requires Node 22+ (package.json uses --experimental-strip-types).
   if [ -f lib/ai/voice-variants.test.mjs ]; then
-    if ! npm run test:voice-variants >/dev/null 2>&1; then
+    VV_OUT=$(mktemp)
+    if ! npm run test:voice-variants >"$VV_OUT" 2>&1; then
       printf "  FAIL  %-38s %s\n" "voice-variants adjective denylist" "npm run test:voice-variants"; FAIL=1
+      sed 's/^/         /' "$VV_OUT" >&2
     else
       printf "  PASS  %-38s %s\n" "voice-variants adjective denylist" "ok"
     fi
+    rm -f "$VV_OUT"
   fi
 }
 run_0(){ echo "── PHASE 0 ──"
@@ -116,7 +120,8 @@ run_0(){ echo "── PHASE 0 ──"
   assert "CI runs playwright"               "$(n 'playwright test' .github/workflows/ci.yml)" ge 1
   assert "acceptance note committed"        "$(f 'docs/acceptance/phase-0-*.md')" eq 1 ; }
 run_1(){ echo "── PHASE 1 ──"
-  assert "og-pack files present"            "$(ls $A 2>/dev/null | rg -c '^(opengraph-image|twitter-image|icon|apple-icon|robots|sitemap)\.(tsx|ts)$' || echo 0)" ge 6
+  # OG/twitter may be Satori .tsx or static .jpg/.png (logo pack).
+  assert "og-pack files present"            "$(ls $A 2>/dev/null | rg -c '^(opengraph-image|twitter-image|icon|apple-icon|robots|sitemap)\.(tsx|ts|jpg|jpeg|png)$' || echo 0)" ge 6
   assert "metadataBase set"                 "$(n 'metadataBase' app/layout.tsx)" ge 1
   assert "raw <img> outside allowlist"      "$(n '<img\b' $A $C "${IMGALLOW[@]}")" eq 0
   assert "next/image imported"              "$(n 'from "next/image"' $A $C)" ge 2
@@ -226,7 +231,7 @@ run_7(){ echo "── PHASE 7 ──"
   assert "no numeric social proof"          "$(n '\b[0-9]{1,3}(,[0-9]{3})+\s*(users|creators|customers|teams|makers)\b|★{3,}|[0-9]+% of (users|creators)' $A $C)" eq 0
   assert "studio templates module"          "$(f 'lib/repurpose/templates.ts')" eq 1
   assert "hex gate still clean"             "$(n '#[0-9A-Fa-f]{3,8}\b' $A $C "${HEXALLOW[@]}")" eq 0
-  assert "og-pack still present"            "$(ls $A 2>/dev/null | rg -c '^(opengraph-image|twitter-image|icon|apple-icon|robots|sitemap)\.(tsx|ts)$' || echo 0)" ge 6
+  assert "og-pack still present"            "$(ls $A 2>/dev/null | rg -c '^(opengraph-image|twitter-image|icon|apple-icon|robots|sitemap)\.(tsx|ts|jpg|jpeg|png)$' || echo 0)" ge 6
   assert "acceptance note committed"        "$(f 'docs/acceptance/phase-7-*.md')" eq 1 ; }
 run_8(){ echo "── PHASE 8 ──"
   assert "@sentry installed"                "$(n '@sentry/' package.json)" ge 1
