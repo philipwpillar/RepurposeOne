@@ -3,10 +3,7 @@ import { streamObject } from "ai";
 import { after, NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { fetchVoiceExemplarsText } from "@/lib/ai/exemplars";
-import {
-  buildBrandVoiceBlock,
-  buildGenerationPrompt,
-} from "@/lib/ai/prompts";
+import { buildGenerationPrompt } from "@/lib/ai/prompts";
 import { stripEmDashes } from "@/lib/ai/strip-em-dashes";
 import {
   AI_CONFIG,
@@ -168,6 +165,7 @@ export async function POST(request: Request) {
     target_format,
     target_tweets,
     target_words,
+    voice_variant,
     generation_id,
     refinement,
   } = requestData;
@@ -310,9 +308,9 @@ export async function POST(request: Request) {
   }
 
   const model = getModelForFormat(target_format);
-  const brandVoiceText = buildBrandVoiceBlock(resolvedVoice);
   const { system, user: userPrompt } = buildGenerationPrompt({
-    brandVoiceText,
+    brandVoice: resolvedVoice,
+    voiceVariant: voice_variant ?? "signature",
     sourceText: truncatedContent,
     targetFormat: target_format,
     targetTweets: target_tweets,

@@ -3,9 +3,14 @@ import {
   getDefaultWords,
   wordsToTweets,
 } from "@/lib/repurpose/length-presets";
+import {
+  assembleVoiceLayers,
+  type VoiceVariantId,
+} from "@/lib/ai/voice-variants";
 
 export interface PromptContext {
-  brandVoiceText: string;
+  brandVoice: BrandVoiceInput;
+  voiceVariant: VoiceVariantId;
   sourceText: string;
   targetFormat: TargetFormat;
   targetTweets?: number;
@@ -17,7 +22,8 @@ export interface PromptContext {
 }
 
 export interface PhotoPromptContext {
-  brandVoiceText: string;
+  brandVoice: BrandVoiceInput;
+  voiceVariant: VoiceVariantId;
   context: string;
   cta?: string;
   targetFormat: TargetFormat;
@@ -146,15 +152,16 @@ export function buildGenerationPrompt(ctx: PromptContext): {
   const wordTarget = ctx.targetWords ?? getDefaultWords(ctx.targetFormat);
   const tweetTarget = ctx.targetTweets ?? wordsToTweets(wordTarget);
   const wordBudget = `- Target approximately ${wordTarget} words for the main body (respect hard character caps).`;
-  const exemplarsBlock = ctx.exemplarsText?.trim()
-    ? `\n\n${ctx.exemplarsText.trim()}`
-    : "";
   const refinementBlock = ctx.refinement?.trim()
     ? `\n\nRefinement for this new version:\n${ctx.refinement.trim()}`
     : "";
+  const voiceLayers = assembleVoiceLayers(
+    ctx.brandVoice,
+    ctx.voiceVariant,
+    ctx.exemplarsText
+  );
 
-  const baseUser = `Brand voice:
-${ctx.brandVoiceText}${exemplarsBlock}
+  const baseUser = `${voiceLayers}
 
 Source content:
 ${ctx.sourceText}${refinementBlock}`;
@@ -213,7 +220,7 @@ Return JSON matching the required schema.`,
 const PHOTO_TASK_PREAMBLE = `You are writing social copy to accompany a photo the user will post - not describing the image for accessibility, and not narrating what is visible in the photo.
 ${PUNCTUATION_RULE}
 
-The user's context field is the authoritative signal for intent, angle, and purpose. The image informs specificity and detail only. Lean heavily on the brand voice block - voice grounding is thinner than a long-form text repurpose, so the brand voice and context must carry tone and intent.
+The user's context field is the authoritative signal for intent, angle, and purpose. The image informs specificity and detail only. Follow the voice identity strictly - this is your primary tone anchor. Voice grounding is thinner than a long-form text repurpose, so the brand voice and context must carry tone and intent.
 
 Do NOT produce copy that merely describes the photo ("In this image we see…"). Write platform-native copy the user can post alongside the image.`;
 
@@ -227,12 +234,13 @@ export function buildPhotoGenerationPrompt(ctx: PhotoPromptContext): {
   const ctaBlock = ctx.cta
     ? `\nCall to action (use or adapt): ${ctx.cta}`
     : "\nCall to action: infer a soft CTA from context, or omit if not appropriate.";
-  const exemplarsBlock = ctx.exemplarsText?.trim()
-    ? `\n\n${ctx.exemplarsText.trim()}`
-    : "";
+  const voiceLayers = assembleVoiceLayers(
+    ctx.brandVoice,
+    ctx.voiceVariant,
+    ctx.exemplarsText
+  );
 
-  const baseUser = `Brand voice (follow strictly - this is your primary tone anchor):
-${ctx.brandVoiceText}${exemplarsBlock}
+  const baseUser = `${voiceLayers}
 
 User context (authoritative intent - what this post is about and why):
 ${ctx.context}${ctaBlock}

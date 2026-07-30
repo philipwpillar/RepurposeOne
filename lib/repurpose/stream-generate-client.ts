@@ -4,6 +4,7 @@ import type {
   RepurposeOutput,
   TargetFormat,
   UsageInfo,
+  VoiceVariantId,
 } from "@/types";
 
 export class StreamGenerateApiError extends Error {
@@ -67,6 +68,7 @@ export async function callGenerateStreamApi(params: {
   brandVoice?: BrandVoiceRef | null;
   targetTweets?: number;
   targetWords?: number;
+  voiceVariant: VoiceVariantId;
   generationId?: string;
   refinement?: string;
   signal?: AbortSignal;
@@ -76,6 +78,7 @@ export async function callGenerateStreamApi(params: {
     input_type: "paste",
     input_content: params.inputContent,
     target_format: params.targetFormat,
+    voice_variant: params.voiceVariant,
   };
 
   if (params.brandVoice?.id) {

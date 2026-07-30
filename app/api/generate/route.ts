@@ -106,6 +106,7 @@ export async function POST(request: Request) {
     target_format,
     target_tweets,
     target_words,
+    voice_variant,
     generation_id,
   } = requestData;
 
@@ -285,6 +286,7 @@ export async function POST(request: Request) {
           context: requestData.photo_context,
           cta: requestData.photo_cta,
           brandVoice: resolvedVoice,
+          voiceVariant: voice_variant ?? "signature",
           targetFormat: target_format,
           targetTweets: target_tweets,
           targetWords: target_words,
@@ -293,6 +295,7 @@ export async function POST(request: Request) {
       : await generateRepurpose({
           inputContent: input_content,
           brandVoice: resolvedVoice,
+          voiceVariant: voice_variant ?? "signature",
           targetFormat: target_format,
           targetTweets: target_tweets,
           targetWords: target_words,

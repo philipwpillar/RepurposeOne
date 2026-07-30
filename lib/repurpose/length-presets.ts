@@ -1,4 +1,8 @@
 import type { TargetFormat } from "@/types";
+import {
+  VOICE_VARIANT_BY_ID,
+  type VoiceVariantId,
+} from "@/lib/ai/voice-variants";
 
 export const FORMAT_LENGTH_PRESETS = {
   x_thread: [50, 100, 200],
@@ -15,6 +19,30 @@ export function getDefaultWords(format: TargetFormat): number {
 
 export function isValidWords(format: TargetFormat, words: number): boolean {
   return (FORMAT_LENGTH_PRESETS[format] as readonly number[]).includes(words);
+}
+
+export function lengthPresetsForVariant(
+  format: TargetFormat,
+  variantId: VoiceVariantId
+): readonly number[] {
+  const presets = FORMAT_LENGTH_PRESETS[format] as readonly number[];
+  if (variantId === "provoke") return presets.filter((words) => words <= 100);
+  if (variantId === "explain") return presets.filter((words) => words >= 50);
+  return presets;
+}
+
+export function nearestLengthForVariant(
+  format: TargetFormat,
+  variantId: VoiceVariantId,
+  currentWords: number
+): number {
+  const presets = lengthPresetsForVariant(format, variantId);
+  if (presets.includes(currentWords)) return currentWords;
+
+  const preferred = VOICE_VARIANT_BY_ID[variantId].lengthDefault;
+  return presets.reduce((nearest, words) =>
+    Math.abs(words - preferred) < Math.abs(nearest - preferred) ? words : nearest
+  );
 }
 
 export function wordsToTweets(words: number): number {

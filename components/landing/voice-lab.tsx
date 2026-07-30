@@ -10,6 +10,8 @@ import {
   VOICE_LAB_MIN_CHARS,
 } from "@/lib/landing/voice-lab-config";
 import { VOICE_LAB_LENGTH_PRESETS } from "@/lib/repurpose/length-presets";
+import { VOICE_VARIANTS } from "@/lib/ai/voice-variants";
+import type { VoiceVariantId } from "@/types";
 
 const LIVE_LABEL = "Generated live · sample voice, your text";
 const IDLE_LABEL = "Live demo · sample voice, your text";
@@ -41,10 +43,10 @@ function prefersReducedMotion() {
 
 function errorMessageForStatus(status: number): string {
   if (status === 429) {
-    return "You've had a few goes - sign up free to keep going.";
+    return "You've had a few goes. Sign up free to keep going.";
   }
   if (status === 403) {
-    return "Couldn't verify - refresh and try again.";
+    return "Couldn't verify. Refresh and try again.";
   }
   if (status === 503) {
     return "Demo is temporarily unavailable. Please try again shortly.";
@@ -56,6 +58,8 @@ export function VoiceLab() {
   const [inputText, setInputText] = useState(VOICE_LAB_DEFAULT_INPUT);
   const [currentVoice, setCurrentVoice] = useState(0);
   const [targetWords, setTargetWords] = useState(50);
+  const [voiceVariant, setVoiceVariant] =
+    useState<VoiceVariantId>("signature");
   const [display, setDisplay] = useState("");
   const [statusLabel, setStatusLabel] = useState(IDLE_LABEL);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -121,6 +125,7 @@ export function VoiceLab() {
             text: trimmed.slice(0, VOICE_LAB_MAX_CHARS),
             voice: currentVoice,
             target_words: targetWords,
+            voice_variant: voiceVariant,
             turnstileToken,
           }),
         });
@@ -151,7 +156,15 @@ export function VoiceLab() {
         }
       }
     },
-    [currentVoice, failGeneration, inputText, reduced, targetWords, typeText]
+    [
+      currentVoice,
+      failGeneration,
+      inputText,
+      reduced,
+      targetWords,
+      typeText,
+      voiceVariant,
+    ]
   );
 
   const handleTryIt = () => {
@@ -192,7 +205,7 @@ export function VoiceLab() {
           if (pendingRunRef.current) {
             pendingRunRef.current = false;
             setLoading(false);
-            failGeneration("Couldn't verify - refresh and try again.");
+            failGeneration("Couldn't verify. Refresh and try again.");
           }
         },
       }
@@ -250,6 +263,26 @@ export function VoiceLab() {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div
+            className="chip-row"
+            role="group"
+            aria-label="Choose a delivery variant"
+          >
+            {VOICE_VARIANTS.map((variant) => (
+              <button
+                key={variant.id}
+                type="button"
+                className="chip"
+                aria-pressed={voiceVariant === variant.id}
+                onClick={() => setVoiceVariant(variant.id)}
+                disabled={loading}
+                title={variant.description}
+              >
+                {variant.label}
+              </button>
+            ))}
           </div>
 
           <div className="lab-input-wrap">
@@ -328,8 +361,8 @@ export function VoiceLab() {
 
         <p className="lab-cta">
           That&apos;s one format in a sample voice.{" "}
-          <Link href="/sign-up">Sign up free</Link> to get all four - X,
-          LinkedIn, Instagram and email - in <strong>your</strong> voice, trained
+          <Link href="/sign-up">Sign up free</Link> to get all four: X,
+          LinkedIn, Instagram and email, in <strong>your</strong> voice, trained
           on your own writing.
         </p>
       </div>

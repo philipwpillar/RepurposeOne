@@ -78,6 +78,8 @@ export const TargetFormatSchema = z.enum([
   "email",
 ]);
 export type TargetFormat = z.infer<typeof TargetFormatSchema>;
+export const VoiceVariantSchema = z.enum(["signature", "explain", "provoke"]);
+export type VoiceVariantId = z.infer<typeof VoiceVariantSchema>;
 
 const PhotoMimeSchema = z.enum(PHOTO_ACCEPTED_MIMES);
 
@@ -87,6 +89,7 @@ const GenerateRequestSharedSchema = z.object({
   target_format: TargetFormatSchema.default("x_thread"),
   target_tweets: z.number().int().min(3).max(15).optional(),
   target_words: z.number().int().positive().optional(),
+  voice_variant: VoiceVariantSchema.optional(),
   /** Client may send for Regenerate All; server validates before insert. */
   generation_id: z.string().uuid().optional(),
 });
