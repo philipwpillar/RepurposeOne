@@ -1,29 +1,17 @@
-import { ImageResponse } from "next/og";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 
 export const size = { width: 32, height: 32 };
 export const contentType = "image/png";
 
-export default function Icon() {
-  return new ImageResponse(
-    (
-      <div
-        style={{
-          height: "100%",
-          width: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          borderRadius: 8,
-          backgroundImage:
-            "linear-gradient(135deg,#2DD4BF 0%,#6366F1 52%,#E24BC4 100%)",
-          color: "#FFFFFF",
-          fontSize: 20,
-          fontWeight: 700,
-        }}
-      >
-        V
-      </div>
-    ),
-    { ...size },
+export default async function Icon() {
+  const data = await readFile(
+    join(process.cwd(), "public/brand/favicon-32.png"),
   );
+  return new Response(data, {
+    headers: {
+      "Content-Type": "image/png",
+      "Cache-Control": "public, max-age=86400, immutable",
+    },
+  });
 }

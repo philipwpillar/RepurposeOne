@@ -25,6 +25,7 @@ import { PaymentFailedBanner } from "@/components/billing/payment-failed-banner"
 import { useShortcuts } from "@/components/shortcut-provider";
 import { RouteViewTransition } from "@/components/route-view-transition";
 import { Button } from "@/components/ui/button";
+import { BrandLockup, VoLogoMark } from "@/components/landing/vo-logo-mark";
 import { cn } from "@/lib/utils";
 
 export interface DashboardUser {
@@ -242,17 +243,18 @@ export function DashboardShell({
           {collapsed ? (
             <Link
               href="/dashboard"
-              className="font-display text-lg font-semibold text-primary"
+              className="flex items-center justify-center"
               aria-label="Voiceora dashboard"
             >
-              V
+              <VoLogoMark size={28} variant="favicon" />
             </Link>
           ) : (
             <Link
               href="/dashboard"
-              className="font-display text-lg font-semibold tracking-tight text-foreground"
+              className="inline-flex items-center"
+              aria-label="Voiceora dashboard"
             >
-              Voice<span className="text-primary">ora</span>
+              <BrandLockup size={26} wordmarkClassName="text-lg" />
             </Link>
           )}
           <Button
@@ -318,9 +320,10 @@ export function DashboardShell({
             </Button>
             <Link
               href="/dashboard"
-              className="font-display text-lg font-semibold tracking-tight text-foreground md:hidden"
+              className="inline-flex items-center md:hidden"
+              aria-label="Voiceora dashboard"
             >
-              Voice<span className="text-primary">ora</span>
+              <BrandLockup size={24} wordmarkClassName="text-lg" />
             </Link>
             <nav
               aria-label="Breadcrumb"
@@ -391,9 +394,10 @@ export function DashboardShell({
               <Link
                 href="/dashboard"
                 onClick={() => setMobileNavOpen(false)}
-                className="font-display text-lg font-semibold tracking-tight text-foreground"
+                className="inline-flex items-center"
+                aria-label="Voiceora"
               >
-                Voice<span className="text-primary">ora</span>
+                <BrandLockup size={26} wordmarkClassName="text-lg" />
               </Link>
               <Button
                 variant="ghost"

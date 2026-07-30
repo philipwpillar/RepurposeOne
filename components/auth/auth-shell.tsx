@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { VoLogoMark, VoMarkDefs } from "@/components/landing/vo-logo-mark";
+import { BrandLockup } from "@/components/landing/vo-logo-mark";
 import { NativeOAuthListener } from "@/components/auth/native-oauth-listener";
 import "@/app/landing.css";
 
@@ -13,17 +13,13 @@ export function AuthShell({ children, footerNote }: AuthShellProps) {
   return (
     <div className="chrome-dark vo-auth relative flex min-h-screen flex-col items-center justify-center px-4 py-10">
       <NativeOAuthListener />
-      <VoMarkDefs />
       <div className="vo-auth-glow" aria-hidden="true" />
       <div className="relative z-10 flex w-full max-w-md flex-col items-center gap-6">
         <Link
           href="/"
-          className="inline-flex items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="inline-flex items-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <VoLogoMark size={28} />
-          <span className="font-display text-xl font-semibold tracking-tight text-foreground">
-            Voiceora
-          </span>
+          <BrandLockup size={28} wordmarkClassName="text-xl" priority />
         </Link>
         {children}
         {footerNote ? (
