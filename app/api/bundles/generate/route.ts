@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/nextjs";
 import { runBundleGeneration } from "@/lib/ai/bundle-generate";
 import { fetchVoiceExemplarsText } from "@/lib/ai/exemplars";
 import { generateRepurpose } from "@/lib/ai/generate";
+import { DEFAULT_VOICE_VARIANT_BY_FORMAT } from "@/lib/ai/voice-variants";
 import {
   AI_CONFIG,
   BUNDLE_MONTHLY_LIMIT,
@@ -777,7 +778,7 @@ export async function POST(request: Request) {
         const result = await generateRepurpose({
           inputContent,
           brandVoice: resolvedVoice,
-          voiceVariant: "signature",
+          voiceVariant: DEFAULT_VOICE_VARIANT_BY_FORMAT[targetFormat],
           targetFormat,
           exemplarsText: exemplarsText || undefined,
         });

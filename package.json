@@ -11,6 +11,7 @@
     "test:e2e": "playwright test",
     "test:e2e:update": "playwright test --update-snapshots",
     "test:voice-variants": "node --experimental-strip-types --test lib/ai/voice-variants.test.mjs",
+    "variant-separation": "node --experimental-strip-types scripts/variant-separation.mjs",
     "ac-check": "bash scripts/ac-check.sh",
     "contrast-check": "node scripts/contrast-check.mjs"
   },

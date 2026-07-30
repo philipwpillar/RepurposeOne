@@ -63,10 +63,10 @@ export const DEFAULT_VOICE_VARIANT_BY_FORMAT: Record<
 };
 
 export const VOICE_IDENTITY_PRECEDENCE =
-  "The voice identity above is fixed. Later instructions may adjust delivery but must not change vocabulary, self-reference, audience-reference, formatting conventions, or stated positions.";
+  "The voice identity above is fixed. Follow it strictly - this is your primary tone anchor. Later instructions may adjust delivery but must not change vocabulary, self-reference, audience-reference, formatting conventions, or stated positions.";
 
 export function buildVoiceIdentityBlock(input: BrandVoiceInput): string {
-  return `Voice identity:\n${input.description?.trim() || "No description provided."}\n${VOICE_IDENTITY_PRECEDENCE}`;
+  return `Voice identity (follow strictly - this is your primary tone anchor):\n${input.description?.trim() || "No description provided."}\n${VOICE_IDENTITY_PRECEDENCE}`;
 }
 
 export function buildVoiceSamplesBlock(input: BrandVoiceInput): string {
