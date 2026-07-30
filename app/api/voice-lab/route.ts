@@ -5,11 +5,13 @@ import { generateRepurpose } from "@/lib/ai/generate";
 import { formatXThreadForCopy } from "@/lib/format-output";
 import {
   VOICE_LAB_MAX_CHARS,
-  VOICE_LAB_MAX_TOKENS,
   VOICE_LAB_MIN_CHARS,
   VOICE_LAB_SAMPLE_VOICES,
-  VOICE_LAB_TARGET_TWEETS,
 } from "@/lib/landing/voice-lab-config";
+import {
+  voiceLabTokensForWords,
+  voiceLabTweetsForWords,
+} from "@/lib/repurpose/length-presets";
 import {
   checkVoiceLabRateLimit,
   hashVoiceLabClientIp,
@@ -25,6 +27,9 @@ export const maxDuration = 60;
 const VoiceLabRequestSchema = z.object({
   text: z.string().trim().min(VOICE_LAB_MIN_CHARS).max(VOICE_LAB_MAX_CHARS),
   voice: z.number().int().min(0).max(2),
+  target_words: z
+    .union([z.literal(20), z.literal(50), z.literal(75)])
+    .default(50),
   turnstileToken: z.string().optional(),
 });
 
@@ -41,7 +46,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
 
-  const { text, voice, turnstileToken } = parsed.data;
+  const { text, voice, target_words, turnstileToken } = parsed.data;
   const clientIp = resolveVoiceLabClientIp(request);
   if (!clientIp) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
@@ -81,9 +86,10 @@ export async function POST(request: Request) {
       inputContent: text.slice(0, VOICE_LAB_MAX_CHARS),
       brandVoice: VOICE_LAB_SAMPLE_VOICES[voice]!,
       targetFormat: "x_thread",
-      targetTweets: VOICE_LAB_TARGET_TWEETS,
+      targetTweets: voiceLabTweetsForWords(target_words),
+      targetWords: target_words,
       modelTier: "fast",
-      maxTokens: VOICE_LAB_MAX_TOKENS,
+      maxTokens: voiceLabTokensForWords(target_words),
     });
 
     if (result.output.format !== "x_thread") {

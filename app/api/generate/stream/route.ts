@@ -167,6 +167,7 @@ export async function POST(request: Request) {
     brand_voice,
     target_format,
     target_tweets,
+    target_words,
     generation_id,
     refinement,
   } = requestData;
@@ -315,6 +316,7 @@ export async function POST(request: Request) {
     sourceText: truncatedContent,
     targetFormat: target_format,
     targetTweets: target_tweets,
+    targetWords: target_words,
     exemplarsText: exemplarsText || undefined,
     refinement,
   });

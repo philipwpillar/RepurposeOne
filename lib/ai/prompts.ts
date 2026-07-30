@@ -1,10 +1,15 @@
 import type { BrandVoiceInput, TargetFormat } from "@/types";
+import {
+  getDefaultWords,
+  wordsToTweets,
+} from "@/lib/repurpose/length-presets";
 
 export interface PromptContext {
   brandVoiceText: string;
   sourceText: string;
   targetFormat: TargetFormat;
   targetTweets?: number;
+  targetWords?: number;
   /** Optional direction for a newly generated variant. */
   refinement?: string;
   /** Optional voice exemplars from rated/edited past outputs (Brief S2). */
@@ -17,6 +22,7 @@ export interface PhotoPromptContext {
   cta?: string;
   targetFormat: TargetFormat;
   targetTweets?: number;
+  targetWords?: number;
   /** Optional voice exemplars from rated/edited past outputs (Brief S2). */
   exemplarsText?: string;
 }
@@ -137,7 +143,9 @@ export function buildGenerationPrompt(ctx: PromptContext): {
   system: string;
   user: string;
 } {
-  const tweetTarget = ctx.targetTweets ?? 7;
+  const wordTarget = ctx.targetWords ?? getDefaultWords(ctx.targetFormat);
+  const tweetTarget = ctx.targetTweets ?? wordsToTweets(wordTarget);
+  const wordBudget = `- Target approximately ${wordTarget} words for the main body (respect hard character caps).`;
   const exemplarsBlock = ctx.exemplarsText?.trim()
     ? `\n\n${ctx.exemplarsText.trim()}`
     : "";
@@ -159,6 +167,7 @@ ${ctx.sourceText}${refinementBlock}`;
 
 Task: Write an X thread repurposing the source.
 - Target approximately ${tweetTarget} tweets.
+${wordBudget}
 - End with one takeaway or soft CTA.
 Return JSON matching the required schema.`,
       };
@@ -169,6 +178,7 @@ Return JSON matching the required schema.`,
         user: `${baseUser}
 
 Task: Write a LinkedIn post repurposing the source, plus carousel slide ideas.
+${wordBudget}
 - Aim for 5 - 10 carousel slides.
 - Make the post standalone-readable even without the carousel.
 Return JSON matching the required schema.`,
@@ -180,6 +190,7 @@ Return JSON matching the required schema.`,
         user: `${baseUser}
 
 Task: Write an Instagram caption repurposing the source.
+${wordBudget}
 - Include 3 - 5 hook variations for A/B testing, all staying in the brand voice.
 - Suggest 3 - 8 relevant hashtags - fewer if the brand voice is minimal or direct.
 Return JSON matching the required schema.`,
@@ -191,6 +202,7 @@ Return JSON matching the required schema.`,
         user: `${baseUser}
 
 Task: Write a newsletter email repurposing the source.
+${wordBudget}
 - Include a compelling subject line and preview text.
 - Structure the body for easy scanning.
 Return JSON matching the required schema.`,
@@ -209,7 +221,9 @@ export function buildPhotoGenerationPrompt(ctx: PhotoPromptContext): {
   system: string;
   user: string;
 } {
-  const tweetTarget = ctx.targetTweets ?? 7;
+  const wordTarget = ctx.targetWords ?? getDefaultWords(ctx.targetFormat);
+  const tweetTarget = ctx.targetTweets ?? wordsToTweets(wordTarget);
+  const wordBudget = `- Target approximately ${wordTarget} words for the main body (respect hard character caps).`;
   const ctaBlock = ctx.cta
     ? `\nCall to action (use or adapt): ${ctx.cta}`
     : "\nCall to action: infer a soft CTA from context, or omit if not appropriate.";
@@ -233,6 +247,7 @@ The attached image is the visual the copy will accompany. Use it for specificity
 
 Task: Write an X thread to accompany this photo.
 - Target approximately ${tweetTarget} tweets.
+${wordBudget}
 - End with one takeaway or soft CTA.
 Return JSON matching the required schema.`,
       };
@@ -243,6 +258,7 @@ Return JSON matching the required schema.`,
         user: `${baseUser}
 
 Task: Write a LinkedIn post to accompany this photo, plus carousel slide ideas.
+${wordBudget}
 - Aim for 5 - 10 carousel slides.
 - Make the post standalone-readable even without the carousel.
 Return JSON matching the required schema.`,
@@ -254,6 +270,7 @@ Return JSON matching the required schema.`,
         user: `${baseUser}
 
 Task: Write an Instagram caption to accompany this photo.
+${wordBudget}
 - Include 3 - 5 hook variations for A/B testing, all staying in the brand voice.
 - Suggest 3 - 8 relevant hashtags - fewer if the brand voice is minimal or direct.
 Return JSON matching the required schema.`,
@@ -265,6 +282,7 @@ Return JSON matching the required schema.`,
         user: `${baseUser}
 
 Task: Write a newsletter email inspired by this photo and context.
+${wordBudget}
 - Include a compelling subject line and preview text.
 - Structure the body for easy scanning.
 - Reference the photo naturally where relevant; do not describe it literally.

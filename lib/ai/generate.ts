@@ -32,6 +32,7 @@ export interface GenerateInput {
   brandVoice: BrandVoiceInput;
   targetFormat: TargetFormat;
   targetTweets?: number;
+  targetWords?: number;
   /** Optional tier override; defaults to FORMAT_MODEL_TIER mapping. */
   modelTier?: ModelTier;
   /** Optional voice exemplars prompt block (Brief S2). */
@@ -93,6 +94,7 @@ export async function generateRepurpose(
     sourceText: truncatedContent,
     targetFormat: input.targetFormat,
     targetTweets: input.targetTweets,
+    targetWords: input.targetWords,
     exemplarsText: input.exemplarsText,
   };
 
@@ -157,6 +159,7 @@ export interface GenerateImageInput {
   brandVoice: BrandVoiceInput;
   targetFormat: TargetFormat;
   targetTweets?: number;
+  targetWords?: number;
   /** Optional voice exemplars prompt block (Brief S2). */
   exemplarsText?: string;
 }
@@ -174,6 +177,7 @@ export async function generateRepurposeFromImage(
     cta: input.cta,
     targetFormat: input.targetFormat,
     targetTweets: input.targetTweets,
+    targetWords: input.targetWords,
     exemplarsText: input.exemplarsText,
   });
 

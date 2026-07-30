@@ -34,6 +34,7 @@ export async function callPhotoGenerateApi(params: {
   targetFormat: TargetFormat;
   brandVoice?: BrandVoiceRef | null;
   targetTweets?: number;
+  targetWords?: number;
   generationId?: string;
 }): Promise<{ output: RepurposeOutput; usage: UsageInfo; repurposeId: string }> {
   const body: Record<string, unknown> = {
@@ -59,6 +60,10 @@ export async function callPhotoGenerateApi(params: {
 
   if (params.targetFormat === "x_thread" && params.targetTweets !== undefined) {
     body.target_tweets = params.targetTweets;
+  }
+
+  if (params.targetWords !== undefined) {
+    body.target_words = params.targetWords;
   }
 
   if (params.generationId) {

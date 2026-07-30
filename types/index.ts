@@ -86,6 +86,7 @@ const GenerateRequestSharedSchema = z.object({
   brand_voice: BrandVoiceInputSchema.optional(),
   target_format: TargetFormatSchema.default("x_thread"),
   target_tweets: z.number().int().min(3).max(15).optional(),
+  target_words: z.number().int().positive().optional(),
   /** Client may send for Regenerate All; server validates before insert. */
   generation_id: z.string().uuid().optional(),
 });

@@ -20,6 +20,12 @@ import {
   callGenerateStreamApi,
   StreamGenerateApiError,
 } from "@/lib/repurpose/stream-generate-client";
+import {
+  FORMAT_LENGTH_PRESETS,
+  getDefaultWords,
+  isValidWords,
+  wordsToTweets,
+} from "@/lib/repurpose/length-presets";
 import type { InputMode, PhotoInputReady } from "@/types/photo-input";
 import type { Plan } from "@/types";
 import InputModeTabs from "./InputModeTabs";
@@ -68,9 +74,6 @@ import type {
   XThreadOutput,
 } from "@/types";
 
-const TWITTER_LENGTH_MIN = 3;
-const TWITTER_LENGTH_MAX = 15;
-
 const ALL_FORMATS: TargetFormat[] = ["x_thread", "linkedin", "instagram", "email"];
 
 const FORMAT_FALLBACK_ERRORS: Record<TargetFormat, string> = {
@@ -115,8 +118,13 @@ function createFormatRecord<T>(value: T): Record<TargetFormat, T> {
   };
 }
 
-function clampTargetTweets(count: number): number {
-  return Math.min(TWITTER_LENGTH_MAX, Math.max(TWITTER_LENGTH_MIN, count));
+function createDefaultLengthWords(): Record<TargetFormat, number> {
+  return {
+    x_thread: getDefaultWords("x_thread"),
+    linkedin: getDefaultWords("linkedin"),
+    instagram: getDefaultWords("instagram"),
+    email: getDefaultWords("email"),
+  };
 }
 
 function FormatGeneratingPlaceholder() {
@@ -287,7 +295,6 @@ interface RepurposeWorkspaceProps {
 export default function RepurposeWorkspace({
   initialInput = "",
   initialTwitterOutput,
-  initialTwitterLength,
   repurposesUsed,
   repurposesLimit,
   userPlan,
@@ -306,11 +313,8 @@ export default function RepurposeWorkspace({
   const [photoInput, setPhotoInput] = useState<PhotoInputReady | null>(null);
   const [pendingMode, setPendingMode] = useState<InputMode | null>(null);
 
-  const [twitterLength, setTwitterLength] = useState(
-    clampTargetTweets(initialTwitterLength ?? 6)
-  );
-  const [pendingTwitterLength, setPendingTwitterLength] = useState(
-    clampTargetTweets(initialTwitterLength ?? 6)
+  const [lengthWords, setLengthWords] = useState<Record<TargetFormat, number>>(
+    createDefaultLengthWords
   );
   const [formatVariants, setFormatVariants] = useState<FormatVariantsState>(
     () => {
@@ -440,19 +444,40 @@ export default function RepurposeWorkspace({
     return `Generating ${generating.length} formats…`;
   }, [formatLoading]);
 
+  useEffect(() => {
+    const stored = createDefaultLengthWords();
+    for (const format of ALL_FORMATS) {
+      const value = Number.parseInt(
+        window.localStorage.getItem(`vo-length-${format}`) ?? "",
+        10
+      );
+      if (isValidWords(format, value)) {
+        stored[format] = value;
+      }
+    }
+    setLengthWords(stored);
+  }, []);
+
+  const handleLengthWordsChange = (format: TargetFormat, words: number) => {
+    if (!isValidWords(format, words)) return;
+    setLengthWords((prev) => ({ ...prev, [format]: words }));
+    window.localStorage.setItem(`vo-length-${format}`, String(words));
+  };
+
   // --- Protected fence: generate clients + usage error handling ---
 
   const callGenerateApi = useCallback(
     async (
       inputContent: string,
       targetFormat: TargetFormat,
-      targetTweets?: number,
+      targetWords: number,
       generationId?: string
     ): Promise<{ output: RepurposeOutput; usage: UsageInfo; repurposeId: string }> => {
       const body: Record<string, unknown> = {
         input_type: "paste",
         input_content: inputContent,
         target_format: targetFormat,
+        target_words: targetWords,
       };
 
       if (brandVoice?.id) {
@@ -466,7 +491,7 @@ export default function RepurposeWorkspace({
       }
 
       if (targetFormat === "x_thread") {
-        body.target_tweets = clampTargetTweets(targetTweets ?? pendingTwitterLength);
+        body.target_tweets = wordsToTweets(targetWords);
       }
 
       if (generationId) {
@@ -513,7 +538,7 @@ export default function RepurposeWorkspace({
         repurposeId: data.repurpose_id,
       };
     },
-    [brandVoice, pendingTwitterLength]
+    [brandVoice]
   );
 
   const applyOutput = useCallback(
@@ -665,7 +690,7 @@ export default function RepurposeWorkspace({
   const generatePhotoFormat = useCallback(
     async (
       format: TargetFormat,
-      options?: { targetTweets?: number; generationId?: string }
+      options?: { targetWords?: number; generationId?: string }
     ) => {
       if (!photoInput || !planAllowsVision(userPlan)) {
         if (!planAllowsVision(userPlan)) {
@@ -684,23 +709,20 @@ export default function RepurposeWorkspace({
       setReactiveUpgradeGate(null);
       setFormatLoading((prev) => ({ ...prev, [format]: true }));
       setExpandedFormat(format);
+      const targetWords = options?.targetWords ?? lengthWords[format];
 
       try {
         const { output, usage, repurposeId } = await callPhotoGenerateApi({
           photo: photoInput,
           targetFormat: format,
           brandVoice,
-          targetTweets: options?.targetTweets,
+          targetWords,
+          targetTweets:
+            format === "x_thread" ? wordsToTweets(targetWords) : undefined,
           generationId: options?.generationId,
         });
         applyOutput(format, output, repurposeId);
         setUsedCount(usage.used);
-
-        if (format === "x_thread" && options?.targetTweets !== undefined) {
-          const length = clampTargetTweets(options.targetTweets);
-          setTwitterLength(length);
-          setPendingTwitterLength(length);
-        }
       } catch (err) {
         console.error(err);
         resolveGenerateError(err, format, FORMAT_FALLBACK_ERRORS);
@@ -708,7 +730,14 @@ export default function RepurposeWorkspace({
         setFormatLoading((prev) => ({ ...prev, [format]: false }));
       }
     },
-    [applyOutput, brandVoice, photoInput, resolveGenerateError, userPlan]
+    [
+      applyOutput,
+      brandVoice,
+      lengthWords,
+      photoInput,
+      resolveGenerateError,
+      userPlan,
+    ]
   );
 
   const generateFormat = useCallback(
@@ -716,12 +745,13 @@ export default function RepurposeWorkspace({
       format: TargetFormat,
       options?: {
         inputContent?: string;
-        targetTweets?: number;
+        targetWords?: number;
         generationId?: string;
         refinement?: string;
       }
     ) => {
       const trimmed = (options?.inputContent ?? inputSummary).trim();
+      const targetWords = options?.targetWords ?? lengthWords[format];
       if (trimmed.length < INPUT_CONTENT_MIN_LENGTH) {
         setFormatErrors((prev) => ({
           ...prev,
@@ -754,7 +784,9 @@ export default function RepurposeWorkspace({
             inputContent: trimmed,
             targetFormat: format,
             brandVoice,
-            targetTweets: options?.targetTweets,
+            targetWords,
+            targetTweets:
+              format === "x_thread" ? wordsToTweets(targetWords) : undefined,
             generationId: options?.generationId,
             refinement: options?.refinement,
             signal: controller.signal,
@@ -766,17 +798,11 @@ export default function RepurposeWorkspace({
           const { output, usage, repurposeId } = await callGenerateApi(
             trimmed,
             format,
-            options?.targetTweets,
+            targetWords,
             options?.generationId
           );
           applyOutput(format, output, repurposeId);
           setUsedCount(usage.used);
-        }
-
-        if (format === "x_thread" && options?.targetTweets !== undefined) {
-          const length = clampTargetTweets(options.targetTweets);
-          setTwitterLength(length);
-          setPendingTwitterLength(length);
         }
       } catch (err) {
         if (isAbortError(err)) {
@@ -799,31 +825,11 @@ export default function RepurposeWorkspace({
       callGenerateApi,
       clearPartialPreview,
       inputSummary,
+      lengthWords,
       resolveGenerateError,
       useStream,
     ]
   );
-
-  const generateTwitter = (
-    lengthOverride?: number,
-    inputContentOverride?: string
-  ) => {
-    if (isPhotoMode) {
-      void generatePhotoFormat("x_thread", {
-        targetTweets: lengthOverride ?? pendingTwitterLength,
-      });
-      return;
-    }
-
-    void generateFormat("x_thread", {
-      inputContent: inputContentOverride,
-      targetTweets: lengthOverride ?? pendingTwitterLength,
-    });
-  };
-
-  const handleApplyTwitterLength = () => {
-    void generateTwitter(pendingTwitterLength);
-  };
 
   const regenerateFormat = (format: TargetFormat) => {
     if (isPhotoMode) {
@@ -1036,6 +1042,37 @@ export default function RepurposeWorkspace({
       />
     ) : null;
 
+  const renderLengthControls = (format: TargetFormat) => (
+    <div className="space-y-1.5">
+      <div className="text-xs text-muted-foreground">
+        Target length (words)
+      </div>
+      <div
+        className="flex flex-wrap gap-2"
+        role="group"
+        aria-label={`Target length for ${FORMAT_TITLES[format]}`}
+      >
+        {FORMAT_LENGTH_PRESETS[format].map((words) => (
+          <button
+            key={words}
+            type="button"
+            className={
+              lengthWords[format] === words
+                ? "rounded-full border border-primary bg-primary px-4 py-1.5 font-mono text-xs text-primary-foreground"
+                : "rounded-full border border-border bg-background px-4 py-1.5 font-mono text-xs text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
+            }
+            aria-label={`${words} words`}
+            aria-pressed={lengthWords[format] === words}
+            onClick={() => handleLengthWordsChange(format, words)}
+            disabled={formatLoading[format]}
+          >
+            {words}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
   const canStartRun = isPhotoMode
     ? canGeneratePhoto
     : inputSummary.trim().length >= INPUT_CONTENT_MIN_LENGTH;
@@ -1156,7 +1193,7 @@ export default function RepurposeWorkspace({
           status={cardStatus("x_thread")}
           statusLabel={statusLabelFor(
             "x_thread",
-            xThreadOutput ? `${twitterLength} tweets` : ""
+            xThreadOutput ? `${xThreadOutput.tweets.length} tweets` : ""
           )}
           icon={
             <span className="text-foreground">
@@ -1176,38 +1213,7 @@ export default function RepurposeWorkspace({
           }
           footerExtra={
             <div className="space-y-4">
-              <div>
-                <div className="mb-1.5 flex justify-between text-xs">
-                  <span className="text-muted-foreground">Target length</span>
-                  <span className="font-mono">{pendingTwitterLength} tweets</span>
-                </div>
-                <input
-                  type="range"
-                  min={TWITTER_LENGTH_MIN}
-                  max={TWITTER_LENGTH_MAX}
-                  value={pendingTwitterLength}
-                  onChange={(e) =>
-                    setPendingTwitterLength(
-                      clampTargetTweets(parseInt(e.target.value, 10))
-                    )
-                  }
-                  className="w-full accent-primary"
-                  aria-label="Target tweet count"
-                />
-                <div className="mt-2 flex justify-end">
-                  <Button
-                    type="button"
-                    size="sm"
-                    className="rounded-xl"
-                    onClick={handleApplyTwitterLength}
-                    disabled={formatLoading.x_thread || atLimit}
-                  >
-                    {formatLoading.x_thread
-                      ? "Generating…"
-                      : "Apply & Regenerate"}
-                  </Button>
-                </div>
-              </div>
+              {renderLengthControls("x_thread")}
               {renderRefinementChips("x_thread")}
             </div>
           }
@@ -1257,7 +1263,12 @@ export default function RepurposeWorkspace({
               ? renderFormatError("linkedin", formatErrors.linkedin)
               : null
           }
-          footerExtra={renderRefinementChips("linkedin")}
+          footerExtra={
+            <div className="space-y-4">
+              {renderLengthControls("linkedin")}
+              {renderRefinementChips("linkedin")}
+            </div>
+          }
         >
           {renderFormatBody(
             "linkedin",
@@ -1301,7 +1312,12 @@ export default function RepurposeWorkspace({
               ? renderFormatError("instagram", formatErrors.instagram)
               : null
           }
-          footerExtra={renderRefinementChips("instagram")}
+          footerExtra={
+            <div className="space-y-4">
+              {renderLengthControls("instagram")}
+              {renderRefinementChips("instagram")}
+            </div>
+          }
         >
           {renderFormatBody(
             "instagram",
@@ -1343,7 +1359,12 @@ export default function RepurposeWorkspace({
               ? renderFormatError("email", formatErrors.email)
               : null
           }
-          footerExtra={renderRefinementChips("email")}
+          footerExtra={
+            <div className="space-y-4">
+              {renderLengthControls("email")}
+              {renderRefinementChips("email")}
+            </div>
+          }
         >
           {renderFormatBody(
             "email",

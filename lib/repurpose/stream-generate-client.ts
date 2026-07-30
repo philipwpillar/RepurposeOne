@@ -66,6 +66,7 @@ export async function callGenerateStreamApi(params: {
   targetFormat: TargetFormat;
   brandVoice?: BrandVoiceRef | null;
   targetTweets?: number;
+  targetWords?: number;
   generationId?: string;
   refinement?: string;
   signal?: AbortSignal;
@@ -88,6 +89,10 @@ export async function callGenerateStreamApi(params: {
 
   if (params.targetFormat === "x_thread" && params.targetTweets !== undefined) {
     body.target_tweets = params.targetTweets;
+  }
+
+  if (params.targetWords !== undefined) {
+    body.target_words = params.targetWords;
   }
 
   if (params.generationId) {
