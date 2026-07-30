@@ -33,6 +33,9 @@ const root = path.join(__dirname, "..");
 const variantsMod = await import(
   pathToFileURL(path.join(root, "lib/ai/voice-variants.ts")).href
 );
+const configMod = await import(
+  pathToFileURL(path.join(root, "lib/config.ts")).href
+);
 
 const {
   VOICE_VARIANT_BY_ID,
@@ -45,6 +48,8 @@ const model =
 // Always pin the production allowlist. Do not inherit AI_MODEL_* overrides -
 // a local GPT/Claude override has no deepinfra/fp8 endpoint.
 const providers = ["deepinfra/fp8"];
+// Match production generation temperature (AI_CONFIG / AI_TEMPERATURE).
+const temperature = configMod.AI_CONFIG.temperature;
 
 const REPEATS = 3;
 const FORMATS = [
@@ -230,7 +235,7 @@ async function generateOnce({ system, identity, samples, fragment }) {
     .join("\n\n");
   const body = JSON.stringify({
     model,
-    temperature: 0.2,
+    temperature,
     max_tokens: 700,
     provider: { only: [...providers] },
     reasoning: { enabled: false },
@@ -385,6 +390,7 @@ function pairSeparates(a, b, sentenceDelta, secondDelta) {
 
 const pairFailures = [];
 const explainSecondFailures = [];
+const explainSentenceFailures = [];
 
 for (const format of FORMATS) {
   const sig = cell(format.id, "signature").meanMetrics;
@@ -406,6 +412,15 @@ for (const format of FORMATS) {
       );
     }
   }
+  // Signed direction: explain sentences must be longer than provoke
+  // (fragment bands 15–22 vs 8–14). Absolute Δ alone cannot catch inversion.
+  if (
+    !(exp.meanSentenceLength >= prov.meanSentenceLength + format.sentenceDelta)
+  ) {
+    explainSentenceFailures.push(
+      `${format.id}: explain meanSentenceLength (${exp.meanSentenceLength}) not ≥ provoke (${prov.meanSentenceLength}) + ${format.sentenceDelta}`
+    );
+  }
   // Explain must address the reader; signature/provoke must not match that cue.
   if (!(exp.secondPersonRatio > sig.secondPersonRatio + 0.01)) {
     explainSecondFailures.push(
@@ -420,7 +435,9 @@ for (const format of FORMATS) {
 }
 
 const mechanicalPass =
-  pairFailures.length === 0 && explainSecondFailures.length === 0;
+  pairFailures.length === 0 &&
+  explainSecondFailures.length === 0 &&
+  explainSentenceFailures.length === 0;
 
 const precisions = cells.map((c) => c.meanMetrics.distinctivePrecision);
 const precisionMin = Math.min(...precisions);
@@ -444,6 +461,7 @@ lines.push("");
 lines.push(`Generated: ${new Date().toISOString()}`);
 lines.push(`Model: ${model}`);
 lines.push(`Provider pin: ${providers.join(", ")}`);
+lines.push(`Temperature: ${temperature} (from AI_CONFIG)`);
 lines.push(`Repeats per cell: ${REPEATS}`);
 lines.push(`Formats: ${FORMATS.map((f) => f.id).join(", ")}`);
 lines.push("");
@@ -460,6 +478,11 @@ lines.push("");
 lines.push(
   `- all variant pairs separate on sentence length or second-person (every format): **${
     pairFailures.length === 0 ? "PASS" : "FAIL"
+  }**`
+);
+lines.push(
+  `- explain mean sentence length ≥ provoke + format delta (signed, every format): **${
+    explainSentenceFailures.length === 0 ? "PASS" : "FAIL"
   }**`
 );
 lines.push(
@@ -484,12 +507,33 @@ if (pairFailures.length) {
   for (const f of pairFailures) lines.push(`- ${f}`);
   lines.push("");
 }
+if (explainSentenceFailures.length) {
+  lines.push(`### Explain sentence-length direction failures`);
+  lines.push("");
+  for (const f of explainSentenceFailures) lines.push(`- ${f}`);
+  lines.push("");
+}
 if (explainSecondFailures.length) {
   lines.push(`### Explain second-person failures`);
   lines.push("");
   for (const f of explainSecondFailures) lines.push(`- ${f}`);
   lines.push("");
 }
+lines.push(`### Logged follow-ups (non-blocking)`);
+lines.push("");
+lines.push(
+  `- Signature is often the shortest variant; confirm that is acceptable for the Instagram/default path.`
+);
+lines.push(
+  `- Distinctive n-gram precision is partly constructed (foreign samples define the complement). It gates sample-tracking, not independent identity retention under a lean.`
+);
+lines.push(
+  `- Eyeball primary outputs for parroting: distinctive precision around 0.2–0.3 means substantial surface echo of the four samples.`
+);
+lines.push(
+  `- At temperature 0.7, X threads can still collapse signature vs provoke on sentence length even when LinkedIn/Instagram order correctly (explain > signature > provoke).`
+);
+lines.push("");
 lines.push(`### Mean metrics by format × variant`);
 lines.push("");
 lines.push(
@@ -575,10 +619,18 @@ console.log(`Wrote ${artefactPath}`);
 console.log(
   `Mechanical gate: ${gatePass ? "PASS" : "FAIL"} (pairs=${
     pairFailures.length === 0
-  }, explain2nd=${explainSecondFailures.length === 0}, precisionFlat=${precisionFlat}, foreignBelow=${fidelityDiscriminates})`
+  }, explainSent=${explainSentenceFailures.length === 0}, explain2nd=${
+    explainSecondFailures.length === 0
+  }, precisionFlat=${precisionFlat}, foreignBelow=${fidelityDiscriminates})`
 );
 if (pairFailures.length) {
   console.error("Pair failures:\n" + pairFailures.map((f) => `  - ${f}`).join("\n"));
+}
+if (explainSentenceFailures.length) {
+  console.error(
+    "Explain sentence-length direction failures:\n" +
+      explainSentenceFailures.map((f) => `  - ${f}`).join("\n")
+  );
 }
 if (explainSecondFailures.length) {
   console.error(

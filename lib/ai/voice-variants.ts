@@ -17,9 +17,14 @@ export const VOICE_VARIANTS: readonly VoiceVariant[] = [
     id: "signature",
     label: "Your voice",
     description: "Match the rhythm and structure of your samples.",
-    promptFragment: `Delivery for this piece: neutral. Match the rhythm and structure of
-the voice samples as closely as possible. Do not lean toward any
-particular register.`,
+    promptFragment: `Delivery for this piece: neutral.
+- Match the vocabulary and self-reference habits of the voice samples.
+- Average sentence 12 to 16 words. Full sentences preferred.
+- Open with context or observation, not with a hard claim and not with a tutorial question.
+- Prefer your own wording for the source idea - do not reuse sample phrases verbatim.
+- Do not lean toward Teach or Take.`,
+
+
     lengthDefault: 100,
   },
   {
@@ -28,10 +33,11 @@ particular register.`,
     description: "Guide the reader through a clear mechanism or sequence.",
     promptFragment: `Delivery for this piece:
 - Address the reader as "you". Do not use first-person plural.
-- Average sentence 15 to 22 words. No sentence fragments.
+- Average sentence 16 to 22 words. No sentence fragments.
 - Open with the problem or the question, not with a claim.
 - Include at least one concrete mechanism, number, or step sequence.
 - State the conclusion last.`,
+
     lengthDefault: 100,
   },
   {
@@ -40,10 +46,11 @@ particular register.`,
     description: "Lead with one direct position and justify it briefly.",
     promptFragment: `Delivery for this piece:
 - Open with the position, in one sentence, before any justification.
-- Average sentence 8 to 14 words. Fragments allowed.
+- Average sentence 8 to 12 words. Fragments allowed. Prefer shorter than Teach.
 - Zero hedging: no "might", "perhaps", "in my opinion", "arguably".
 - Exactly one claim. Do not enumerate.
 - Name the thing you disagree with explicitly.`,
+
     lengthDefault: 50,
   },
 ] as const;

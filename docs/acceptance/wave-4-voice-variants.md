@@ -27,6 +27,7 @@ OPENROUTER_API_KEY=... npm run variant-separation
 The script:
 - imports fragments from `lib/ai/voice-variants.ts` (not a local copy)
 - defaults to `qwen/qwen3.5-397b-a17b` with `provider.only: deepinfra/fp8` and `reasoning: { enabled: false }`
+- uses `AI_CONFIG.temperature` (production default 0.7 via `AI_TEMPERATURE`)
 - uses a mid-register primary fixture (not already in the provoke register)
 - generates across X thread, LinkedIn, and Instagram
 - repeats each cell three times
@@ -34,6 +35,7 @@ The script:
 - computes mean sentence length, hedge count, first/second-person ratio, legacy lexicon overlap (report-only), raw sample n-gram fidelity (report-only), and distinctive sample n-gram precision (primary-sample grams absent from the foreign samples)
 - mechanical gate:
   - every variant pair (signature/explain, signature/provoke, explain/provoke) separates on sentence length or second-person, on every format
+  - explain mean sentence length is ≥ provoke + format delta (signed direction), on every format
   - explain second-person is above signature and provoke on every format
   - distinctive n-gram precision is flat across primary variants (max−min ≤ 0.12)
   - foreign distinctive precision is at least 0.05 below every primary cell
@@ -44,7 +46,17 @@ Without `OPENROUTER_API_KEY`, the script exits successfully and prints instructi
 
 **2026-07-30 first run:** earlier gate (explain vs provoke only) printed PASS; verifier correctly rejected that claim (fixture already provoke-shaped; lexicon fidelity did not discriminate).
 
-**2026-07-30 re-run:** mid-register fixture + all-pair gate + distinctive n-gram fidelity. Mechanical gate **PASS** against production Qwen on DeepInfra. Artefact committed. Blind human match of unlabeled outputs remains a reviewer checkbox.
+**2026-07-30 re-run (temp 0.2):** mid-register fixture + all-pair gate + distinctive n-gram fidelity. Mechanical gate PASS at temperature 0.2; verifier held for production temperature and signed explain>provoke sentence direction.
+
+**2026-07-30 re-run (temp from AI_CONFIG):** production temperature (0.7) + signed sentence-length direction + mutually exclusive sentence bands / opening moves in fragments.
+
+Mechanical result at 0.7:
+- explain > provoke sentence length (signed): **PASS** on every format
+- explain second-person: **PASS**
+- distinctive precision flat + foreign below: **PASS**
+- all pairs separate: **FAIL** on `x_thread` signature vs provoke only (Δsent 0.25). LinkedIn and Instagram pairs clear. This is the format-compression finding: X threads squash signature and provoke toward the same short-sentence band.
+
+F1 signature terseness, F3 metric construction, and blind reviewer boxes remain logged follow-ups, not blockers. Blind human match of unlabeled outputs remains a reviewer checkbox.
 
 ## Copy decisions locked for merge
 
