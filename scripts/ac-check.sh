@@ -92,12 +92,16 @@ run_floor(){
   assert "setUsedCount(usage.used) success" "$(n 'setUsedCount\(usage\.used\)' "$W")" ge 3
   assert "no obsolete setUsedCount(err…)"   "$(n 'setUsedCount\(err\.usage\.used\)' "$W")" eq 0
   # Voice variant adjective denylist - only when the catalog/tests exist (#107+).
+  # Requires Node 22+ (package.json uses --experimental-strip-types).
   if [ -f lib/ai/voice-variants.test.mjs ]; then
-    if ! npm run test:voice-variants >/dev/null 2>&1; then
+    VV_OUT=$(mktemp)
+    if ! npm run test:voice-variants >"$VV_OUT" 2>&1; then
       printf "  FAIL  %-38s %s\n" "voice-variants adjective denylist" "npm run test:voice-variants"; FAIL=1
+      sed 's/^/         /' "$VV_OUT" >&2
     else
       printf "  PASS  %-38s %s\n" "voice-variants adjective denylist" "ok"
     fi
+    rm -f "$VV_OUT"
   fi
 }
 run_0(){ echo "── PHASE 0 ──"

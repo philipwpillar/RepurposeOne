@@ -201,28 +201,28 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold">Third parties / processors</h2>
             <ul className="mt-3 list-disc space-y-2 pl-6 leading-relaxed text-muted-foreground">
               <li>
-                <strong className="font-medium text-foreground">Supabase</strong>{" "}
-                — authentication and database hosting.
+                <strong className="font-medium text-foreground">Supabase</strong>
+                : authentication and database hosting.
               </li>
               <li>
-                <strong className="font-medium text-foreground">Stripe</strong>{" "}
-                — payment processing.
+                <strong className="font-medium text-foreground">Stripe</strong>:
+                payment processing.
               </li>
               <li>
                 <strong className="font-medium text-foreground">
                   OpenRouter
-                </strong>{" "}
-                — routing content to AI model providers for generation.
+                </strong>
+                : routing content to AI model providers for generation.
               </li>
               <li>
-                <strong className="font-medium text-foreground">Vercel</strong>{" "}
-                — application hosting and operational logs.
+                <strong className="font-medium text-foreground">Vercel</strong>:
+                application hosting and operational logs.
               </li>
               <li>
                 <strong className="font-medium text-foreground">
                   Cloudflare
-                </strong>{" "}
-                — Turnstile bot protection on the Voice Lab demo (see Landing
+                </strong>
+                : Turnstile bot protection on the Voice Lab demo (see Landing
                 page demo above).
               </li>
             </ul>
