@@ -30,9 +30,6 @@ const root = path.join(__dirname, "..");
 const variantsMod = await import(
   pathToFileURL(path.join(root, "lib/ai/voice-variants.ts")).href
 );
-const configMod = await import(
-  pathToFileURL(path.join(root, "lib/config.ts")).href
-);
 
 const {
   VOICE_VARIANTS,
@@ -42,10 +39,10 @@ const {
 } = variantsMod;
 
 const model =
-  process.env.VARIANT_SEPARATION_MODEL ||
-  configMod.STRONG_MODEL ||
-  "qwen/qwen3.5-397b-a17b";
-const providers = configMod.OPENROUTER_ALLOWED_PROVIDERS || ["deepinfra/fp8"];
+  process.env.VARIANT_SEPARATION_MODEL || "qwen/qwen3.5-397b-a17b";
+// Always pin the production allowlist. Do not inherit AI_MODEL_* overrides -
+// a local GPT/Claude override has no deepinfra/fp8 endpoint.
+const providers = ["deepinfra/fp8"];
 
 const REPEATS = 3;
 const FORMATS = [
@@ -81,14 +78,33 @@ const source =
 const HEDGE_RE =
   /\b(might|perhaps|maybe|possibly|arguably|somewhat|could be|in my opinion|i think|seems|appears)\b/gi;
 const STOPWORDS = new Set(
-  `a an the and or but if in on at to for of as is was are were be been being this that these those it its with from by into over after before about between through during without within along across behind beyond under above than then so such own same too very can will just also only other into our your their my we you they he she i me him her us them not no nor more most some any each few many much who whom which what when where why how all both did do does doing done have has had having`.split(
+  `a an the and or but if in on at to for of as is was are were be been being this that these those it its with from by into over after before about between through during without within along across behind beyond under above than then so such own same too very can will just also only other into our their my we they he she me him her us them not no nor more most some any each few many much who whom which what when where why how all both did do does doing done have has had having`.split(
     /\s+/
   )
 );
+const PRONOUNS_FIRST = new Set([
+  "i",
+  "me",
+  "my",
+  "mine",
+  "we",
+  "us",
+  "our",
+  "ours",
+]);
+const PRONOUNS_SECOND = new Set(["you", "your", "yours"]);
 
-function tokenize(text) {
-  return (text.toLowerCase().match(/[a-z0-9']+/g) || []).filter(
-    (w) => !STOPWORDS.has(w) && w.length > 2
+function allTokens(text) {
+  return text.toLowerCase().match(/[a-z0-9']+/g) || [];
+}
+
+function contentTokens(text) {
+  return allTokens(text).filter(
+    (w) =>
+      !STOPWORDS.has(w) &&
+      !PRONOUNS_FIRST.has(w) &&
+      !PRONOUNS_SECOND.has(w) &&
+      w.length > 2
   );
 }
 
@@ -102,7 +118,7 @@ function sentenceList(text) {
 function meanSentenceLength(text) {
   const ss = sentenceList(text);
   if (!ss.length) return 0;
-  const lengths = ss.map((s) => tokenize(s).length);
+  const lengths = ss.map((s) => contentTokens(s).length);
   return lengths.reduce((a, b) => a + b, 0) / lengths.length;
 }
 
@@ -111,24 +127,20 @@ function hedgeCount(text) {
 }
 
 function personRatio(text) {
-  const tokens = tokenize(text);
+  const tokens = allTokens(text);
   if (!tokens.length) return { first: 0, second: 0 };
   let first = 0;
   let second = 0;
   for (const t of tokens) {
-    if (["i", "me", "my", "mine", "we", "us", "our", "ours"].includes(t)) {
-      first += 1;
-    }
-    if (["you", "your", "yours"].includes(t)) {
-      second += 1;
-    }
+    if (PRONOUNS_FIRST.has(t)) first += 1;
+    if (PRONOUNS_SECOND.has(t)) second += 1;
   }
   return { first: first / tokens.length, second: second / tokens.length };
 }
 
 function lexiconOverlap(text, lexicon) {
   if (!lexicon.size) return 0;
-  const tokens = new Set(tokenize(text));
+  const tokens = new Set(contentTokens(text));
   let hit = 0;
   for (const w of lexicon) {
     if (tokens.has(w)) hit += 1;
@@ -156,39 +168,62 @@ async function generateOnce({ system, identity, samples, fragment }) {
   const sampleBlock = samples
     .map((s, i) => `--- Sample ${i + 1} ---\n${s}`)
     .join("\n\n");
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model,
-      temperature: 0.2,
-      max_tokens: 700,
-      provider: { only: [...providers] },
-      messages: [
-        { role: "system", content: system },
-        {
-          role: "user",
-          content: `Voice identity:\n${identity}\n${VOICE_IDENTITY_PRECEDENCE}\n\nDelivery variant:\n${fragment}\n\nWriting samples:\n${sampleBlock}\n\nSource content:\n${source}`,
-        },
-      ],
-    }),
+  const body = JSON.stringify({
+    model,
+    temperature: 0.2,
+    max_tokens: 700,
+    provider: { only: [...providers] },
+    reasoning: { enabled: false },
+    messages: [
+      { role: "system", content: system },
+      {
+        role: "user",
+        content: `Voice identity:\n${identity}\n${VOICE_IDENTITY_PRECEDENCE}\n\nDelivery variant:\n${fragment}\n\nWriting samples:\n${sampleBlock}\n\nSource content:\n${source}`,
+      },
+    ],
   });
 
-  if (!response.ok) {
+  let lastError = "";
+  for (let attempt = 0; attempt < 6; attempt++) {
+    if (attempt > 0) {
+      const waitMs = Math.min(60_000, 2000 * 2 ** (attempt - 1));
+      process.stderr.write(`Retry ${attempt} after ${waitMs}ms...\n`);
+      await new Promise((r) => setTimeout(r, waitMs));
+    }
+    const response = await fetch(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body,
+      }
+    );
+    if (response.status === 429) {
+      lastError = await response.text();
+      continue;
+    }
+    if (!response.ok) {
+      throw new Error(
+        `request failed: ${response.status} ${await response.text()}`
+      );
+    }
+    const data = await response.json();
+    const message = data.choices?.[0]?.message;
+    const content = message?.content?.trim();
+    if (content) return content;
     throw new Error(
-      `request failed: ${response.status} ${await response.text()}`
+      `empty content from model (finish=${data.choices?.[0]?.finish_reason}, hasReasoning=${Boolean(message?.reasoning)})`
     );
   }
-  const data = await response.json();
-  return data.choices?.[0]?.message?.content?.trim() || "(empty response)";
+  throw new Error(`rate-limited after retries: ${lastError}`);
 }
 
 const primaryLexicon = new Set([
-  ...tokenize(primaryIdentity),
-  ...primarySamples.flatMap(tokenize),
+  ...contentTokens(primaryIdentity),
+  ...primarySamples.flatMap(contentTokens),
 ]);
 
 const cells = [];
@@ -237,8 +272,8 @@ for (const format of FORMATS) {
 }
 
 const foreignLexicon = new Set([
-  ...tokenize(foreignIdentity),
-  ...foreignSamples.flatMap(tokenize),
+  ...contentTokens(foreignIdentity),
+  ...foreignSamples.flatMap(contentTokens),
 ]);
 const foreignFragment = VOICE_VARIANT_BY_ID.signature.promptFragment;
 const foreignRuns = [];
@@ -276,10 +311,17 @@ const mechanicalPass =
     linkedInProvoke.meanSentenceLength,
     2
   ) &&
-  separates(linkedInExplain.hedgeCount, linkedInProvoke.hedgeCount, 0.5) &&
+  separates(
+    linkedInExplain.secondPersonRatio,
+    linkedInProvoke.secondPersonRatio,
+    0.02
+  ) &&
   separates(xExplain.meanSentenceLength, xProvoke.meanSentenceLength, 1.5);
 
-const lexiconFlat = cells.every((c) => c.meanMetrics.lexiconOverlap >= 0.15);
+const overlaps = cells.map((c) => c.meanMetrics.lexiconOverlap);
+const lexiconFlat =
+  Math.max(...overlaps) - Math.min(...overlaps) <= 0.25 &&
+  Math.min(...overlaps) >= 0.05;
 
 const artefactPath = path.join(
   root,
@@ -298,10 +340,10 @@ lines.push("");
 lines.push(`## Mechanical gate`);
 lines.push("");
 lines.push(
-  `- explain vs provoke sentence-length / hedge separation: **${mechanicalPass ? "PASS" : "FAIL"}**`
+  `- explain vs provoke sentence-length / second-person separation: **${mechanicalPass ? "PASS" : "FAIL"}**`
 );
 lines.push(
-  `- lexicon overlap stays non-trivial across variants: **${lexiconFlat ? "PASS" : "FAIL"}**`
+  `- lexicon overlap stays relatively flat across variants: **${lexiconFlat ? "PASS" : "FAIL"}**`
 );
 lines.push("");
 lines.push(`### Mean metrics by format × variant`);

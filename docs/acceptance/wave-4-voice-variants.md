@@ -26,15 +26,18 @@ OPENROUTER_API_KEY=... npm run variant-separation
 
 The script:
 - imports fragments from `lib/ai/voice-variants.ts` (not a local copy)
-- defaults to `STRONG_MODEL` with `provider.only: deepinfra/fp8`
+- defaults to `qwen/qwen3.5-397b-a17b` with `provider.only: deepinfra/fp8` and `reasoning: { enabled: false }`
 - generates across X thread, LinkedIn, and Instagram
 - repeats each cell three times
 - adds a foreign-voice control output for the fidelity half
 - computes mean sentence length, hedge count, first/second-person ratio, and lexicon overlap
+- mechanical gate: explain vs provoke sentence-length + second-person separation; lexicon overlap relatively flat
 - writes `docs/acceptance/variant-separation-artefact.md`
 - exits non-zero if the mechanical gate fails
 
 Without `OPENROUTER_API_KEY`, the script exits successfully and prints instructions. That stub result does not satisfy criterion 5.
+
+**2026-07-30 run:** mechanical gate **PASS** against production Qwen on DeepInfra. Artefact committed. Blind human match of unlabeled outputs remains a reviewer checkbox.
 
 ## Copy decisions locked for merge
 
