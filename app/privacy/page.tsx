@@ -32,7 +32,7 @@ export default function PrivacyPage() {
           Privacy Policy
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Last updated: 29 July 2026
+          Last updated: 30 July 2026
         </p>
 
         <div className="mt-10 space-y-8 text-foreground">
@@ -106,6 +106,23 @@ export default function PrivacyPage() {
               abuse). This involves a transfer of personal data to the United
               States; we rely on appropriate safeguards for international
               transfers.
+            </p>
+            <p className="mt-3 leading-relaxed text-muted-foreground">
+              We also use Cloudflare Turnstile on the Voice Lab demo to reduce
+              bot abuse. Turnstile may run an invisible check and process
+              technical signals such as IP address, TLS fingerprint, and
+              browser characteristics. Cloudflare acts as a processor for bot
+              protection on our behalf and may also process signals as a
+              controller to improve Turnstile. See{" "}
+              <a
+                href="https://www.cloudflare.com/en-gb/turnstile-privacy-policy/"
+                className="text-foreground underline underline-offset-4"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                Cloudflare&apos;s Turnstile Privacy Addendum
+              </a>
+              .
             </p>
           </section>
 
@@ -189,21 +206,28 @@ export default function PrivacyPage() {
             <ul className="mt-3 list-disc space-y-2 pl-6 leading-relaxed text-muted-foreground">
               <li>
                 <strong className="font-medium text-foreground">Supabase</strong>{" "}
- - authentication and database hosting.
+                — authentication and database hosting.
               </li>
               <li>
                 <strong className="font-medium text-foreground">Stripe</strong>{" "}
- - payment processing.
+                — payment processing.
               </li>
               <li>
                 <strong className="font-medium text-foreground">
                   OpenRouter
                 </strong>{" "}
- - routing content to AI model providers for generation.
+                — routing content to AI model providers for generation.
               </li>
               <li>
                 <strong className="font-medium text-foreground">Vercel</strong>{" "}
- - application hosting and operational logs.
+                — application hosting and operational logs.
+              </li>
+              <li>
+                <strong className="font-medium text-foreground">
+                  Cloudflare
+                </strong>{" "}
+                — Turnstile bot protection on the Voice Lab demo (see Landing
+                page demo above).
               </li>
             </ul>
           </section>
@@ -213,7 +237,18 @@ export default function PrivacyPage() {
             <p className="mt-3 leading-relaxed text-muted-foreground">
               We use essential cookies only, such as those required for
               authentication and session management. We do not use advertising
-              or tracking cookies.
+              or tracking cookies. Cloudflare Turnstile on the Voice Lab demo
+              may use strictly necessary cookies or similar technologies for
+              bot detection; see{" "}
+              <a
+                href="https://www.cloudflare.com/en-gb/turnstile-privacy-policy/"
+                className="text-foreground underline underline-offset-4"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                Cloudflare&apos;s Turnstile Privacy Addendum
+              </a>
+              .
             </p>
           </section>
 
