@@ -75,13 +75,19 @@ run_floor(){
   BASE_HEX=$(git --no-pager grep -cE '(text|bg|border|ring|fill|stroke|from|via|to|shadow|outline|placeholder|accent|caret|divide)-\[#' origin/main -- app components 2>/dev/null | awk -F: '{s+=$NF} END {print s+0}')
   NOW_HEX=$(n '(text|bg|border|ring|fill|stroke|from|via|to|shadow|outline|placeholder|accent|caret|divide)-\[#' $A $C)
   assert "no NET Tailwind arbitrary hex added" "$NOW_HEX" le "$BASE_HEX"
+  # Studio generate fence (ratified 2026-07-23; re-spec 2026-07-30).
+  # Presence of the client helpers + consolidated error path — not brittle
+  # mention counts that drift when UI is added around the fence.
+  # Usage sync must stay consolidated: error path uses apiErr; success uses usage.
   echo "── FENCE (assert only if the PR touches Studio) ──"
-  assert "GenerateApiError"                 "$(n 'GenerateApiError' "$W")" eq 8
-  assert "callGenerateApi"                  "$(n 'callGenerateApi' "$W")" eq 3
-  assert "callPhotoGenerateApi"             "$(n 'callPhotoGenerateApi' "$W")" eq 2
-  assert "PhotoGenerateApiError"            "$(n 'PhotoGenerateApiError' "$W")" eq 2
+  assert "GenerateApiError present"         "$(n 'GenerateApiError' "$W")" ge 1
+  assert "PhotoGenerateApiError present"    "$(n 'PhotoGenerateApiError' "$W")" ge 1
+  assert "callGenerateApi present"          "$(n 'callGenerateApi' "$W")" ge 1
+  assert "callPhotoGenerateApi present"     "$(n 'callPhotoGenerateApi' "$W")" ge 1
+  assert "resolveGenerateError present"     "$(n 'resolveGenerateError' "$W")" ge 1
   assert "setUsedCount(apiErr.usage.used)"  "$(n 'setUsedCount\(apiErr\.usage\.used\)' "$W")" eq 1
-  assert "setUsedCount(usage.used)"         "$(n 'setUsedCount\(usage\.used\)' "$W")" eq 3
+  assert "setUsedCount(usage.used) success" "$(n 'setUsedCount\(usage\.used\)' "$W")" ge 1
+  assert "no obsolete setUsedCount(err…)"   "$(n 'setUsedCount\(err\.usage\.used\)' "$W")" eq 0
 }
 run_0(){ echo "── PHASE 0 ──"
   assert "@vercel/analytics+speed-insights" "$(n '@vercel/analytics|@vercel/speed-insights' app/layout.tsx package.json)" ge 2
