@@ -220,7 +220,7 @@ Return JSON matching the required schema.`,
 const PHOTO_TASK_PREAMBLE = `You are writing social copy to accompany a photo the user will post - not describing the image for accessibility, and not narrating what is visible in the photo.
 ${PUNCTUATION_RULE}
 
-The user's context field is the authoritative signal for intent, angle, and purpose. The image informs specificity and detail only. Lean heavily on the brand voice block - voice grounding is thinner than a long-form text repurpose, so the brand voice and context must carry tone and intent.
+The user's context field is the authoritative signal for intent, angle, and purpose. The image informs specificity and detail only. Follow the voice identity strictly - this is your primary tone anchor. Voice grounding is thinner than a long-form text repurpose, so the brand voice and context must carry tone and intent.
 
 Do NOT produce copy that merely describes the photo ("In this image we see…"). Write platform-native copy the user can post alongside the image.`;
 

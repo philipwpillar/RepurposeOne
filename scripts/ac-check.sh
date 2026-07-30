@@ -82,6 +82,14 @@ run_floor(){
   assert "PhotoGenerateApiError"            "$(n 'PhotoGenerateApiError' "$W")" eq 2
   assert "setUsedCount(apiErr.usage.used)"  "$(n 'setUsedCount\(apiErr\.usage\.used\)' "$W")" eq 1
   assert "setUsedCount(usage.used)"         "$(n 'setUsedCount\(usage\.used\)' "$W")" eq 3
+  # Voice variant adjective denylist - only when the catalog/tests exist (#107+).
+  if [ -f lib/ai/voice-variants.test.mjs ]; then
+    if ! npm run test:voice-variants >/dev/null 2>&1; then
+      printf "  FAIL  %-38s %s\n" "voice-variants adjective denylist" "npm run test:voice-variants"; FAIL=1
+    else
+      printf "  PASS  %-38s %s\n" "voice-variants adjective denylist" "ok"
+    fi
+  fi
 }
 run_0(){ echo "── PHASE 0 ──"
   assert "@vercel/analytics+speed-insights" "$(n '@vercel/analytics|@vercel/speed-insights' app/layout.tsx package.json)" ge 2
