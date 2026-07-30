@@ -33,13 +33,13 @@ function errorResponse(
 
 function toUserFacingGenerationError(err: unknown): string {
   if (!(err instanceof Error)) {
-    return "Generation failed unexpectedly. Please try again — this attempt won't count toward your monthly limit.";
+    return "Generation failed unexpectedly. Please try again - this attempt won't count toward your monthly limit.";
   }
 
   const msg = err.message.toLowerCase();
 
   if (msg.includes("timeout") || msg.includes("timed out")) {
-    return "Generation timed out. Try again with shorter content — this attempt won't count toward your monthly limit.";
+    return "Generation timed out. Try again with shorter content - this attempt won't count toward your monthly limit.";
   }
 
   if (msg.includes("rate") && msg.includes("limit")) {
@@ -47,10 +47,10 @@ function toUserFacingGenerationError(err: unknown): string {
   }
 
   if (msg.includes("invalid") || msg.includes("validation") || msg.includes("parse")) {
-    return "The AI returned an unexpected format. Please try again — this attempt won't count toward your monthly limit.";
+    return "The AI returned an unexpected format. Please try again - this attempt won't count toward your monthly limit.";
   }
 
-  return "We couldn't generate your content. Please try again — this attempt won't count toward your monthly limit.";
+  return "We couldn't generate your content. Please try again - this attempt won't count toward your monthly limit.";
 }
 
 /**
@@ -60,7 +60,7 @@ function toUserFacingGenerationError(err: unknown): string {
  * 1. Authenticate
  * 2. Validate input
  * 3. Check burst rate limit (recent complete + pending rows)
- * 4. Check plan usage (complete rows only — no AI call if over limit)
+ * 4. Check plan usage (complete rows only - no AI call if over limit)
  * 4. Insert pending repurpose
  * 5. Call AI + validate output with Zod
  * 6. Update to complete or failed

@@ -80,7 +80,7 @@ async function updateProfileByCustomerId(
 
 /**
  * Returns true when this invoice event should apply to payment_failed_* fields.
- * Scoped only to that field pair — subscription events are a separate stream.
+ * Scoped only to that field pair - subscription events are a separate stream.
  *
  * One watermark per customer (not per invoice): a failure on invoice B with an
  * older event.created than a paid for invoice A would be ignored if A landed
@@ -244,7 +244,7 @@ async function handleInvoicePaid(
 
   const admin = createAdminClient();
 
-  // Always advance the watermark when the guard passes — even if no failure
+  // Always advance the watermark when the guard passes - even if no failure
   // row exists yet (paid-before-failed delivery). Bundling this into the
   // banner-clear update would leave the watermark NULL and let a late failed
   // event through.

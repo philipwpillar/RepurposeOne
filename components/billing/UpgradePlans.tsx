@@ -111,7 +111,7 @@ export function UpgradePlans({ currentPlan }: UpgradePlansProps) {
         <Card key={entry.id}>
           <CardHeader>
             <CardTitle>
-              {entry.title} — {entry.priceLabel}
+              {entry.title} - {entry.priceLabel}
             </CardTitle>
             <CardDescription>{entry.summary}</CardDescription>
           </CardHeader>

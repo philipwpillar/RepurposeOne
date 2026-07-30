@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 /**
- * Path A trust note — only claims already backed by /privacy.
+ * Path A trust note - only claims already backed by /privacy.
  * Do not add US hosting / ZDR / region claims until Path B updates the policy.
  */
 export function ProcessingTrustNote() {

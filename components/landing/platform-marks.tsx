@@ -1,5 +1,5 @@
 // Brand marks: X and Instagram paths via simple-icons (CC0); LinkedIn path via Font Awesome
-// Free Brands (CC BY 4.0 — fontawesome.com/license/free). The marks remain trademarks of
+// Free Brands (CC BY 4.0 - fontawesome.com/license/free). The marks remain trademarks of
 // X Corp., Meta Platforms, Inc., and LinkedIn Corp. Rendered in single approved colors,
 // unmodified shapes, referential use only.
 

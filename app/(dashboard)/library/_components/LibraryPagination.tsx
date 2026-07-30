@@ -45,7 +45,7 @@ export function LibraryPagination({
       className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between"
     >
       <p className="text-sm text-muted-foreground">
-        Showing {from}–{to} of {totalItems} {itemLabel}
+        Showing {from}-{to} of {totalItems} {itemLabel}
       </p>
       <div className="flex items-center gap-2">
         {canPrev ? (

@@ -30,7 +30,7 @@ export async function POST(request: Request) {
 
   if (!profile?.stripe_customer_id) {
     return NextResponse.json(
-      { error: "No billing account found — subscribe to a plan first" },
+      { error: "No billing account found - subscribe to a plan first" },
       { status: 400 }
     );
   }

@@ -62,7 +62,7 @@ export default async function SourceGroupPage({
       <div style={{ viewTransitionName: `vo-source-${hash}` }}>
         <PageHeader
           title={title}
-          description={`${repurposes.length} output${repurposes.length === 1 ? "" : "s"} from this source. Reuse opens a new Studio run — history stays unchanged.`}
+          description={`${repurposes.length} output${repurposes.length === 1 ? "" : "s"} from this source. Reuse opens a new Studio run - history stays unchanged.`}
           actions={<ReuseInStudioButton sourceHash={hash} />}
         />
       </div>

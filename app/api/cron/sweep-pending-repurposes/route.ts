@@ -10,7 +10,7 @@ export const maxDuration = 60;
 const PENDING_ORPHAN_MAX_AGE_MS = 10 * 60 * 1000;
 
 /**
- * Backup only — the ffmpeg worker reclaims accurately at 3× its own
+ * Backup only - the ffmpeg worker reclaims accurately at 3× its own
  * RENDER_TIMEOUT_MS. That variable lives on Railway, not Vercel, so deriving
  * it here would silently drift. Deliberately generous.
  */
@@ -19,7 +19,7 @@ const RENDERING_ORPHAN_MAX_AGE_MS = 60 * 60 * 1000;
 /**
  * Distinguishable from generation failures / client aborts so ops can query:
  *   select * from repurposes where error_message like 'orphaned_pending:%'
- * Not exported — Next.js route modules may only export route handlers / config.
+ * Not exported - Next.js route modules may only export route handlers / config.
  */
 const ORPHANED_PENDING_ERROR =
   "orphaned_pending: settled by sweeper after 10m";
@@ -49,7 +49,7 @@ function authorizeCron(request: Request): boolean {
  *
  * Settles stranded `repurposes` / `bundles` orphans and reclaim stuck
  * `bundle_clips.rendering` rows, and purge expired `voice_lab_hits` (48h).
- * Vercel Hobby only allows daily crons —
+ * Vercel Hobby only allows daily crons - 
  * schedule this endpoint more frequently via GitHub Actions (or Pro cron /
  * external scheduler) using Authorization: Bearer $CRON_SECRET.
  */
@@ -122,7 +122,7 @@ export async function GET(request: Request) {
     );
   }
 
-  // H2 backup (also runs in the ffmpeg worker lifecycle). Fixed 60m threshold —
+  // H2 backup (also runs in the ffmpeg worker lifecycle). Fixed 60m threshold - 
   // do not derive from Railway's RENDER_TIMEOUT_MS (absent on Vercel).
   const renderingCutoff = new Date(
     Date.now() - RENDERING_ORPHAN_MAX_AGE_MS

@@ -228,7 +228,7 @@ export function DashboardShell({
         Skip to main content
       </a>
 
-      {/* Desktop sidebar — width driven by html.vo-sidebar-collapsed (boot script). */}
+      {/* Desktop sidebar - width driven by html.vo-sidebar-collapsed (boot script). */}
       <aside
         className="vo-sidebar chrome-dark hidden shrink-0 flex-col border-r border-border bg-card md:flex"
         aria-label="Primary"

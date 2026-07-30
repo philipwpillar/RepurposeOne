@@ -128,7 +128,7 @@ export default async function AccountPage() {
         </p>
         {paymentFailed ? (
           <p className="mt-1 text-xs text-destructive">
-            Payment failed —{" "}
+            Payment failed - {" "}
             <Link href="#billing" className="underline underline-offset-2">
               update payment method
             </Link>

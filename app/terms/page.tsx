@@ -4,7 +4,7 @@ import { VoLogoMark, VoMarkDefs } from "@/components/landing/vo-logo-mark";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Terms of Service — Voiceora",
+    absolute: "Terms of Service - Voiceora",
   },
   robots: {
     index: true,
@@ -77,7 +77,7 @@ export default function TermsPage() {
             <h2 className="text-xl font-semibold">AI processing</h2>
             <p className="mt-3 leading-relaxed text-muted-foreground">
               Content you submit is processed by third-party AI providers to
-              produce outputs. Outputs may be imperfect — review before
+              produce outputs. Outputs may be imperfect - review before
               publishing. We do not guarantee uniqueness, accuracy, or fitness
               for a particular purpose.
             </p>

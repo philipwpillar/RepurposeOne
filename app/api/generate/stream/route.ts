@@ -42,11 +42,11 @@ export const maxDuration = 60;
 /**
  * NDJSON stream protocol (one JSON object per line):
  *   { type: "meta", repurpose_id, source_hash, model }
- *   { type: "partial", object }   — DeepPartial output as fields arrive
+ *   { type: "partial", object } - DeepPartial output as fields arrive
  *   { type: "done", output, usage, model, tokens_used }
  *   { type: "error", error, code? }
  *
- * Gate errors (401/402/429/…) return normal JSON — the stream never opens.
+ * Gate errors (401/402/429/…) return normal JSON - the stream never opens.
  */
 
 function errorResponse(
@@ -101,12 +101,12 @@ function createOpenRouter() {
  *
  * Parallel streaming path. Same quota sequence as /api/generate:
  * auth → validate → rate → usage → reservePendingRepurpose → only then AI.
- * Text (paste) only — photo/vision stays on the non-streaming route.
+ * Text (paste) only - photo/vision stays on the non-streaming route.
  */
 export async function POST(request: Request) {
   if (AI_CONFIG.provider !== "openrouter") {
     return errorResponse(500, {
-      error: `Unsupported AI_PROVIDER "${AI_CONFIG.provider}" — only "openrouter" is configured for production.`,
+      error: `Unsupported AI_PROVIDER "${AI_CONFIG.provider}" - only "openrouter" is configured for production.`,
       code: "internal_error",
     });
   }
@@ -135,7 +135,7 @@ export async function POST(request: Request) {
     });
   }
 
-  // Reject image payloads explicitly — streaming is text-only.
+  // Reject image payloads explicitly - streaming is text-only.
   if (
     body &&
     typeof body === "object" &&
@@ -458,7 +458,7 @@ export async function POST(request: Request) {
           send({
             type: "error",
             error:
-              "We couldn't generate your content. Please try again — this attempt won't count toward your monthly limit.",
+              "We couldn't generate your content. Please try again - this attempt won't count toward your monthly limit.",
             code: "generation_failed",
           });
         } catch {

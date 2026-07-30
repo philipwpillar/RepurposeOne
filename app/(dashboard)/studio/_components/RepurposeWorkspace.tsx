@@ -100,7 +100,7 @@ type FormatLoadingState = Record<TargetFormat, boolean>;
 type FormatErrorState = Record<TargetFormat, string | null>;
 type FormatIdState = Record<TargetFormat, string | null>;
 
-/** One generated result. Variants are client state only — every variant is
+/** One generated result. Variants are client state only - every variant is
  * already its own `repurposes` row (Regenerate mints a new generation_id), so
  * this array is purely presentational; no schema or billing change. */
 type FormatVariant = { repurposeId: string; output: RepurposeOutput };
@@ -552,7 +552,7 @@ export default function RepurposeWorkspace({
       if (brandVoice?.id) {
         body.brand_voice_id = brandVoice.id;
       } else {
-        // No saved voice yet — minimal inline fallback so first-run still works.
+        // No saved voice yet - minimal inline fallback so first-run still works.
         body.brand_voice = {
           samples: [],
           description: "Clear, professional, conversational.",

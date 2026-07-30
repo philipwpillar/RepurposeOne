@@ -17,7 +17,7 @@ import {
 const GROUP_ORDER: ShortcutGroup[] = ["Navigate", "Create", "General"];
 
 /**
- * Shortcut cheat-sheet — generated only from lib/shortcuts.ts.
+ * Shortcut cheat-sheet - generated only from lib/shortcuts.ts.
  */
 export function ShortcutSheet() {
   const { shortcutSheetOpen, setShortcutSheetOpen } = useShortcuts();
@@ -33,7 +33,7 @@ export function ShortcutSheet() {
         <DialogHeader>
           <DialogTitle>Keyboard shortcuts</DialogTitle>
           <DialogDescription>
-            All shortcuts come from the shared registry — the palette and this
+            All shortcuts come from the shared registry - the palette and this
             sheet cannot drift.
           </DialogDescription>
         </DialogHeader>

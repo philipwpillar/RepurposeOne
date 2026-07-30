@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   try {
     body = (await request.json()) as DeleteAccountBody;
   } catch {
-    // empty body ok if confirmation missing — still 400 below
+    // empty body ok if confirmation missing - still 400 below
   }
 
   if (body.confirmation !== "DELETE") {
@@ -131,7 +131,7 @@ export async function POST(request: Request) {
     }
   } catch (err) {
     console.error("Stripe cancellation during account delete failed:", err);
-    // Continue — do not block GDPR deletion on Stripe errors
+    // Continue - do not block GDPR deletion on Stripe errors
   }
 
   // Delete private media before auth user (paths live on DB rows)
@@ -156,7 +156,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error:
-            "Billing and media cleanup may already have run, but we couldn't finish deleting your login. Retry deletion — if it keeps failing, contact support@voiceora.io.",
+            "Billing and media cleanup may already have run, but we couldn't finish deleting your login. Retry deletion - if it keeps failing, contact support@voiceora.io.",
           code: "deletion_incomplete",
         },
         { status: 500 }

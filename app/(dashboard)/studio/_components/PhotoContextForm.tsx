@@ -43,7 +43,7 @@ export default function PhotoContextForm({
           aria-invalid={Boolean(contextError)}
           aria-describedby={contextError ? "photo-context-error" : undefined}
           maxLength={PHOTO_CONTEXT_MAX_LENGTH}
-          placeholder="Launch photo of our new dashboard — want to drive waitlist signups."
+          placeholder="Launch photo of our new dashboard - want to drive waitlist signups."
           className="min-h-[88px] rounded-2xl"
           onChange={(event) => onContextChange(event.target.value)}
           onBlur={onContextBlur}

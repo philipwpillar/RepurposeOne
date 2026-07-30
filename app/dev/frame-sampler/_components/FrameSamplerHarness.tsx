@@ -38,7 +38,7 @@ export default function FrameSamplerHarness() {
     try {
       const sampled = await sampleVideoFrames(file);
       const contactSheets = buildContactSheets(sampled.frames);
-      // Release frame canvases after tiling — harness only needs sheets.
+      // Release frame canvases after tiling - harness only needs sheets.
       for (const frame of sampled.frames) {
         frame.canvas.width = 0;
         frame.canvas.height = 0;
@@ -67,7 +67,7 @@ export default function FrameSamplerHarness() {
       <h1 style={{ fontSize: 20, marginBottom: 8 }}>Frame sampler harness</h1>
       <p style={{ color: "#555", fontSize: 14, marginBottom: 16 }}>
         Dev-only. Flag: NEXT_PUBLIC_VIDEO_BUNDLES_DEV=true. Desktop: use H.264
-        MP4 (HEVC often fails in Chrome/Firefox — expected). HEVC belongs on
+        MP4 (HEVC often fails in Chrome/Firefox - expected). HEVC belongs on
         iOS shell QA.
       </p>
 

@@ -75,13 +75,22 @@ run_floor(){
   BASE_HEX=$(git --no-pager grep -cE '(text|bg|border|ring|fill|stroke|from|via|to|shadow|outline|placeholder|accent|caret|divide)-\[#' origin/main -- app components 2>/dev/null | awk -F: '{s+=$NF} END {print s+0}')
   NOW_HEX=$(n '(text|bg|border|ring|fill|stroke|from|via|to|shadow|outline|placeholder|accent|caret|divide)-\[#' $A $C)
   assert "no NET Tailwind arbitrary hex added" "$NOW_HEX" le "$BASE_HEX"
+  # Typographic dashes banned in app/components (UI + CSS). lib/ai/strip-em-dashes.ts
+  # is intentionally out of scope so the stripper can still match — – ―.
+  assert "no em/en/horizontal dashes in UI"  "$(n '[—–―]' $A $C)" eq 0
+  # Studio generate fence (ratified 2026-07-23; floor re-spec proposed 2026-07-30).
+  # Floors use current counts (ge N) so UI additions around the fence do not
+  # break the gate, while deletions of usage-sync or error classes still fail.
+  # Usage sync must stay consolidated: error path uses apiErr; success uses usage.
   echo "── FENCE (assert only if the PR touches Studio) ──"
-  assert "GenerateApiError"                 "$(n 'GenerateApiError' "$W")" eq 8
-  assert "callGenerateApi"                  "$(n 'callGenerateApi' "$W")" eq 3
-  assert "callPhotoGenerateApi"             "$(n 'callPhotoGenerateApi' "$W")" eq 2
-  assert "PhotoGenerateApiError"            "$(n 'PhotoGenerateApiError' "$W")" eq 2
+  assert "GenerateApiError present"         "$(n 'GenerateApiError' "$W")" ge 8
+  assert "PhotoGenerateApiError present"    "$(n 'PhotoGenerateApiError' "$W")" ge 2
+  assert "callGenerateApi present"          "$(n 'callGenerateApi' "$W")" ge 3
+  assert "callPhotoGenerateApi present"     "$(n 'callPhotoGenerateApi' "$W")" ge 2
+  assert "resolveGenerateError present"     "$(n 'resolveGenerateError' "$W")" ge 1
   assert "setUsedCount(apiErr.usage.used)"  "$(n 'setUsedCount\(apiErr\.usage\.used\)' "$W")" eq 1
-  assert "setUsedCount(usage.used)"         "$(n 'setUsedCount\(usage\.used\)' "$W")" eq 3
+  assert "setUsedCount(usage.used) success" "$(n 'setUsedCount\(usage\.used\)' "$W")" ge 3
+  assert "no obsolete setUsedCount(err…)"   "$(n 'setUsedCount\(err\.usage\.used\)' "$W")" eq 0
   # Voice variant adjective denylist - only when the catalog/tests exist (#107+).
   if [ -f lib/ai/voice-variants.test.mjs ]; then
     if ! npm run test:voice-variants >/dev/null 2>&1; then

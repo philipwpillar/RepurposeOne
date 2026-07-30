@@ -253,7 +253,7 @@ export function AuthForm({
         </h1>
         <CardDescription>
           {isSignUp
-            ? "Start free — teach your voice, then generate your first drafts."
+            ? "Start free - teach your voice, then generate your first drafts."
             : "Sign in to continue to Voiceora"}
         </CardDescription>
       </CardHeader>

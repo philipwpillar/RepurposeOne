@@ -148,7 +148,7 @@ export function OnboardingForm() {
             <Label htmlFor="sample">A sample of your writing</Label>
             <Textarea
               id="sample"
-              placeholder="Paste a paragraph you've written before — a blog post, a caption, an email. Anything works."
+              placeholder="Paste a paragraph you've written before - a blog post, a caption, an email. Anything works."
               value={sample}
               onChange={(e) => setSample(e.target.value)}
               rows={4}
@@ -194,7 +194,7 @@ export function OnboardingForm() {
             Skip for now
           </Button>
           <p className="text-center text-xs leading-relaxed text-muted-foreground">
-            Skipping uses a built-in generic style until you add a Brand Voice —
+            Skipping uses a built-in generic style until you add a Brand Voice - 
             outputs won’t sound as much like you.
           </p>
         </CardContent>

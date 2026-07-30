@@ -22,11 +22,11 @@ Every model below is served by DeepInfra and is a **native vision-language** mod
 
 ### Strong tier — X thread, LinkedIn, email (`AI_MODEL_STRONG`)
 
-| Order | Slug | In / Out per M | Positioning |
+| Order | Slug | In / Out per M (DeepInfra) | Positioning |
 |---|---|---|---|
-| **1 (current)** | `qwen/qwen3.5-397b-a17b` | $0.45 / $3.00 | Flagship |
+| **1 (current)** | `qwen/qwen3.5-397b-a17b` | $0.45 / $3.00 | Flagship (`max_completion_tokens` 81,920). Watch DeepInfra uptime. |
 | **2** | `qwen/qwen3.5-122b-a10b` | $0.29 / $2.40 | Qwen: *"second only to Qwen3.5-397B-A17B"*; text beats Qwen3-235B-2507 |
-| **3** | `qwen/qwen3.5-35b-a3b` | $0.14 / $1.00 | Current fast tier — degraded but functional |
+| **3** | `qwen/qwen3.5-35b-a3b` | $0.14 / $1.00 | Current fast tier - degraded but functional |
 
 ### Fast tier — Instagram (`AI_MODEL_FAST`)
 
@@ -77,7 +77,12 @@ One-off task, roughly thirty minutes and a few pence:
 
 That converts the fallback list from a guess into a tested decision, and the artifacts double as evidence if you ever need to justify a swap.
 
-**Status of voice-parity check:** still unrun as of 2026-07-26.
+**Status of voice-parity check:** baseline capture run 2026-07-30 (current models only). See [`docs/acceptance/model-voice-baseline-2026-07-30.md`](../acceptance/model-voice-baseline-2026-07-30.md) and the eval note [`docs/acceptance/model-eval-2026-07-30.md`](../acceptance/model-eval-2026-07-30.md). No production swap. Re-check candidates in 4 to 6 weeks.
+
+### Watch list (not blessed)
+
+- **`qwen/qwen3.6-35b-a3b`** - may appear on `deepinfra/fp8` at lower $/token, but DeepInfra `max_completion_tokens` has been **16,384** vs 81,920 on 3.5. Re-verify endpoints + voice before any trial. Not an incident fallback.
+- **`moonshotai/kimi-k2.6`** - DeepInfra is `deepinfra/fp4` only; no video modality; do not add without allowlist + Moment Bundle decision.
 
 ---
 

@@ -10,7 +10,7 @@ interface ReuseInStudioButtonProps {
 }
 
 /**
- * Opens Studio with this source prefilled. Creates a new run — does not mutate history.
+ * Opens Studio with this source prefilled. Creates a new run - does not mutate history.
  */
 export function ReuseInStudioButton({
   sourceHash,

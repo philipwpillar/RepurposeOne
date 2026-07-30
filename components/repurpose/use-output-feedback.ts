@@ -14,7 +14,7 @@ export type FeedbackProps = {
   initialRating?: UserRating | null;
   initialUserOutput?: RepurposeOutput | null;
   initialWorkflowStatus?: UserWorkflowStatus | null;
-  /** ISO timestamp of last server-side user_output save — used for draft staleness. */
+  /** ISO timestamp of last server-side user_output save - used for draft staleness. */
   initialEditedAt?: string | null;
   onFeedback?: (payload: {
     rating: UserRating | null;
