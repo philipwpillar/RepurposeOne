@@ -21,11 +21,16 @@ import {
   StreamGenerateApiError,
 } from "@/lib/repurpose/stream-generate-client";
 import {
-  FORMAT_LENGTH_PRESETS,
   getDefaultWords,
   isValidWords,
+  lengthPresetsForVariant,
+  nearestLengthForVariant,
   wordsToTweets,
 } from "@/lib/repurpose/length-presets";
+import {
+  DEFAULT_VOICE_VARIANT_BY_FORMAT,
+  VOICE_VARIANTS,
+} from "@/lib/ai/voice-variants";
 import type { InputMode, PhotoInputReady } from "@/types/photo-input";
 import type { Plan } from "@/types";
 import InputModeTabs from "./InputModeTabs";
@@ -71,6 +76,7 @@ import type {
   RepurposeOutput,
   TargetFormat,
   UsageInfo,
+  VoiceVariantId,
   XThreadOutput,
 } from "@/types";
 
@@ -125,6 +131,10 @@ function createDefaultLengthWords(): Record<TargetFormat, number> {
     instagram: getDefaultWords("instagram"),
     email: getDefaultWords("email"),
   };
+}
+
+function createDefaultVoiceVariants(): Record<TargetFormat, VoiceVariantId> {
+  return { ...DEFAULT_VOICE_VARIANT_BY_FORMAT };
 }
 
 function FormatGeneratingPlaceholder() {
@@ -316,6 +326,9 @@ export default function RepurposeWorkspace({
   const [lengthWords, setLengthWords] = useState<Record<TargetFormat, number>>(
     createDefaultLengthWords
   );
+  const [voiceVariants, setVoiceVariants] = useState<
+    Record<TargetFormat, VoiceVariantId>
+  >(createDefaultVoiceVariants);
   const [formatVariants, setFormatVariants] = useState<FormatVariantsState>(
     () => {
       const base = createVariantsRecord();
@@ -406,6 +419,7 @@ export default function RepurposeWorkspace({
   const [expandedFormat, setExpandedFormat] = useState<TargetFormat>("x_thread");
 
   const atLimit = usedCount >= repurposesLimit;
+  const hasVoiceSamples = Boolean(brandVoice?.samples?.length);
 
   const activeFormats = ALL_FORMATS.filter((format) => selectedFormats.has(format));
 
@@ -456,12 +470,65 @@ export default function RepurposeWorkspace({
       }
     }
     setLengthWords(stored);
+
+    try {
+      const overrides = JSON.parse(
+        window.localStorage.getItem("vo-variant-override") ?? "{}"
+      ) as Partial<Record<TargetFormat, VoiceVariantId>>;
+      const resolvedVariants = createDefaultVoiceVariants();
+      setVoiceVariants((current) => {
+        const next = { ...current };
+        for (const format of ALL_FORMATS) {
+          if (VOICE_VARIANTS.some((variant) => variant.id === overrides[format])) {
+            next[format] = overrides[format]!;
+            resolvedVariants[format] = overrides[format]!;
+          }
+        }
+        return next;
+      });
+      setLengthWords((current) => {
+        const next = { ...current };
+        for (const format of ALL_FORMATS) {
+          next[format] = nearestLengthForVariant(
+            format,
+            resolvedVariants[format],
+            next[format]
+          );
+        }
+        return next;
+      });
+    } catch {
+      window.localStorage.removeItem("vo-variant-override");
+    }
   }, []);
 
   const handleLengthWordsChange = (format: TargetFormat, words: number) => {
     if (!isValidWords(format, words)) return;
     setLengthWords((prev) => ({ ...prev, [format]: words }));
     window.localStorage.setItem(`vo-length-${format}`, String(words));
+  };
+
+  const handleVoiceVariantChange = (
+    format: TargetFormat,
+    voiceVariant: VoiceVariantId
+  ) => {
+    if (!hasVoiceSamples) return;
+    setVoiceVariants((prev) => ({ ...prev, [format]: voiceVariant }));
+    setLengthWords((prev) => ({
+      ...prev,
+      [format]: nearestLengthForVariant(format, voiceVariant, prev[format]),
+    }));
+
+    let overrides: Partial<Record<TargetFormat, VoiceVariantId>> = {};
+    try {
+      overrides = JSON.parse(
+        window.localStorage.getItem("vo-variant-override") ?? "{}"
+      );
+    } catch {
+      overrides = {};
+    }
+    overrides[format] = voiceVariant;
+    window.localStorage.setItem("vo-variant-override", JSON.stringify(overrides));
   };
 
   // --- Protected fence: generate clients + usage error handling ---
@@ -471,6 +538,7 @@ export default function RepurposeWorkspace({
       inputContent: string,
       targetFormat: TargetFormat,
       targetWords: number,
+      voiceVariant: VoiceVariantId,
       generationId?: string
     ): Promise<{ output: RepurposeOutput; usage: UsageInfo; repurposeId: string }> => {
       const body: Record<string, unknown> = {
@@ -478,6 +546,7 @@ export default function RepurposeWorkspace({
         input_content: inputContent,
         target_format: targetFormat,
         target_words: targetWords,
+        voice_variant: voiceVariant,
       };
 
       if (brandVoice?.id) {
@@ -716,6 +785,7 @@ export default function RepurposeWorkspace({
           photo: photoInput,
           targetFormat: format,
           brandVoice,
+          voiceVariant: voiceVariants[format],
           targetWords,
           targetTweets:
             format === "x_thread" ? wordsToTweets(targetWords) : undefined,
@@ -737,6 +807,7 @@ export default function RepurposeWorkspace({
       photoInput,
       resolveGenerateError,
       userPlan,
+      voiceVariants,
     ]
   );
 
@@ -784,6 +855,7 @@ export default function RepurposeWorkspace({
             inputContent: trimmed,
             targetFormat: format,
             brandVoice,
+            voiceVariant: voiceVariants[format],
             targetWords,
             targetTweets:
               format === "x_thread" ? wordsToTweets(targetWords) : undefined,
@@ -799,6 +871,7 @@ export default function RepurposeWorkspace({
             trimmed,
             format,
             targetWords,
+            voiceVariants[format],
             options?.generationId
           );
           applyOutput(format, output, repurposeId);
@@ -828,6 +901,7 @@ export default function RepurposeWorkspace({
       lengthWords,
       resolveGenerateError,
       useStream,
+      voiceVariants,
     ]
   );
 
@@ -956,7 +1030,7 @@ export default function RepurposeWorkspace({
 
   const statusLabelFor = (format: TargetFormat, ready: string) => {
     if (formatLoading[format]) return "Generating…";
-    if (formatErrors[format]) return "Failed — retry below";
+    if (formatErrors[format]) return "Failed. Retry below";
     if (ready) return ready;
     return "Not generated yet";
   };
@@ -1043,32 +1117,68 @@ export default function RepurposeWorkspace({
     ) : null;
 
   const renderLengthControls = (format: TargetFormat) => (
-    <div className="space-y-1.5">
-      <div className="text-xs text-muted-foreground">
-        Target length (words)
+    <div className="space-y-4">
+      <div className="space-y-1.5">
+        <div className="text-xs text-muted-foreground">Delivery</div>
+        <div
+          className="flex flex-wrap gap-2"
+          role="group"
+          aria-label={`Delivery for ${FORMAT_TITLES[format]}`}
+        >
+          {VOICE_VARIANTS.map((variant) => (
+            <button
+              key={variant.id}
+              type="button"
+              className={
+                voiceVariants[format] === variant.id
+                  ? "rounded-full border border-primary bg-primary px-4 py-1.5 text-xs font-medium text-primary-foreground"
+                  : "rounded-full border border-border bg-background px-4 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
+              }
+              aria-pressed={voiceVariants[format] === variant.id}
+              onClick={() => handleVoiceVariantChange(format, variant.id)}
+              disabled={formatLoading[format] || !hasVoiceSamples}
+              title={variant.description}
+            >
+              {variant.label}
+            </button>
+          ))}
+        </div>
+        {!hasVoiceSamples ? (
+          <p className="text-xs text-muted-foreground">
+            <Link href="/brand-voice" className="underline underline-offset-2">
+              Add writing samples
+            </Link>{" "}
+            to choose a delivery variant.
+          </p>
+        ) : null}
       </div>
-      <div
-        className="flex flex-wrap gap-2"
-        role="group"
-        aria-label={`Target length for ${FORMAT_TITLES[format]}`}
-      >
-        {FORMAT_LENGTH_PRESETS[format].map((words) => (
-          <button
-            key={words}
-            type="button"
-            className={
-              lengthWords[format] === words
-                ? "rounded-full border border-primary bg-primary px-4 py-1.5 font-mono text-xs text-primary-foreground"
-                : "rounded-full border border-border bg-background px-4 py-1.5 font-mono text-xs text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
-            }
-            aria-label={`${words} words`}
-            aria-pressed={lengthWords[format] === words}
-            onClick={() => handleLengthWordsChange(format, words)}
-            disabled={formatLoading[format]}
-          >
-            {words}
-          </button>
-        ))}
+      <div className="space-y-1.5">
+        <div className="text-xs text-muted-foreground">
+          Target length (words)
+        </div>
+        <div
+          className="flex flex-wrap gap-2"
+          role="group"
+          aria-label={`Target length for ${FORMAT_TITLES[format]}`}
+        >
+          {lengthPresetsForVariant(format, voiceVariants[format]).map((words) => (
+            <button
+              key={words}
+              type="button"
+              className={
+                lengthWords[format] === words
+                  ? "rounded-full border border-primary bg-primary px-4 py-1.5 font-mono text-xs text-primary-foreground"
+                  : "rounded-full border border-border bg-background px-4 py-1.5 font-mono text-xs text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
+              }
+              aria-label={`${words} words`}
+              aria-pressed={lengthWords[format] === words}
+              onClick={() => handleLengthWordsChange(format, words)}
+              disabled={formatLoading[format]}
+            >
+              {words}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -1142,7 +1252,7 @@ export default function RepurposeWorkspace({
             <span className="font-medium">
               {brandVoice
                 ? voiceDisplayName(brandVoice)
-                : "No voice set — using built-in style"}
+                : "No voice set, using built-in style"}
             </span>
           </span>
         </Link>
@@ -1231,7 +1341,7 @@ export default function RepurposeWorkspace({
             ) : null,
             <p className="text-sm italic leading-relaxed text-muted-foreground">
               Generate to create your X thread from the source content. Results
-              appear here as soon as this format finishes — you do not need to wait
+              appear here as soon as this format finishes. You do not need to wait
               for every platform.
             </p>
           )}

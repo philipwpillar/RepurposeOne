@@ -19,7 +19,7 @@ import {
 } from "@/lib/landing/voice-lab-rate-limit";
 import { verifyTurnstileToken } from "@/lib/landing/turnstile";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { XThreadOutput } from "@/types";
+import { VoiceVariantSchema, type XThreadOutput } from "@/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -30,6 +30,7 @@ const VoiceLabRequestSchema = z.object({
   target_words: z
     .union([z.literal(20), z.literal(50), z.literal(75)])
     .default(50),
+  voice_variant: VoiceVariantSchema.default("signature"),
   turnstileToken: z.string().optional(),
 });
 
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
 
-  const { text, voice, target_words, turnstileToken } = parsed.data;
+  const { text, voice, target_words, voice_variant, turnstileToken } = parsed.data;
   const clientIp = resolveVoiceLabClientIp(request);
   if (!clientIp) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
@@ -85,6 +86,7 @@ export async function POST(request: Request) {
     const result = await generateRepurpose({
       inputContent: text.slice(0, VOICE_LAB_MAX_CHARS),
       brandVoice: VOICE_LAB_SAMPLE_VOICES[voice]!,
+      voiceVariant: voice_variant,
       targetFormat: "x_thread",
       targetTweets: voiceLabTweetsForWords(target_words),
       targetWords: target_words,

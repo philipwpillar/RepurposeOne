@@ -8,11 +8,11 @@ import {
   type ModelTier,
 } from "@/lib/config";
 import {
-  buildBrandVoiceBlock,
   buildGenerationPrompt,
   buildPhotoGenerationPrompt,
   type PromptContext,
 } from "@/lib/ai/prompts";
+import type { VoiceVariantId } from "@/lib/ai/voice-variants";
 import {
   RepurposeOutputSchema,
   type BrandVoiceInput,
@@ -30,6 +30,7 @@ type OpenRouterChatCompletionParams =
 export interface GenerateInput {
   inputContent: string;
   brandVoice: BrandVoiceInput;
+  voiceVariant: VoiceVariantId;
   targetFormat: TargetFormat;
   targetTweets?: number;
   targetWords?: number;
@@ -87,10 +88,9 @@ export async function generateRepurpose(
   input: GenerateInput
 ): Promise<GenerateResult> {
   const truncatedContent = input.inputContent.slice(0, AI_CONFIG.maxInputChars);
-  const brandVoiceText = buildBrandVoiceBlock(input.brandVoice);
-
   const ctx: PromptContext = {
-    brandVoiceText,
+    brandVoice: input.brandVoice,
+    voiceVariant: input.voiceVariant,
     sourceText: truncatedContent,
     targetFormat: input.targetFormat,
     targetTweets: input.targetTweets,
@@ -157,6 +157,7 @@ export interface GenerateImageInput {
   context: string;
   cta?: string;
   brandVoice: BrandVoiceInput;
+  voiceVariant: VoiceVariantId;
   targetFormat: TargetFormat;
   targetTweets?: number;
   targetWords?: number;
@@ -170,9 +171,9 @@ export interface GenerateImageInput {
 export async function generateRepurposeFromImage(
   input: GenerateImageInput
 ): Promise<GenerateResult> {
-  const brandVoiceText = buildBrandVoiceBlock(input.brandVoice);
   const { system, user } = buildPhotoGenerationPrompt({
-    brandVoiceText,
+    brandVoice: input.brandVoice,
+    voiceVariant: input.voiceVariant,
     context: input.context,
     cta: input.cta,
     targetFormat: input.targetFormat,

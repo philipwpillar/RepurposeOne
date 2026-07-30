@@ -777,6 +777,7 @@ export async function POST(request: Request) {
         const result = await generateRepurpose({
           inputContent,
           brandVoice: resolvedVoice,
+          voiceVariant: "signature",
           targetFormat,
           exemplarsText: exemplarsText || undefined,
         });

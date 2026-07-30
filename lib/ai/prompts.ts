@@ -3,9 +3,14 @@ import {
   getDefaultWords,
   wordsToTweets,
 } from "@/lib/repurpose/length-presets";
+import {
+  assembleVoiceLayers,
+  type VoiceVariantId,
+} from "@/lib/ai/voice-variants";
 
 export interface PromptContext {
-  brandVoiceText: string;
+  brandVoice: BrandVoiceInput;
+  voiceVariant: VoiceVariantId;
   sourceText: string;
   targetFormat: TargetFormat;
   targetTweets?: number;
@@ -17,7 +22,8 @@ export interface PromptContext {
 }
 
 export interface PhotoPromptContext {
-  brandVoiceText: string;
+  brandVoice: BrandVoiceInput;
+  voiceVariant: VoiceVariantId;
   context: string;
   cta?: string;
   targetFormat: TargetFormat;
@@ -146,15 +152,16 @@ export function buildGenerationPrompt(ctx: PromptContext): {
   const wordTarget = ctx.targetWords ?? getDefaultWords(ctx.targetFormat);
   const tweetTarget = ctx.targetTweets ?? wordsToTweets(wordTarget);
   const wordBudget = `- Target approximately ${wordTarget} words for the main body (respect hard character caps).`;
-  const exemplarsBlock = ctx.exemplarsText?.trim()
-    ? `\n\n${ctx.exemplarsText.trim()}`
-    : "";
   const refinementBlock = ctx.refinement?.trim()
     ? `\n\nRefinement for this new version:\n${ctx.refinement.trim()}`
     : "";
+  const voiceLayers = assembleVoiceLayers(
+    ctx.brandVoice,
+    ctx.voiceVariant,
+    ctx.exemplarsText
+  );
 
-  const baseUser = `Brand voice:
-${ctx.brandVoiceText}${exemplarsBlock}
+  const baseUser = `${voiceLayers}
 
 Source content:
 ${ctx.sourceText}${refinementBlock}`;
@@ -227,12 +234,13 @@ export function buildPhotoGenerationPrompt(ctx: PhotoPromptContext): {
   const ctaBlock = ctx.cta
     ? `\nCall to action (use or adapt): ${ctx.cta}`
     : "\nCall to action: infer a soft CTA from context, or omit if not appropriate.";
-  const exemplarsBlock = ctx.exemplarsText?.trim()
-    ? `\n\n${ctx.exemplarsText.trim()}`
-    : "";
+  const voiceLayers = assembleVoiceLayers(
+    ctx.brandVoice,
+    ctx.voiceVariant,
+    ctx.exemplarsText
+  );
 
-  const baseUser = `Brand voice (follow strictly - this is your primary tone anchor):
-${ctx.brandVoiceText}${exemplarsBlock}
+  const baseUser = `${voiceLayers}
 
 User context (authoritative intent - what this post is about and why):
 ${ctx.context}${ctaBlock}

@@ -5,6 +5,7 @@ import type {
   RepurposeOutput,
   TargetFormat,
   UsageInfo,
+  VoiceVariantId,
 } from "@/types";
 import type { PhotoInputReady } from "@/types/photo-input";
 
@@ -35,6 +36,7 @@ export async function callPhotoGenerateApi(params: {
   brandVoice?: BrandVoiceRef | null;
   targetTweets?: number;
   targetWords?: number;
+  voiceVariant: VoiceVariantId;
   generationId?: string;
 }): Promise<{ output: RepurposeOutput; usage: UsageInfo; repurposeId: string }> {
   const body: Record<string, unknown> = {
@@ -43,6 +45,7 @@ export async function callPhotoGenerateApi(params: {
     image_mime: params.photo.mimeType,
     photo_context: params.photo.context,
     target_format: params.targetFormat,
+    voice_variant: params.voiceVariant,
   };
 
   if (params.photo.cta) {
