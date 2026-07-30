@@ -7,6 +7,9 @@
  * Change only the variant fragment. Measure mechanical separation and write a
  * foreign-voice control for the fidelity half of the test.
  *
+ * Fixture identity is deliberately mid-register (not already in the provoke
+ * register) so signature-vs-provoke collapse is detectable.
+ *
  * Run:
  *   OPENROUTER_API_KEY=... npm run variant-separation
  *   # or: node --experimental-strip-types scripts/variant-separation.mjs
@@ -32,7 +35,6 @@ const variantsMod = await import(
 );
 
 const {
-  VOICE_VARIANTS,
   VOICE_VARIANT_BY_ID,
   VOICE_IDENTITY_PRECEDENCE,
   VOICE_VARIANT_IDS,
@@ -50,27 +52,39 @@ const FORMATS = [
     id: "x_thread",
     system:
       "Write a short X/Twitter thread of 3 to 5 tweets. Return plain text only, one tweet per line, numbered.",
+    sentenceDelta: 1.5,
+    secondDelta: 0.015,
   },
   {
     id: "linkedin",
     system: "Write one short LinkedIn post. Return plain text only.",
+    sentenceDelta: 2,
+    secondDelta: 0.02,
   },
   {
     id: "instagram",
     system: "Write one short Instagram caption. Return plain text only.",
+    sentenceDelta: 2,
+    secondDelta: 0.02,
   },
 ];
 
+// Mid-register fixture: must not already sit in the provoke register
+// ("Direct, concrete… Short paragraphs…") or signature/provoke cannot separate.
 const primaryIdentity =
-  "Direct, concrete writing. Short paragraphs. Prefer plain verbs and specific mechanisms.";
+  "Practitioner writing for operators who ship work. Prefer concrete examples and plain language. Mix short lines with fuller explanations when a point needs room. Sound like a thoughtful peer, not a manifesto and not a tutorial script.";
 const primarySamples = [
-  "A good workflow removes decisions at the moment they become expensive. Decide the structure first. Then make each draft earn its place.",
-  "Ship the smallest version that teaches the point. Cut the rest. Readers stay when every line pays rent.",
+  "Most teams do not fail because they lack ideas. They fail because the same draft is asked to work in three rooms that reward different kinds of attention. The fix is usually structural: decide what the reader must do next, then rebuild the opening for that room.",
+  "When I review a launch note, I look for one decision the reader can take without a meeting. If that decision is buried under context, I move it up. Context still matters, but only after the reader knows why they are there.",
+  "A useful habit is to keep a short list of phrases you refuse to reuse across channels. Not because repetition is wrong, but because each channel trains a different ear. Rebuilding the line is cheaper than explaining why the original felt off.",
+  "I still draft long first. Then I cut until the remaining sentences each carry a job: frame the problem, name the mechanism, or ask for the next step. Anything that only reassures me gets deleted.",
 ];
 const foreignIdentity =
   "Warm, reflective newsletter voice. Soft transitions. Prefer questions and shared feeling over hard claims.";
 const foreignSamples = [
   "I keep coming back to the quiet mornings before a launch, when the only job is to notice what still feels unfinished.",
+  "Have you ever shared the same draft everywhere, hoping it would land the same way? It is a common feeling, isn't it? Yet every space has its own rhythm.",
+  "Perhaps the kindest thing we can do for our ideas is to let them breathe in new shapes, rebuilding the delivery while keeping the heart of the message intact.",
 ];
 const source =
   "Teams often publish the same draft everywhere. Platform constraints change how readers scan, respond, and decide whether to continue. A useful repurposing workflow preserves the idea while rebuilding its delivery for each destination.";
@@ -118,7 +132,9 @@ function sentenceList(text) {
 function meanSentenceLength(text) {
   const ss = sentenceList(text);
   if (!ss.length) return 0;
-  const lengths = ss.map((s) => contentTokens(s).length);
+  // Full word count (not content-only) so instruction bands like 8–14 / 15–22
+  // are measurable against what the model was asked to produce.
+  const lengths = ss.map((s) => allTokens(s).length);
   return lengths.reduce((a, b) => a + b, 0) / lengths.length;
 }
 
@@ -138,6 +154,46 @@ function personRatio(text) {
   return { first: first / tokens.length, second: second / tokens.length };
 }
 
+function charNgrams(text, n = 4) {
+  const s = text.toLowerCase().replace(/\s+/g, " ").trim();
+  const grams = new Set();
+  for (let i = 0; i <= s.length - n; i++) grams.add(s.slice(i, i + n));
+  return grams;
+}
+
+function jaccard(a, b) {
+  if (!a.size && !b.size) return 0;
+  let inter = 0;
+  for (const x of a) {
+    if (b.has(x)) inter += 1;
+  }
+  const union = a.size + b.size - inter;
+  return union ? inter / union : 0;
+}
+
+/**
+ * Share of output char-n-grams that are distinctive to the primary samples
+ * (present in primary samples, absent from foreign samples). Absolute Jaccard
+ * against the full primary set collapses on short provoke cells and lets
+ * foreign warm prose sit inside the primary range; distinctive precision
+ * measures identity leakage without that length bias.
+ */
+function distinctivePrecision(text, distinctiveGrams) {
+  const grams = charNgrams(text);
+  if (!grams.size || !distinctiveGrams.size) return 0;
+  let hit = 0;
+  for (const g of grams) {
+    if (distinctiveGrams.has(g)) hit += 1;
+  }
+  return hit / grams.size;
+}
+
+/** Character n-gram similarity against sample text (report-only). */
+function sampleFidelity(text, sampleGrams) {
+  return jaccard(charNgrams(text), sampleGrams);
+}
+
+/** Legacy content-word overlap; reported only, not used for the gate. */
 function lexiconOverlap(text, lexicon) {
   if (!lexicon.size) return 0;
   const tokens = new Set(contentTokens(text));
@@ -148,7 +204,7 @@ function lexiconOverlap(text, lexicon) {
   return hit / lexicon.size;
 }
 
-function metrics(text, lexicon) {
+function metrics(text, lexicon, distinctiveGrams, primaryGrams) {
   const pr = personRatio(text);
   return {
     meanSentenceLength: Number(meanSentenceLength(text).toFixed(2)),
@@ -156,6 +212,10 @@ function metrics(text, lexicon) {
     firstPersonRatio: Number(pr.first.toFixed(4)),
     secondPersonRatio: Number(pr.second.toFixed(4)),
     lexiconOverlap: Number(lexiconOverlap(text, lexicon).toFixed(4)),
+    sampleFidelity: Number(sampleFidelity(text, primaryGrams).toFixed(4)),
+    distinctivePrecision: Number(
+      distinctivePrecision(text, distinctiveGrams).toFixed(4)
+    ),
   };
 }
 
@@ -225,6 +285,11 @@ const primaryLexicon = new Set([
   ...contentTokens(primaryIdentity),
   ...primarySamples.flatMap(contentTokens),
 ]);
+const primarySampleGrams = charNgrams(primarySamples.join("\n"));
+const foreignSampleGrams = charNgrams(foreignSamples.join("\n"));
+const distinctivePrimaryGrams = new Set(
+  [...primarySampleGrams].filter((g) => !foreignSampleGrams.has(g))
+);
 
 const cells = [];
 
@@ -242,7 +307,12 @@ for (const format of FORMATS) {
       });
       runs.push({
         text,
-        metrics: metrics(text, primaryLexicon),
+        metrics: metrics(
+          text,
+          primaryLexicon,
+          distinctivePrimaryGrams,
+          primarySampleGrams
+        ),
       });
     }
     cells.push({
@@ -266,15 +336,17 @@ for (const format of FORMATS) {
         lexiconOverlap: Number(
           mean(runs.map((r) => r.metrics.lexiconOverlap)).toFixed(4)
         ),
+        sampleFidelity: Number(
+          mean(runs.map((r) => r.metrics.sampleFidelity)).toFixed(4)
+        ),
+        distinctivePrecision: Number(
+          mean(runs.map((r) => r.metrics.distinctivePrecision)).toFixed(4)
+        ),
       },
     });
   }
 }
 
-const foreignLexicon = new Set([
-  ...contentTokens(foreignIdentity),
-  ...foreignSamples.flatMap(contentTokens),
-]);
 const foreignFragment = VOICE_VARIANT_BY_ID.signature.promptFragment;
 const foreignRuns = [];
 for (let i = 0; i < REPEATS; i++) {
@@ -285,10 +357,18 @@ for (let i = 0; i < REPEATS; i++) {
     samples: foreignSamples,
     fragment: foreignFragment,
   });
+  const m = metrics(
+    text,
+    primaryLexicon,
+    distinctivePrimaryGrams,
+    primarySampleGrams
+  );
   foreignRuns.push({
     text,
-    metrics: metrics(text, foreignLexicon),
+    metrics: m,
     primaryLexiconOverlap: lexiconOverlap(text, primaryLexicon),
+    primarySampleFidelity: sampleFidelity(text, primarySampleGrams),
+    distinctivePrecision: m.distinctivePrecision,
   });
 }
 
@@ -296,32 +376,62 @@ function cell(format, variant) {
   return cells.find((c) => c.format === format && c.variant === variant);
 }
 
-function separates(a, b, minDelta) {
-  return Math.abs(a - b) >= minDelta;
+function pairSeparates(a, b, sentenceDelta, secondDelta) {
+  return (
+    Math.abs(a.meanSentenceLength - b.meanSentenceLength) >= sentenceDelta ||
+    Math.abs(a.secondPersonRatio - b.secondPersonRatio) >= secondDelta
+  );
 }
 
-const linkedInExplain = cell("linkedin", "explain").meanMetrics;
-const linkedInProvoke = cell("linkedin", "provoke").meanMetrics;
-const xExplain = cell("x_thread", "explain").meanMetrics;
-const xProvoke = cell("x_thread", "provoke").meanMetrics;
+const pairFailures = [];
+const explainSecondFailures = [];
+
+for (const format of FORMATS) {
+  const sig = cell(format.id, "signature").meanMetrics;
+  const exp = cell(format.id, "explain").meanMetrics;
+  const prov = cell(format.id, "provoke").meanMetrics;
+  const pairs = [
+    ["signature", "explain", sig, exp],
+    ["signature", "provoke", sig, prov],
+    ["explain", "provoke", exp, prov],
+  ];
+  for (const [left, right, a, b] of pairs) {
+    if (!pairSeparates(a, b, format.sentenceDelta, format.secondDelta)) {
+      pairFailures.push(
+        `${format.id}: ${left} vs ${right} (Δsent=${Math.abs(
+          a.meanSentenceLength - b.meanSentenceLength
+        ).toFixed(2)}, Δ2nd=${Math.abs(
+          a.secondPersonRatio - b.secondPersonRatio
+        ).toFixed(4)}; need sent≥${format.sentenceDelta} or 2nd≥${format.secondDelta})`
+      );
+    }
+  }
+  // Explain must address the reader; signature/provoke must not match that cue.
+  if (!(exp.secondPersonRatio > sig.secondPersonRatio + 0.01)) {
+    explainSecondFailures.push(
+      `${format.id}: explain secondPerson (${exp.secondPersonRatio}) not above signature (${sig.secondPersonRatio})`
+    );
+  }
+  if (!(exp.secondPersonRatio > prov.secondPersonRatio + 0.01)) {
+    explainSecondFailures.push(
+      `${format.id}: explain secondPerson (${exp.secondPersonRatio}) not above provoke (${prov.secondPersonRatio})`
+    );
+  }
+}
 
 const mechanicalPass =
-  separates(
-    linkedInExplain.meanSentenceLength,
-    linkedInProvoke.meanSentenceLength,
-    2
-  ) &&
-  separates(
-    linkedInExplain.secondPersonRatio,
-    linkedInProvoke.secondPersonRatio,
-    0.02
-  ) &&
-  separates(xExplain.meanSentenceLength, xProvoke.meanSentenceLength, 1.5);
+  pairFailures.length === 0 && explainSecondFailures.length === 0;
 
-const overlaps = cells.map((c) => c.meanMetrics.lexiconOverlap);
-const lexiconFlat =
-  Math.max(...overlaps) - Math.min(...overlaps) <= 0.25 &&
-  Math.min(...overlaps) >= 0.05;
+const precisions = cells.map((c) => c.meanMetrics.distinctivePrecision);
+const precisionMin = Math.min(...precisions);
+const precisionMax = Math.max(...precisions);
+const precisionFlat = precisionMax - precisionMin <= 0.12;
+
+const foreignPrecisionMean = mean(
+  foreignRuns.map((r) => r.distinctivePrecision)
+);
+// Foreign voice must sit clearly below every primary cell on distinctive grams.
+const fidelityDiscriminates = foreignPrecisionMean < precisionMin - 0.05;
 
 const artefactPath = path.join(
   root,
@@ -337,32 +447,76 @@ lines.push(`Provider pin: ${providers.join(", ")}`);
 lines.push(`Repeats per cell: ${REPEATS}`);
 lines.push(`Formats: ${FORMATS.map((f) => f.id).join(", ")}`);
 lines.push("");
+lines.push(`## Fixture`);
+lines.push("");
+lines.push(
+  `Primary identity (mid-register, not provoke-shaped): ${primaryIdentity}`
+);
+lines.push("");
+lines.push(`Primary samples: ${primarySamples.length} (expanded for n-gram fidelity).`);
+lines.push("");
 lines.push(`## Mechanical gate`);
 lines.push("");
 lines.push(
-  `- explain vs provoke sentence-length / second-person separation: **${mechanicalPass ? "PASS" : "FAIL"}**`
+  `- all variant pairs separate on sentence length or second-person (every format): **${
+    pairFailures.length === 0 ? "PASS" : "FAIL"
+  }**`
 );
 lines.push(
-  `- lexicon overlap stays relatively flat across variants: **${lexiconFlat ? "PASS" : "FAIL"}**`
+  `- explain second-person above signature and provoke (every format): **${
+    explainSecondFailures.length === 0 ? "PASS" : "FAIL"
+  }**`
+);
+lines.push(
+  `- distinctive sample n-gram precision stays flat across primary variants (max−min ≤ 0.12): **${
+    precisionFlat ? "PASS" : "FAIL"
+  }** (spread=${(precisionMax - precisionMin).toFixed(4)})`
+);
+lines.push(
+  `- foreign distinctive precision below every primary cell by ≥ 0.05: **${
+    fidelityDiscriminates ? "PASS" : "FAIL"
+  }** (foreign=${foreignPrecisionMean.toFixed(4)}, primaryMin=${precisionMin.toFixed(4)})`
 );
 lines.push("");
+if (pairFailures.length) {
+  lines.push(`### Pair separation failures`);
+  lines.push("");
+  for (const f of pairFailures) lines.push(`- ${f}`);
+  lines.push("");
+}
+if (explainSecondFailures.length) {
+  lines.push(`### Explain second-person failures`);
+  lines.push("");
+  for (const f of explainSecondFailures) lines.push(`- ${f}`);
+  lines.push("");
+}
 lines.push(`### Mean metrics by format × variant`);
 lines.push("");
 lines.push(
-  `| format | variant | meanSentenceLength | hedgeCount | firstPersonRatio | secondPersonRatio | lexiconOverlap |`
+  `| format | variant | meanSentenceLength | hedgeCount | firstPersonRatio | secondPersonRatio | lexiconOverlap (report-only) | sampleFidelity (report-only) | distinctivePrecision |`
 );
-lines.push(`|---|---|---:|---:|---:|---:|---:|`);
+lines.push(`|---|---|---:|---:|---:|---:|---:|---:|---:|`);
 for (const c of cells) {
   const m = c.meanMetrics;
   lines.push(
-    `| ${c.format} | ${c.variant} | ${m.meanSentenceLength} | ${m.hedgeCount} | ${m.firstPersonRatio} | ${m.secondPersonRatio} | ${m.lexiconOverlap} |`
+    `| ${c.format} | ${c.variant} | ${m.meanSentenceLength} | ${m.hedgeCount} | ${m.firstPersonRatio} | ${m.secondPersonRatio} | ${m.lexiconOverlap} | ${m.sampleFidelity} | ${m.distinctivePrecision} |`
   );
 }
 lines.push("");
 lines.push(`## Foreign-voice control (LinkedIn / signature)`);
 lines.push("");
 lines.push(
-  `Primary-lexicon overlap on foreign outputs (mean): **${Number(
+  `Distinctive primary-sample n-gram precision on foreign outputs (mean): **${Number(
+    foreignPrecisionMean.toFixed(4)
+  )}**`
+);
+lines.push(
+  `Primary-sample n-gram fidelity on foreign outputs (mean, report-only): **${Number(
+    mean(foreignRuns.map((r) => r.primarySampleFidelity)).toFixed(4)
+  )}**`
+);
+lines.push(
+  `Legacy primary-lexicon overlap on foreign outputs (mean, report-only): **${Number(
     mean(foreignRuns.map((r) => r.primaryLexiconOverlap)).toFixed(4)
   )}**`
 );
@@ -371,6 +525,10 @@ for (let i = 0; i < foreignRuns.length; i++) {
   lines.push(`### foreign run ${i + 1}`);
   lines.push("");
   lines.push(foreignRuns[i].text);
+  lines.push("");
+  lines.push(
+    `metrics: distinctivePrecision=${foreignRuns[i].distinctivePrecision.toFixed(4)}, sampleFidelity=${foreignRuns[i].primarySampleFidelity.toFixed(4)}, lexiconOverlap=${foreignRuns[i].primaryLexiconOverlap.toFixed(4)}`
+  );
   lines.push("");
 }
 lines.push(`## Primary outputs`);
@@ -384,7 +542,7 @@ for (const c of cells) {
     lines.push(run.text);
     lines.push("");
     lines.push(
-      `metrics: meanSentenceLength=${run.metrics.meanSentenceLength}, hedgeCount=${run.metrics.hedgeCount}, first=${run.metrics.firstPersonRatio}, second=${run.metrics.secondPersonRatio}, lexiconOverlap=${run.metrics.lexiconOverlap}`
+      `metrics: meanSentenceLength=${run.metrics.meanSentenceLength}, hedgeCount=${run.metrics.hedgeCount}, first=${run.metrics.firstPersonRatio}, second=${run.metrics.secondPersonRatio}, lexiconOverlap=${run.metrics.lexiconOverlap}, sampleFidelity=${run.metrics.sampleFidelity}, distinctivePrecision=${run.metrics.distinctivePrecision}`
     );
     lines.push("");
   });
@@ -392,7 +550,7 @@ for (const c of cells) {
 lines.push(`## Reviewer result`);
 lines.push("");
 lines.push(
-  `- [ ] Mechanical gate passed (sentence length + hedges separate; lexicon flat).`
+  `- [ ] Mechanical gate passed (all pairs separate; explain second-person; distinctive precision flat + foreign lower).`
 );
 lines.push(
   `- [ ] Blind match of unlabeled outputs to variant labels is well above chance.`
@@ -410,8 +568,22 @@ lines.push(`Notes:`);
 lines.push("");
 
 await fs.writeFile(artefactPath, lines.join("\n"));
+
+const gatePass =
+  mechanicalPass && precisionFlat && fidelityDiscriminates;
 console.log(`Wrote ${artefactPath}`);
 console.log(
-  `Mechanical gate: ${mechanicalPass && lexiconFlat ? "PASS" : "FAIL"} (separation=${mechanicalPass}, lexiconFlat=${lexiconFlat})`
+  `Mechanical gate: ${gatePass ? "PASS" : "FAIL"} (pairs=${
+    pairFailures.length === 0
+  }, explain2nd=${explainSecondFailures.length === 0}, precisionFlat=${precisionFlat}, foreignBelow=${fidelityDiscriminates})`
 );
-if (!(mechanicalPass && lexiconFlat)) process.exit(1);
+if (pairFailures.length) {
+  console.error("Pair failures:\n" + pairFailures.map((f) => `  - ${f}`).join("\n"));
+}
+if (explainSecondFailures.length) {
+  console.error(
+    "Explain second-person failures:\n" +
+      explainSecondFailures.map((f) => `  - ${f}`).join("\n")
+  );
+}
+if (!gatePass) process.exit(1);
