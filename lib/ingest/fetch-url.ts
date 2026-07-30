@@ -28,6 +28,38 @@ function isHtmlContentType(contentType: string | null): boolean {
   );
 }
 
+function isBotProtectedResponse(response: Response): boolean {
+  if (response.status === 401 || response.status === 403) return true;
+  const headerBlob = [
+    response.headers.get("x-datadome"),
+    response.headers.get("server"),
+    response.headers.get("cf-mitigated"),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return (
+    headerBlob.includes("datadome") ||
+    (headerBlob.includes("cloudflare") && response.status >= 400)
+  );
+}
+
+/** Challenge / interstitial HTML that is not a real article. */
+export function looksLikeBotChallengeHtml(html: string): boolean {
+  const sample = html.slice(0, 6_000).toLowerCase();
+  return (
+    sample.includes("datadome") ||
+    sample.includes("please enable js and disable any ad blocker") ||
+    sample.includes("cf-browser-verification") ||
+    sample.includes("challenge-platform") ||
+    sample.includes("_incapsula_resource") ||
+    sample.includes("captcha-delivery.com")
+  );
+}
+
+const BOT_BLOCK_MESSAGE =
+  "That site blocks automated article extraction. Paste the article text instead.";
+
 /**
  * Fetch HTML for article extraction. Follows redirects manually and
  * re-validates scheme + resolved IP on every hop (SSRF bar).
@@ -90,6 +122,9 @@ export async function fetchHtmlForIngest(rawUrl: string): Promise<{
       }
 
       if (!response.ok) {
+        if (isBotProtectedResponse(response)) {
+          throw new IngestFetchError(BOT_BLOCK_MESSAGE);
+        }
         throw new IngestFetchError(
           `That page returned ${response.status}. Try pasting the text instead.`
         );
@@ -135,6 +170,10 @@ export async function fetchHtmlForIngest(rawUrl: string): Promise<{
       const html = new TextDecoder("utf-8", { fatal: false }).decode(
         Buffer.concat(chunks.map((c) => Buffer.from(c)))
       );
+
+      if (looksLikeBotChallengeHtml(html)) {
+        throw new IngestFetchError(BOT_BLOCK_MESSAGE);
+      }
 
       return { finalUrl: current.toString(), html };
     }

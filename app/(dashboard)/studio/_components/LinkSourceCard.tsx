@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { INPUT_CONTENT_MIN_LENGTH } from "@/lib/config";
+import { normalizeIngestUrl } from "@/lib/ingest/normalize-url";
 
 interface LinkSourceCardProps {
   inputSummary: string;
@@ -30,6 +31,11 @@ export default function LinkSourceCard({
       return;
     }
 
+    const normalized = normalizeIngestUrl(trimmed);
+    if (normalized !== trimmed) {
+      setUrl(normalized);
+    }
+
     setExtracting(true);
     setError(null);
 
@@ -37,7 +43,7 @@ export default function LinkSourceCard({
       const response = await fetch("/api/ingest/url", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: trimmed }),
+        body: JSON.stringify({ url: normalized }),
       });
       const data = (await response.json()) as {
         error?: string;
@@ -61,7 +67,7 @@ export default function LinkSourceCard({
       setTitle(data.title ?? null);
       onExtracted(data.sourceText, {
         title: data.title ?? null,
-        sourceUrl: data.sourceUrl ?? trimmed,
+        sourceUrl: data.sourceUrl ?? normalized,
       });
     } catch {
       setError("Could not extract that URL. Try pasting the text instead.");
@@ -133,8 +139,9 @@ export default function LinkSourceCard({
         </div>
       ) : (
         <p className="text-sm text-muted-foreground">
-          Extract an article, then generate as usual. Paywalled or
-          JavaScript-only pages may fail - paste the text instead.
+          Extract a public article, then generate as usual. Sites with bot
+          protection (for example Reuters) or paywalls often block this - paste
+          the text instead.
         </p>
       )}
     </div>
