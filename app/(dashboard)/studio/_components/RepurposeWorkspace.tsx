@@ -23,7 +23,6 @@ import {
 import {
   getDefaultWords,
   isValidWords,
-  lengthPresetsForVariant,
   nearestLengthForVariant,
   wordsToTweets,
 } from "@/lib/repurpose/length-presets";
@@ -40,6 +39,7 @@ import StudioTemplatePicker from "./StudioTemplatePicker";
 import TextSourceCard from "./TextSourceCard";
 import VoiceSetupBanner from "./VoiceSetupBanner";
 import StudioFormatPicker from "./StudioFormatPicker";
+import StudioRunSettings from "./StudioRunSettings";
 import { ModeSwitchDialog } from "./ModeSwitchDialog";
 import { RefinementChips } from "./RefinementChips";
 import {
@@ -1116,73 +1116,6 @@ export default function RepurposeWorkspace({
       />
     ) : null;
 
-  const renderLengthControls = (format: TargetFormat) => (
-    <div className="space-y-4">
-      <div className="space-y-1.5">
-        <div className="text-xs text-muted-foreground">Delivery</div>
-        <div
-          className="flex flex-wrap gap-2"
-          role="group"
-          aria-label={`Delivery for ${FORMAT_TITLES[format]}`}
-        >
-          {VOICE_VARIANTS.map((variant) => (
-            <button
-              key={variant.id}
-              type="button"
-              className={
-                voiceVariants[format] === variant.id
-                  ? "rounded-full border border-primary bg-primary px-4 py-1.5 text-xs font-medium text-primary-foreground"
-                  : "rounded-full border border-border bg-background px-4 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
-              }
-              aria-pressed={voiceVariants[format] === variant.id}
-              onClick={() => handleVoiceVariantChange(format, variant.id)}
-              disabled={formatLoading[format] || !hasVoiceSamples}
-              title={variant.description}
-            >
-              {variant.label}
-            </button>
-          ))}
-        </div>
-        {!hasVoiceSamples ? (
-          <p className="text-xs text-muted-foreground">
-            <Link href="/brand-voice" className="underline underline-offset-2">
-              Add writing samples
-            </Link>{" "}
-            to choose a delivery variant.
-          </p>
-        ) : null}
-      </div>
-      <div className="space-y-1.5">
-        <div className="text-xs text-muted-foreground">
-          Target length (words)
-        </div>
-        <div
-          className="flex flex-wrap gap-2"
-          role="group"
-          aria-label={`Target length for ${FORMAT_TITLES[format]}`}
-        >
-          {lengthPresetsForVariant(format, voiceVariants[format]).map((words) => (
-            <button
-              key={words}
-              type="button"
-              className={
-                lengthWords[format] === words
-                  ? "rounded-full border border-primary bg-primary px-4 py-1.5 font-mono text-xs text-primary-foreground"
-                  : "rounded-full border border-border bg-background px-4 py-1.5 font-mono text-xs text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
-              }
-              aria-label={`${words} words`}
-              aria-pressed={lengthWords[format] === words}
-              onClick={() => handleLengthWordsChange(format, words)}
-              disabled={formatLoading[format]}
-            >
-              {words}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-
   const canStartRun = isPhotoMode
     ? canGeneratePhoto
     : inputSummary.trim().length >= INPUT_CONTENT_MIN_LENGTH;
@@ -1194,7 +1127,7 @@ export default function RepurposeWorkspace({
           Content Studio
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Source → formats → generate → review → export
+          Source → formats → settings → generate → review → export
         </p>
       </div>
 
@@ -1274,6 +1207,16 @@ export default function RepurposeWorkspace({
         disabled={isAnyLoading}
       />
 
+      <StudioRunSettings
+        formats={activeFormats}
+        lengthWords={lengthWords}
+        voiceVariants={voiceVariants}
+        hasVoiceSamples={hasVoiceSamples}
+        disabled={isAnyLoading}
+        onLengthChange={handleLengthWordsChange}
+        onVoiceVariantChange={handleVoiceVariantChange}
+      />
+
       <div
         className="mb-3 flex items-center justify-between px-1 text-sm"
         aria-live="polite"
@@ -1321,12 +1264,7 @@ export default function RepurposeWorkspace({
               ? renderFormatError("x_thread", formatErrors.x_thread)
               : null
           }
-          footerExtra={
-            <div className="space-y-4">
-              {renderLengthControls("x_thread")}
-              {renderRefinementChips("x_thread")}
-            </div>
-          }
+          footerExtra={renderRefinementChips("x_thread")}
         >
           {renderFormatBody(
             "x_thread",
@@ -1373,12 +1311,7 @@ export default function RepurposeWorkspace({
               ? renderFormatError("linkedin", formatErrors.linkedin)
               : null
           }
-          footerExtra={
-            <div className="space-y-4">
-              {renderLengthControls("linkedin")}
-              {renderRefinementChips("linkedin")}
-            </div>
-          }
+          footerExtra={renderRefinementChips("linkedin")}
         >
           {renderFormatBody(
             "linkedin",
@@ -1422,12 +1355,7 @@ export default function RepurposeWorkspace({
               ? renderFormatError("instagram", formatErrors.instagram)
               : null
           }
-          footerExtra={
-            <div className="space-y-4">
-              {renderLengthControls("instagram")}
-              {renderRefinementChips("instagram")}
-            </div>
-          }
+          footerExtra={renderRefinementChips("instagram")}
         >
           {renderFormatBody(
             "instagram",
@@ -1469,12 +1397,7 @@ export default function RepurposeWorkspace({
               ? renderFormatError("email", formatErrors.email)
               : null
           }
-          footerExtra={
-            <div className="space-y-4">
-              {renderLengthControls("email")}
-              {renderRefinementChips("email")}
-            </div>
-          }
+          footerExtra={renderRefinementChips("email")}
         >
           {renderFormatBody(
             "email",
