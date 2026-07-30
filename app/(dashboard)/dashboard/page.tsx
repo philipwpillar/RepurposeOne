@@ -99,7 +99,7 @@ export default async function DashboardPage() {
 
       <PageHeader
         title="Dashboard"
-        description="What to do next — create, review, or fix billing and limits."
+        description="What to do next - create, review, or fix billing and limits."
         actions={
           <Button asChild size="lg">
             <Link href={atLimit ? "/account#plans" : "/studio"}>

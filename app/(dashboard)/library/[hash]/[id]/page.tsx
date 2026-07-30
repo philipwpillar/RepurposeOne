@@ -96,7 +96,7 @@ export default async function HistoryDetailPage({
         description={`Saved ${format(
           new Date(repurpose.created_at),
           "MMM d, yyyy 'at' h:mm a"
-        )}. Preview, edit, and copy match Studio — edits save a draft on this row only.`}
+        )}. Preview, edit, and copy match Studio - edits save a draft on this row only.`}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary">{formatName}</Badge>

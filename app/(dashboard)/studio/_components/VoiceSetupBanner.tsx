@@ -38,7 +38,7 @@ export default function VoiceSetupBanner() {
           Set up your Brand Voice before your first generation
         </p>
         <p className="mt-1 text-muted-foreground">
-          Without a voice profile, outputs use a generic default — they won&apos;t
+          Without a voice profile, outputs use a generic default - they won&apos;t
           sound like you.
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-3">

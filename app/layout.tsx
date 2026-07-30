@@ -36,17 +36,17 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL ?? "https://voiceora.io",
   ),
   title: {
-    default: "Voiceora — content repurposing in your brand voice",
+    default: "Voiceora - Content Repurposing in Your Brand Voice",
     template: "%s | Voiceora",
   },
   description:
-    "Turn one piece of content into platform-native outputs in your brand voice — X threads, LinkedIn, and more.",
+    "Turn one piece of content into platform-native outputs in your brand voice - X threads, LinkedIn, and more.",
   openGraph: {
     type: "website",
     siteName: "Voiceora",
-    title: "Voiceora — one piece of content, every platform, your voice",
+    title: "Voiceora - One Piece of Content. Every Platform. Your Voice.",
     description:
-      "Paste a post, transcript, or photo. Get an X thread, LinkedIn post, Instagram caption, and email draft — in your voice.",
+      "Paste a post, transcript, or photo. Get an X thread, LinkedIn post, Instagram caption, and email draft - in your voice.",
   },
   twitter: { card: "summary_large_image" },
 };

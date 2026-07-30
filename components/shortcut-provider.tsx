@@ -73,7 +73,7 @@ export function ShortcutProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      // Guard first — editable targets never trigger navigation shortcuts.
+      // Guard first - editable targets never trigger navigation shortcuts.
       if (isEditableShortcutTarget(event.target)) {
         clearChord();
         return;

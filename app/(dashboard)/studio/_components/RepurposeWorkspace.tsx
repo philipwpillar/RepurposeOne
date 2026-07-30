@@ -91,7 +91,7 @@ type FormatLoadingState = Record<TargetFormat, boolean>;
 type FormatErrorState = Record<TargetFormat, string | null>;
 type FormatIdState = Record<TargetFormat, string | null>;
 
-/** One generated result. Variants are client state only — every variant is
+/** One generated result. Variants are client state only - every variant is
  * already its own `repurposes` row (Regenerate mints a new generation_id), so
  * this array is purely presentational; no schema or billing change. */
 type FormatVariant = { repurposeId: string; output: RepurposeOutput };
@@ -458,7 +458,7 @@ export default function RepurposeWorkspace({
       if (brandVoice?.id) {
         body.brand_voice_id = brandVoice.id;
       } else {
-        // No saved voice yet — minimal inline fallback so first-run still works.
+        // No saved voice yet - minimal inline fallback so first-run still works.
         body.brand_voice = {
           samples: [],
           description: "Clear, professional, conversational.",
@@ -950,7 +950,7 @@ export default function RepurposeWorkspace({
 
   const statusLabelFor = (format: TargetFormat, ready: string) => {
     if (formatLoading[format]) return "Generating…";
-    if (formatErrors[format]) return "Failed — retry below";
+    if (formatErrors[format]) return "Failed - retry below";
     if (ready) return ready;
     return "Not generated yet";
   };
@@ -1105,7 +1105,7 @@ export default function RepurposeWorkspace({
             <span className="font-medium">
               {brandVoice
                 ? voiceDisplayName(brandVoice)
-                : "No voice set — using built-in style"}
+                : "No voice set - using built-in style"}
             </span>
           </span>
         </Link>
@@ -1225,7 +1225,7 @@ export default function RepurposeWorkspace({
             ) : null,
             <p className="text-sm italic leading-relaxed text-muted-foreground">
               Generate to create your X thread from the source content. Results
-              appear here as soon as this format finishes — you do not need to wait
+              appear here as soon as this format finishes - you do not need to wait
               for every platform.
             </p>
           )}

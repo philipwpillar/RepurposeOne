@@ -1,4 +1,4 @@
-/** Monoline glyphs for How-it-works — same stroke family as VoLogoMark (1.8, round caps). */
+/** Monoline glyphs for How-it-works - same stroke family as VoLogoMark (1.8, round caps). */
 
 type GlyphProps = { size?: number };
 

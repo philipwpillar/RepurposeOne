@@ -38,7 +38,7 @@ type RecentItem = {
 
 /**
  * Authenticated command palette. Mounted under ShortcutProvider.
- * Recent items load lazily on first open via the browser Supabase client —
+ * Recent items load lazily on first open via the browser Supabase client - 
  * never from the dashboard layout hot path.
  */
 export function CommandPalette() {
@@ -185,7 +185,7 @@ export function CommandPalette() {
                       <span className="font-medium">
                         {formatLabel(item.target_format)}
                       </span>
-                      <span className="text-muted-foreground"> — {preview}</span>
+                      <span className="text-muted-foreground"> - {preview}</span>
                     </span>
                   </CommandItem>
                 );
@@ -219,5 +219,5 @@ export function CommandPalette() {
   );
 }
 
-/** Gate alias — same component. */
+/** Gate alias - same component. */
 export const CommandDialog = CommandPalette;

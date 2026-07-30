@@ -25,7 +25,7 @@ export default async function BrandVoicePage() {
     <div className="mx-auto max-w-3xl space-y-6">
       <PageHeader
         title="Brand Voice"
-        description="Named profiles with writing samples — your default voice steers every Studio generate."
+        description="Named profiles with writing samples - your default voice steers every Studio generate."
       />
 
       <BrandVoiceManager initialVoices={voices ?? []} />

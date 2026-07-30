@@ -399,7 +399,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
       <div className="flex items-center justify-between gap-4">
         <p className="text-sm text-muted-foreground">
           {voices.length === 0
-            ? "No brand voices yet — create one to steer every repurpose."
+            ? "No brand voices yet - create one to steer every repurpose."
             : `${voices.length} voice${voices.length === 1 ? "" : "s"}`}
         </p>
         {formMode === null && (
@@ -444,7 +444,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
                 autoComplete="off"
               />
               <p className="text-xs text-muted-foreground">
-                {name.trim().length}/60 — shown in Studio and Library
+                {name.trim().length}/60 - shown in Studio and Library
               </p>
             </div>
 
@@ -454,7 +454,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
                 id="voice-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="e.g. Clear, direct, UK founder tone — conversational but authoritative."
+                placeholder="e.g. Clear, direct, UK founder tone - conversational but authoritative."
                 maxLength={2000}
                 rows={3}
                 disabled={isSaving}
@@ -462,7 +462,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
               <p className="text-xs text-muted-foreground">
                 {description.length}/2000 characters
                 {description.trim().length > 0 && description.trim().length < 10
-                  ? " — minimum 10 characters if used alone"
+                  ? " - minimum 10 characters if used alone"
                   : ""}
               </p>
             </div>
@@ -472,7 +472,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
             <div className="space-y-4">
               <Label>Writing samples (optional)</Label>
               <p className="text-xs text-muted-foreground">
-                Paste 2–3 posts or paragraphs that sound like you. These are the
+                Paste 2-3 posts or paragraphs that sound like you. These are the
                 evidence Studio steers from.
               </p>
               {sampleFields.map((sample, index) => (

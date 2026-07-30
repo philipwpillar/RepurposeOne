@@ -75,6 +75,9 @@ run_floor(){
   BASE_HEX=$(git --no-pager grep -cE '(text|bg|border|ring|fill|stroke|from|via|to|shadow|outline|placeholder|accent|caret|divide)-\[#' origin/main -- app components 2>/dev/null | awk -F: '{s+=$NF} END {print s+0}')
   NOW_HEX=$(n '(text|bg|border|ring|fill|stroke|from|via|to|shadow|outline|placeholder|accent|caret|divide)-\[#' $A $C)
   assert "no NET Tailwind arbitrary hex added" "$NOW_HEX" le "$BASE_HEX"
+  # Typographic dashes banned in app/components (UI + CSS). lib/ai/strip-em-dashes.ts
+  # is intentionally out of scope so the stripper can still match — – ―.
+  assert "no em/en/horizontal dashes in UI"  "$(n '[—–―]' $A $C)" eq 0
   echo "── FENCE (assert only if the PR touches Studio) ──"
   assert "GenerateApiError"                 "$(n 'GenerateApiError' "$W")" eq 8
   assert "callGenerateApi"                  "$(n 'callGenerateApi' "$W")" eq 3
