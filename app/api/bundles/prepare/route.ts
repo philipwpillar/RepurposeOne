@@ -35,7 +35,7 @@ function errorResponse(
  * Brief 3a: create a pending bundle + video asset rows, then issue signed
  * upload URLs (service role). Client PUTs raw files directly to Storage.
  * Gates: auth → plan → rate → N2 (pending counts toward cap). No generation
- * usage check — preparing does not bill.
+ * usage check - preparing does not bill.
  */
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -120,7 +120,7 @@ export async function POST(request: Request) {
     });
   }
 
-  // N2 — atomically reserve a pending bundle under the monthly cap
+  // N2 - atomically reserve a pending bundle under the monthly cap
   let admin;
   try {
     admin = createAdminClient();

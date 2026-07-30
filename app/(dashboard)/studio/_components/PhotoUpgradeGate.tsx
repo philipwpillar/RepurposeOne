@@ -8,7 +8,7 @@ interface PhotoUpgradeGateProps {
   plan: Plan;
 }
 
-/** Thin wrapper — same vision gate copy as Studio UpgradePrompt. */
+/** Thin wrapper - same vision gate copy as Studio UpgradePrompt. */
 export default function PhotoUpgradeGate({ plan }: PhotoUpgradeGateProps) {
   if (planAllowsVision(plan)) {
     return null;

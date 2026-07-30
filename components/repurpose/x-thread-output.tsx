@@ -36,7 +36,7 @@ export function XThreadOutputDisplay({
           <div>
             <CardTitle className="text-xl">X / Twitter thread</CardTitle>
             <CardDescription>
-              {tweetCount} tweets — preview, edit, and copy like Studio
+              {tweetCount} tweets - preview, edit, and copy like Studio
             </CardDescription>
           </div>
           {repurposeId && (

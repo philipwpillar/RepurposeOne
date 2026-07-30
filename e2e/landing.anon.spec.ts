@@ -4,7 +4,7 @@ test.describe("landing", () => {
   test("renders the Voiceora hero", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 })).toContainText(
-      "Every platform",
+      "Every Platform",
     );
     await expect(page.getByText("X / Twitter", { exact: true })).toBeVisible();
     await expect(page.getByText("LinkedIn").first()).toBeVisible();

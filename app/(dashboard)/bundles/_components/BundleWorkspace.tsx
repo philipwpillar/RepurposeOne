@@ -159,7 +159,7 @@ export default function BundleWorkspace({
     for (const file of incoming) {
       if (slots <= 0) {
         nextErrors.push(
-          `Only ${BUNDLE_MAX_PHOTOS} photos allowed — extra files were skipped.`
+          `Only ${BUNDLE_MAX_PHOTOS} photos allowed - extra files were skipped.`
         );
         break;
       }
@@ -219,7 +219,7 @@ export default function BundleWorkspace({
 
     for (const file of incoming) {
       if (room <= 0) {
-        nextErrors.push("Only 2 videos allowed — extra files were skipped.");
+        nextErrors.push("Only 2 videos allowed - extra files were skipped.");
         break;
       }
 
@@ -381,7 +381,7 @@ export default function BundleWorkspace({
           message:
             err instanceof Error
               ? err.message
-              : "Network error — please try again.",
+              : "Network error - please try again.",
           billingHint: true,
         });
       }
@@ -452,7 +452,7 @@ export default function BundleWorkspace({
         {VIDEO_BUNDLES_DEV && (photos.length > 0 || videos.length > 0) && (
           <p className="text-xs text-muted-foreground">
             Approx. request size: {payloadKb} KB
-            {payloadKb > 3500 ? " — getting close to the upload limit" : ""}
+            {payloadKb > 3500 ? " - getting close to the upload limit" : ""}
           </p>
         )}
 
@@ -509,7 +509,7 @@ export default function BundleWorkspace({
               {contextError ? (
                 <span className="text-destructive">{contextError}</span>
               ) : (
-                `${PHOTO_CONTEXT_MIN_LENGTH}–${PHOTO_CONTEXT_MAX_LENGTH} characters`
+                `${PHOTO_CONTEXT_MIN_LENGTH}-${PHOTO_CONTEXT_MAX_LENGTH} characters`
               )}
             </span>
             <span>
@@ -531,7 +531,7 @@ export default function BundleWorkspace({
             <p>{error.message}</p>
             {error.billingHint && (
               <p className="text-xs text-muted-foreground">
-                This attempt wasn’t billed — you can retry safely.
+                This attempt wasn’t billed - you can retry safely.
               </p>
             )}
             <Button
@@ -551,7 +551,7 @@ export default function BundleWorkspace({
             role="status"
             aria-live="polite"
           >
-            Generating your pack… You can leave this page — check{" "}
+            Generating your pack… You can leave this page - check{" "}
             <span className="font-medium text-foreground">Past bundles</span>{" "}
             when you return for status and Library links.
           </p>
@@ -580,7 +580,7 @@ export default function BundleWorkspace({
             <h2 className="text-lg font-semibold text-foreground">Your pack</h2>
             <p className="text-sm text-muted-foreground">
               Captions in recommended posting order. Platform posts live in the
-              Library — this page keeps the pack preview for this session.
+              Library - this page keeps the pack preview for this session.
             </p>
           </div>
 

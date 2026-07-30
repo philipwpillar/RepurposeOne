@@ -4,7 +4,7 @@ import { VoLogoMark, VoMarkDefs } from "@/components/landing/vo-logo-mark";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Privacy Policy — Voiceora",
+    absolute: "Privacy Policy - Voiceora",
   },
   robots: {
     index: true,
@@ -189,21 +189,21 @@ export default function PrivacyPage() {
             <ul className="mt-3 list-disc space-y-2 pl-6 leading-relaxed text-muted-foreground">
               <li>
                 <strong className="font-medium text-foreground">Supabase</strong>{" "}
-                — authentication and database hosting.
+ - authentication and database hosting.
               </li>
               <li>
                 <strong className="font-medium text-foreground">Stripe</strong>{" "}
-                — payment processing.
+ - payment processing.
               </li>
               <li>
                 <strong className="font-medium text-foreground">
                   OpenRouter
                 </strong>{" "}
-                — routing content to AI model providers for generation.
+ - routing content to AI model providers for generation.
               </li>
               <li>
                 <strong className="font-medium text-foreground">Vercel</strong>{" "}
-                — application hosting and operational logs.
+ - application hosting and operational logs.
               </li>
             </ul>
           </section>

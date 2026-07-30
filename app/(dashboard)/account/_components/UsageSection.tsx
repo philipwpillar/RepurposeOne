@@ -21,7 +21,7 @@ export function UsageSection({ usage, bundleUsed }: UsageSectionProps) {
         <div>
           <h2 className="text-lg font-semibold">Plan &amp; usage</h2>
           <p className="text-sm text-muted-foreground">
-            Generations are successful runs this calendar month — not tokens.
+            Generations are successful runs this calendar month - not tokens.
           </p>
         </div>
         <Badge>{planLabel(usage.plan)}</Badge>

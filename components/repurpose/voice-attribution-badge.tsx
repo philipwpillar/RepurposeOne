@@ -9,7 +9,7 @@ interface VoiceAttributionBadgeProps {
   voice: VoiceAttributionInput;
 }
 
-/** Factual voice attribution — links to Brand Voice settings. No match-quality claim. */
+/** Factual voice attribution - links to Brand Voice settings. No match-quality claim. */
 export function VoiceAttributionBadge({ voice }: VoiceAttributionBadgeProps) {
   const label = voiceAttributionLabel(voice);
 

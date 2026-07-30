@@ -5,7 +5,7 @@ import {
 } from "@/components/landing/platform-marks";
 
 /**
- * Product proof cards — genuine Voiceora-style outputs about the product itself.
+ * Product proof cards - genuine Voiceora-style outputs about the product itself.
  * Not customer testimonials; not invented counts. Matches the "written with Voiceora" claim.
  */
 export function ProofOutputs() {
@@ -21,11 +21,11 @@ export function ProofOutputs() {
         </div>
         <ol className="proof-thread">
           <li>
-            One source. Four platforms. Still sounding like you — that’s the
+            One source. Four platforms. Still sounding like you - that’s the
             whole product.
           </li>
           <li>
-            Paste a post, a transcript, or a photo. Teach Voiceora 2–3 samples
+            Paste a post, a transcript, or a photo. Teach Voiceora 2-3 samples
             of how you write. Then generate.
           </li>
           <li>
@@ -45,8 +45,8 @@ export function ProofOutputs() {
         </div>
         <p className="proof-body">
           Most “repurposing” tools rewrite your idea into generic marketing
-          copy. Voiceora starts from your voice — samples or a short style note
-          — then drafts an X thread, LinkedIn post, Instagram caption, and email
+          copy. Voiceora starts from your voice - samples or a short style note
+ - then drafts an X thread, LinkedIn post, Instagram caption, and email
           from one input.
         </p>
         <p className="proof-body">

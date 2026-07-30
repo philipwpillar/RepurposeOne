@@ -103,7 +103,7 @@ export default async function LibraryPage({
     if (totalItems > 0) {
       const from = (page - 1) * LIBRARY_PAGE_SIZE;
       const to = from + LIBRARY_PAGE_SIZE - 1;
-      // Flat page rows — source_hash before input_content so the old heavy
+      // Flat page rows - source_hash before input_content so the old heavy
       // contiguous select string cannot reappear.
       let rowsQuery = supabase
         .from("repurposes")
@@ -124,7 +124,7 @@ export default async function LibraryPage({
       flatItems = (data ?? []) as FlatLibraryItem[];
     }
   } else {
-    // Paginated group index via RPCs — never loads full history into Node.
+    // Paginated group index via RPCs - never loads full history into Node.
     // Preview comes from the list RPC (per-hash latest input_content) so a
     // global hydrate LIMIT cannot starve later groups.
     const { data: groupCount, error: countError } = await supabase.rpc(
@@ -198,7 +198,7 @@ export default async function LibraryPage({
     <div className="mx-auto max-w-3xl space-y-6">
       <PageHeader
         title="Library"
-        description="Your sources and platform outputs — open one to review, copy, or reuse in Studio."
+        description="Your sources and platform outputs - open one to review, copy, or reuse in Studio."
         actions={
           <Button asChild size="sm" className="bg-primary hover:bg-primary/90">
             <Link href="/studio">New in Studio</Link>
@@ -248,7 +248,7 @@ export default async function LibraryPage({
             <CardTitle>No history yet</CardTitle>
             <CardDescription>
               When you generate in Studio, each source and its platform outputs
-              land here — ready to review, copy, or reuse.
+              land here - ready to review, copy, or reuse.
             </CardDescription>
           </CardHeader>
           <CardContent>

@@ -22,7 +22,7 @@ function SharperEmptyCard() {
       <CardHeader className="text-center">
         <CardTitle>Turn one article into X, LinkedIn, Instagram, and email drafts</CardTitle>
         <CardDescription className="text-balance">
-          Paste a blog post, newsletter, or notes into Studio — Voiceora drafts
+          Paste a blog post, newsletter, or notes into Studio - Voiceora drafts
           an X thread, LinkedIn post, Instagram caption, and email in your
           voice.
         </CardDescription>

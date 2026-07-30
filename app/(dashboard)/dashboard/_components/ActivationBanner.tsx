@@ -25,7 +25,7 @@ export default function ActivationBanner({ onDismiss }: ActivationBannerProps) {
       <Sparkles className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" aria-hidden />
       <div className="flex-1 text-sm">
         <p className="font-medium text-foreground">
-          Your voice is set up — now see it work
+          Your voice is set up - now see it work
         </p>
         <p className="mt-1 text-muted-foreground">
           Paste any article into Studio and get drafts for X, LinkedIn, Instagram, and email in

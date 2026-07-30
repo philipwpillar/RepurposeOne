@@ -77,7 +77,7 @@ export default function PastBundlesList({ bundles }: PastBundlesListProps) {
       <div>
         <h2 className="text-lg font-semibold text-foreground">Past bundles</h2>
         <p className="text-sm text-muted-foreground">
-          Job history — open complete packs in the Library. In-progress jobs keep
+          Job history - open complete packs in the Library. In-progress jobs keep
           updating if you leave and return.
         </p>
       </div>
@@ -122,7 +122,7 @@ export default function PastBundlesList({ bundles }: PastBundlesListProps) {
                   </p>
                   {isInFlight ? (
                     <p className="text-xs text-muted-foreground">
-                      Still processing — refresh this page to check status.
+                      Still processing - refresh this page to check status.
                     </p>
                   ) : null}
                   {isFailed ? (

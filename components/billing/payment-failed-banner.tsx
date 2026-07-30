@@ -6,7 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
 /**
- * Non-dismissible — no X, no localStorage. Cleared only when Stripe clears
+ * Non-dismissible - no X, no localStorage. Cleared only when Stripe clears
  * payment_failed_* on the profile via webhook.
  */
 export function PaymentFailedBanner() {

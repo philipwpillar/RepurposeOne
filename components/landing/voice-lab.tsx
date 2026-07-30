@@ -40,10 +40,10 @@ function prefersReducedMotion() {
 
 function errorMessageForStatus(status: number): string {
   if (status === 429) {
-    return "You've had a few goes — sign up free to keep going.";
+    return "You've had a few goes - sign up free to keep going.";
   }
   if (status === 403) {
-    return "Couldn't verify — refresh and try again.";
+    return "Couldn't verify - refresh and try again.";
   }
   if (status === 503) {
     return "Demo is temporarily unavailable. Please try again shortly.";
@@ -189,7 +189,7 @@ export function VoiceLab() {
           if (pendingRunRef.current) {
             pendingRunRef.current = false;
             setLoading(false);
-            failGeneration("Couldn't verify — refresh and try again.");
+            failGeneration("Couldn't verify - refresh and try again.");
           }
         },
       }
@@ -217,7 +217,7 @@ export function VoiceLab() {
       <div className="wrap">
         <p className="zone-title">The part other tools skip</p>
         <h2 className="big">
-          Same idea. <span className="grad">Different voice.</span>
+          Same Idea. <span className="grad">Different Voice.</span>
         </h2>
         <p className="lab-sub">
           Most AI content sounds like the same person wrote all of it. Paste your
@@ -307,8 +307,8 @@ export function VoiceLab() {
 
         <p className="lab-cta">
           That&apos;s one format in a sample voice.{" "}
-          <Link href="/sign-up">Sign up free</Link> to get all four — X,
-          LinkedIn, Instagram and email — in <strong>your</strong> voice, trained
+          <Link href="/sign-up">Sign up free</Link> to get all four - X,
+          LinkedIn, Instagram and email - in <strong>your</strong> voice, trained
           on your own writing.
         </p>
       </div>

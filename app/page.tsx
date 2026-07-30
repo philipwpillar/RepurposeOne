@@ -22,9 +22,9 @@ import { PLAN_LIMITS } from "@/lib/config";
 import "./landing.css";
 
 export const metadata: Metadata = {
-  title: "Voiceora — one piece of content, every platform, your voice",
+  title: "Voiceora - One Piece of Content. Every Platform. Your Voice.",
   description:
-    "Turn a blog post, transcript, or photo into an X thread, a LinkedIn post with carousel ideas, an Instagram caption, and an email draft — written in your brand voice. Free plan, no card required.",
+    "Turn a blog post, transcript, or photo into an X thread, a LinkedIn post with carousel ideas, an Instagram caption, and an email draft - written in your brand voice. Free plan, no card required.",
 };
 
 export default async function HomePage() {
@@ -72,16 +72,16 @@ export default async function HomePage() {
                 Content repurposing
               </p>
               <h1 className="head">
-                One piece of content.
+                One Piece of Content.
                 <br />
-                Every platform.
+                Every Platform.
                 <br />
-                <span className="grad">Your voice.</span>
+                <span className="grad">Your Voice.</span>
               </h1>
               <p className="sub">
                 Paste a post, a transcript, or a photo. Voiceora turns it into an
                 X thread, a LinkedIn post with carousel ideas, an Instagram
-                caption, and an email draft — each one written the way you write.
+                caption, and an email draft - each one written the way you write.
               </p>
               <div className="cta-row">
                 {user ? (
@@ -102,7 +102,7 @@ export default async function HomePage() {
               </div>
               <p className="trust-line">
                 Free plan · {PLAN_LIMITS.free} generations/month · no card ·
-                voice from 2–3 samples
+                voice from 2-3 samples
               </p>
             </div>
 
@@ -183,8 +183,8 @@ export default async function HomePage() {
               </span>
               <div className="st">Teach your voice</div>
               <p className="sd">
-                Add 2–3 writing samples or a short description. Your voice is
-                the first thing Voiceora asks for — everything is written from
+                Add 2-3 writing samples or a short description. Your voice is
+                the first thing Voiceora asks for - everything is written from
                 it.
               </p>
             </div>
@@ -195,7 +195,7 @@ export default async function HomePage() {
               </span>
               <div className="st">Add your content</div>
               <p className="sd">
-                Paste a blog post, article, or transcript — or upload a photo
+                Paste a blog post, article, or transcript - or upload a photo
                 with a line of context.
               </p>
               <span className="tiertag">Photo input · Creator plan</span>
@@ -245,7 +245,7 @@ export default async function HomePage() {
             <p className="proof-sub">
               Voiceora is new, so you won&apos;t find invented user counts or
               stock-photo testimonials here. What you will find: real Studio
-              outputs about the product itself — every post about Voiceora is
+              outputs about the product itself - every post about Voiceora is
               written with Voiceora.
             </p>
           </ScrollReveal>

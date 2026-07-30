@@ -127,14 +127,14 @@ export default function LinkSourceCard({
             className="w-full resize-y rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
           />
           <div className="mt-1 text-xs text-muted-foreground">
-            {inputSummary.length.toLocaleString()} characters — edit before
+            {inputSummary.length.toLocaleString()} characters - edit before
             generating if needed
           </div>
         </div>
       ) : (
         <p className="text-sm text-muted-foreground">
           Extract an article, then generate as usual. Paywalled or
-          JavaScript-only pages may fail — paste the text instead.
+          JavaScript-only pages may fail - paste the text instead.
         </p>
       )}
     </div>

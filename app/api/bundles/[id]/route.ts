@@ -7,7 +7,7 @@ import {
   type BundleClipStatus,
 } from "@/types";
 
-/** Signed download URL TTL — matches prepare's short-lived upload URL pattern. */
+/** Signed download URL TTL - matches prepare's short-lived upload URL pattern. */
 const SIGNED_DOWNLOAD_TTL_SECONDS = 600;
 
 type ClipRow = {
@@ -79,7 +79,7 @@ export async function GET(
     );
   }
 
-  // video_index is not stored on bundle_clips — derive it as the clip's
+  // video_index is not stored on bundle_clips - derive it as the clip's
   // asset position among this bundle's video-kind assets ordered by sort_order
   // (upload order), matching generate's videos[] indexing.
   const { data: videoAssets, error: assetsError } = await supabase
@@ -122,7 +122,7 @@ export async function GET(
     const videoIndex = videoIndexByAssetId.get(row.asset_id);
     if (videoIndex === undefined) {
       console.warn(
-        `bundle_clips ${row.id}: asset_id ${row.asset_id} not among video assets — video_index defaulting to 0`
+        `bundle_clips ${row.id}: asset_id ${row.asset_id} not among video assets - video_index defaulting to 0`
       );
     }
 
