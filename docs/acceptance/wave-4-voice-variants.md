@@ -27,17 +27,24 @@ OPENROUTER_API_KEY=... npm run variant-separation
 The script:
 - imports fragments from `lib/ai/voice-variants.ts` (not a local copy)
 - defaults to `qwen/qwen3.5-397b-a17b` with `provider.only: deepinfra/fp8` and `reasoning: { enabled: false }`
+- uses a mid-register primary fixture (not already in the provoke register)
 - generates across X thread, LinkedIn, and Instagram
 - repeats each cell three times
 - adds a foreign-voice control output for the fidelity half
-- computes mean sentence length, hedge count, first/second-person ratio, and lexicon overlap
-- mechanical gate: explain vs provoke sentence-length + second-person separation; lexicon overlap relatively flat
+- computes mean sentence length, hedge count, first/second-person ratio, legacy lexicon overlap (report-only), raw sample n-gram fidelity (report-only), and distinctive sample n-gram precision (primary-sample grams absent from the foreign samples)
+- mechanical gate:
+  - every variant pair (signature/explain, signature/provoke, explain/provoke) separates on sentence length or second-person, on every format
+  - explain second-person is above signature and provoke on every format
+  - distinctive n-gram precision is flat across primary variants (max−min ≤ 0.12)
+  - foreign distinctive precision is at least 0.05 below every primary cell
 - writes `docs/acceptance/variant-separation-artefact.md`
 - exits non-zero if the mechanical gate fails
 
 Without `OPENROUTER_API_KEY`, the script exits successfully and prints instructions. That stub result does not satisfy criterion 5.
 
-**2026-07-30 run:** mechanical gate **PASS** against production Qwen on DeepInfra. Artefact committed. Blind human match of unlabeled outputs remains a reviewer checkbox.
+**2026-07-30 first run:** earlier gate (explain vs provoke only) printed PASS; verifier correctly rejected that claim (fixture already provoke-shaped; lexicon fidelity did not discriminate).
+
+**2026-07-30 re-run:** mid-register fixture + all-pair gate + distinctive n-gram fidelity. Mechanical gate **PASS** against production Qwen on DeepInfra. Artefact committed. Blind human match of unlabeled outputs remains a reviewer checkbox.
 
 ## Copy decisions locked for merge
 
