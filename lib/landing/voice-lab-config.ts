@@ -5,10 +5,6 @@ export const VOICE_LAB_MAX_CHARS = 1500;
 
 export const VOICE_LAB_MIN_CHARS = 20;
 
-export const VOICE_LAB_TARGET_TWEETS = 4;
-
-export const VOICE_LAB_MAX_TOKENS = 400;
-
 export const VOICE_LAB_HOURLY_LIMIT = 5;
 
 export const VOICE_LAB_DAILY_LIMIT = 20;

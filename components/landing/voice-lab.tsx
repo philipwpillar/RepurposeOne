@@ -9,6 +9,7 @@ import {
   VOICE_LAB_MAX_CHARS,
   VOICE_LAB_MIN_CHARS,
 } from "@/lib/landing/voice-lab-config";
+import { VOICE_LAB_LENGTH_PRESETS } from "@/lib/repurpose/length-presets";
 
 const LIVE_LABEL = "Generated live · sample voice, your text";
 const IDLE_LABEL = "Live demo · sample voice, your text";
@@ -54,6 +55,7 @@ function errorMessageForStatus(status: number): string {
 export function VoiceLab() {
   const [inputText, setInputText] = useState(VOICE_LAB_DEFAULT_INPUT);
   const [currentVoice, setCurrentVoice] = useState(0);
+  const [targetWords, setTargetWords] = useState(50);
   const [display, setDisplay] = useState("");
   const [statusLabel, setStatusLabel] = useState(IDLE_LABEL);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -118,6 +120,7 @@ export function VoiceLab() {
           body: JSON.stringify({
             text: trimmed.slice(0, VOICE_LAB_MAX_CHARS),
             voice: currentVoice,
+            target_words: targetWords,
             turnstileToken,
           }),
         });
@@ -148,7 +151,7 @@ export function VoiceLab() {
         }
       }
     },
-    [currentVoice, failGeneration, inputText, reduced, typeText]
+    [currentVoice, failGeneration, inputText, reduced, targetWords, typeText]
   );
 
   const handleTryIt = () => {
@@ -266,6 +269,24 @@ export function VoiceLab() {
           </div>
 
           <div className="lab-actions">
+            <div
+              className="chip-row"
+              role="group"
+              aria-label="Choose output length"
+            >
+              {VOICE_LAB_LENGTH_PRESETS.map((words) => (
+                <button
+                  key={words}
+                  type="button"
+                  className="chip"
+                  aria-pressed={targetWords === words}
+                  onClick={() => setTargetWords(words)}
+                  disabled={loading}
+                >
+                  ~{words} words
+                </button>
+              ))}
+            </div>
             <button
               type="button"
               className="btn-primary lab-try"
