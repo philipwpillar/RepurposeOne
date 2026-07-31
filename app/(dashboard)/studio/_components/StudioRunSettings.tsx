@@ -1,7 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { VOICE_VARIANTS, type VoiceVariantId } from "@/lib/ai/voice-variants";
+import {
+  VOICE_VARIANT_BY_ID,
+  VOICE_VARIANTS,
+  type VoiceVariantId,
+} from "@/lib/ai/voice-variants";
 import { lengthPresetsForVariant } from "@/lib/repurpose/length-presets";
 import type { TargetFormat } from "@/types";
 
@@ -77,7 +81,11 @@ export default function StudioRunSettings({
                   </button>
                 ))}
               </div>
-              {!hasVoiceSamples ? (
+              {hasVoiceSamples ? (
+                <p className="text-xs text-muted-foreground">
+                  {VOICE_VARIANT_BY_ID[voiceVariants[format]].description}
+                </p>
+              ) : (
                 <p className="text-xs text-muted-foreground">
                   <Link
                     href="/brand-voice"
@@ -87,7 +95,7 @@ export default function StudioRunSettings({
                   </Link>{" "}
                   to choose a delivery variant.
                 </p>
-              ) : null}
+              )}
             </div>
 
             <div className="space-y-1.5">

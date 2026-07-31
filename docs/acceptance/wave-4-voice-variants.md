@@ -2,8 +2,8 @@
 
 ## Acceptance checklist
 
-1. Studio offers Your voice, Teach, and Take on every format generation path.
-2. Format defaults are Take for X, Teach for LinkedIn, Your voice for Instagram, and Teach for email.
+1. Studio offers I'll State Facts, I'll Explain, and I'll Give my Opinion on every format generation path.
+2. Format defaults are I'll Give my Opinion for X, I'll Explain for LinkedIn, I'll State Facts for Instagram, and I'll Explain for email.
 3. Explicit choices persist in `vo-variant-override`; defaults are not persisted.
 4. Length choices are filtered by variant and invalid choices snap to the nearest valid default.
 5. The separation protocol produces materially different delivery while preserving voice identity.

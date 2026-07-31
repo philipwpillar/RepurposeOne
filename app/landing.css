@@ -247,6 +247,12 @@
 .vo-landing .lab-head .src { font-family:var(--font-mono); font-size:12px; color:var(--text-lo); }
 .vo-landing .lab-head .src strong { color:var(--text-hi); font-weight:500; }
 .vo-landing .chip-row { display:flex; gap:8px; flex-wrap:wrap; }
+.vo-landing .lab-variant {
+  padding:12px 22px 0;
+}
+.vo-landing .lab-variant-help {
+  margin:10px 0 0; font-size:12px; line-height:1.5; color:var(--text-lo);
+}
 .vo-landing .chip {
   font-family:var(--font-mono); font-size:12.5px; cursor:pointer; background:transparent;
   color:var(--text-lo); border:1px solid var(--line-dark); border-radius:999px; padding:7px 15px;

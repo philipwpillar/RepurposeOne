@@ -265,24 +265,34 @@ export function VoiceLab() {
             </div>
           </div>
 
-          <div
-            className="chip-row"
-            role="group"
-            aria-label="Choose a delivery variant"
-          >
-            {VOICE_VARIANTS.map((variant) => (
-              <button
-                key={variant.id}
-                type="button"
-                className="chip"
-                aria-pressed={voiceVariant === variant.id}
-                onClick={() => setVoiceVariant(variant.id)}
-                disabled={loading}
-                title={variant.description}
-              >
-                {variant.label}
-              </button>
-            ))}
+          <div className="lab-variant">
+            <div
+              className="chip-row"
+              role="group"
+              aria-label="Choose a delivery variant"
+            >
+              {VOICE_VARIANTS.map((variant) => (
+                <button
+                  key={variant.id}
+                  type="button"
+                  className="chip"
+                  aria-pressed={voiceVariant === variant.id}
+                  onClick={() => setVoiceVariant(variant.id)}
+                  disabled={loading}
+                  title={variant.description}
+                >
+                  {variant.label}
+                </button>
+              ))}
+            </div>
+            <p className="lab-variant-help">
+              {
+                (
+                  VOICE_VARIANTS.find((variant) => variant.id === voiceVariant) ??
+                  VOICE_VARIANTS[0]
+                ).description
+              }
+            </p>
           </div>
 
           <div className="lab-input-wrap">
