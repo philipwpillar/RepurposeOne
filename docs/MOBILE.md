@@ -67,7 +67,7 @@ Production `HOLDING_MODE=true` means a plain Capacitor load of `https://voiceora
 | Option | Env (in `.env.local`) | When to use |
 | --- | --- | --- |
 | **A — Vercel Preview** | `CAPACITOR_SERVER_URL=https://<preview>.vercel.app` | Branch Preview with no `HOLDING_MODE`; good for unmerged web changes |
-| **B — Production + bypass** | `HOLDING_BYPASS_TOKEN=<same as Vercel>` (optional alias `CAPACITOR_HOLDING_BYPASS_TOKEN`) | Shell should match live production; first load hits `/?preview=<token>` and sets `vo-preview` |
+| **B — Production + bypass** | `HOLDING_BYPASS_TOKEN=<same as Vercel>` (optional alias `CAPACITOR_HOLDING_BYPASS_TOKEN`) | Shell should match live production; first load hits `https://www.voiceora.io/?preview=<token>` and sets `vo-preview` |
 
 Then:
 
@@ -78,7 +78,9 @@ npx cap sync ios
 
 `capacitor.config.ts` reads `.env.local` at sync time (Capacitor CLI does not load Next env files). Generated `ios/App/App/capacitor.config.json` is gitignored.
 
-**Release rule:** before any App Store or external TestFlight archive, unset `CAPACITOR_SERVER_URL` / bypass tokens and re-run `npx cap sync ios` so the binary’s `server.url` is plain `https://voiceora.io` with no embedded preview token.
+**Release rule:** before any App Store or external TestFlight archive, unset `CAPACITOR_SERVER_URL` / bypass tokens and re-run `npx cap sync ios` so the binary’s `server.url` is plain `https://www.voiceora.io` with no embedded preview token.
+
+**Host note:** Production canonical URL is `www.voiceora.io` (apex `voiceora.io` returns 308). The shell defaults to `www` so the bypass cookie is set on the host the WebView actually stays on.
 
 ---
 

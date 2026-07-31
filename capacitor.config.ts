@@ -29,16 +29,17 @@ function loadEnvLocal() {
 
 loadEnvLocal();
 
-const PRODUCTION_ORIGIN = "https://voiceora.io";
+/** Canonical production host (apex voiceora.io 308s here). */
+const PRODUCTION_ORIGIN = "https://www.voiceora.io";
 
 /**
  * Resolve the remote WebView URL for local / TestFlight-internal builds.
  *
- * - Default: https://voiceora.io (App Store / production shell)
+ * - Default: https://www.voiceora.io (App Store / production shell)
  * - CAPACITOR_SERVER_URL: point at a Vercel Preview (no HOLDING_MODE) for local testing
  * - HOLDING_BYPASS_TOKEN / CAPACITOR_HOLDING_BYPASS_TOKEN: when the base host is
- *   voiceora.io, append ?preview=<token> so the first load sets the vo-preview
- *   cookie and the shell skips the holding page
+ *   voiceora.io / www.voiceora.io, append ?preview=<token> so the first load sets
+ *   the vo-preview cookie and the shell skips the holding page
  *
  * Unset bypass env vars before any App Store / external TestFlight archive so
  * the binary does not embed the preview token in server.url.
