@@ -184,7 +184,7 @@ body {
   font-family: var(--font-body), system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, sans-serif;
   /* Safe-area insets are applied on chrome (topbar / bottom tabs / landing nav),
-     not body — body padding + sticky/fixed headers caused Cap WKWebView
+     not body - body padding + sticky/fixed headers caused Cap WKWebView
      horizontal visual-viewport offset (left clipping).
      Do not set overflow-x:clip on html/body: it breaks position:sticky
      topbars on iOS when Radix menus open while scrolled. */
