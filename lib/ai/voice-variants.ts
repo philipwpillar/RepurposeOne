@@ -15,22 +15,23 @@ export interface VoiceVariant {
 export const VOICE_VARIANTS: readonly VoiceVariant[] = [
   {
     id: "signature",
-    label: "Your voice",
-    description: "Match the rhythm and structure of your samples.",
+    label: "I'll State Facts",
+    description:
+      "Sound like your samples. Neutral delivery, not a lesson and not a hot take.",
     promptFragment: `Delivery for this piece: neutral.
 - Match the vocabulary and self-reference habits of the voice samples.
 - Average sentence 12 to 16 words. Full sentences preferred.
 - Open with context or observation, not with a hard claim and not with a tutorial question.
 - Prefer your own wording for the source idea - do not reuse sample phrases verbatim.
-- Do not lean toward Teach or Take.`,
+- Do not lean toward I'll Explain or I'll Give my Opinion.`,
 
 
     lengthDefault: 100,
   },
   {
     id: "explain",
-    label: "Teach",
-    description: "Guide the reader through a clear mechanism or sequence.",
+    label: "I'll Explain",
+    description: "Walk the reader through how it works, step by step.",
     promptFragment: `Delivery for this piece:
 - Address the reader as "you". Do not use first-person plural.
 - Average sentence 16 to 22 words. No sentence fragments.
@@ -42,11 +43,11 @@ export const VOICE_VARIANTS: readonly VoiceVariant[] = [
   },
   {
     id: "provoke",
-    label: "Take",
-    description: "Lead with one direct position and justify it briefly.",
+    label: "I'll Give my Opinion",
+    description: "Lead with one clear position, then justify it briefly.",
     promptFragment: `Delivery for this piece:
 - Open with the position, in one sentence, before any justification.
-- Average sentence 8 to 12 words. Fragments allowed. Prefer shorter than Teach.
+- Average sentence 8 to 12 words. Fragments allowed. Prefer shorter than I'll Explain.
 - Zero hedging: no "might", "perhaps", "in my opinion", "arguably".
 - Exactly one claim. Do not enumerate.
 - Name the thing you disagree with explicitly.`,
