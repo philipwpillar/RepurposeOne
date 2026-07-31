@@ -46,7 +46,14 @@
 }
 @keyframes vo-drift { from{transform:translate3d(-2%,-1%,0) scale(1);} to{transform:translate3d(3%,2%,0) scale(1.08);} }
 
-.vo-landing .nav-inner { position:relative; z-index:5; display:flex; align-items:center; justify-content:space-between; padding:22px 0; }
+.vo-landing .nav-inner {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(22px + env(safe-area-inset-top, 0px)) 0 22px;
+}
 .vo-landing .brand { display:flex; align-items:center; gap:11px; }
 .vo-landing .brand .name { font-family:var(--font-display); font-weight:700; font-size:21px; letter-spacing:-0.02em; color:var(--text-hi); }
 .vo-landing .navbtn { font-size:14px; font-weight:500; color:var(--text-hi); border:1px solid var(--line-dark); border-radius:10px; padding:9px 16px; transition:border-color .2s, background .2s; }

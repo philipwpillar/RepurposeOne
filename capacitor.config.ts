@@ -76,15 +76,25 @@ function resolveServerUrl(): string {
   return url.toString();
 }
 
+const resolvedUrl = resolveServerUrl();
+const resolvedIsHttp = resolvedUrl.startsWith("http://");
+
 const config: CapacitorConfig = {
   appId: "com.voiceora.io",
   appName: "Voiceora",
   webDir: "public",
   server: {
-    url: resolveServerUrl(),
-    cleartext: false,
-    // Keep apex + www in-app (production 308s apex → www).
-    allowNavigation: ["voiceora.io", "www.voiceora.io", "*.voiceora.io"],
+    url: resolvedUrl,
+    // Required for CAPACITOR_SERVER_URL=http://localhost:3000 local debug.
+    cleartext: resolvedIsHttp,
+    // Keep apex + www in-app (production 308s apex → www). Include localhost for Cap→Next local debug.
+    allowNavigation: [
+      "voiceora.io",
+      "www.voiceora.io",
+      "*.voiceora.io",
+      "localhost",
+      "127.0.0.1",
+    ],
   },
 };
 

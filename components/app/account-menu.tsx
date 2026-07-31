@@ -46,7 +46,7 @@ export function AccountMenu({ user, usage }: AccountMenuProps) {
   const usagePercent = Math.min(100, (usage.used / usage.limit) * 100);
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button
           type="button"
