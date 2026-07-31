@@ -3,7 +3,7 @@
 > **Living document.** Scope, architecture, and roadmap for the native mobile app.
 > Grok owns strategic direction; Claude (Cursor) owns implementation. Update this file whenever a decision is made.
 > **Claude's verification role is limited to the web/TypeScript layer** — iOS binary builds require Xcode and are confirmed by Phil.
-> Last updated: 2026-07-03
+> Last updated: 2026-07-31
 
 ---
 
@@ -60,25 +60,55 @@ Phase numbers describe intended sequencing, not commitments to bundle everything
 
 ---
 
-## 5. Constraints & gotchas
+## 5. Testing while holding is on
 
-1. **Free Apple ID limits.** Do **not** add Push Notifications or App Groups capabilities until a **paid** Apple Developer account exists — they break builds on a Personal Team. Push (Phase 3) is gated on enrollment.
-2. **Remote-URL mode.** The simulator/app shows whatever is deployed at `voiceora.io`. Local web changes are invisible until pushed **and** deployed. Any WebView-facing fix (like safe-area) lands in the **web app**, not native files.
-3. **Google OAuth breaks in the default WKWebView.** Google blocks OAuth in embedded webviews; sign-in needs an in-app-browser / `ASWebAuthenticationSession` fix (Phase 1) before the app is usable for new users.
-4. **Capacitor 8 uses SPM.** Open `App.xcodeproj`, not `App.xcworkspace`; there is no `Podfile`. CocoaPods is installed on Phil's Mac for future briefs that may need it, but this project doesn't use it.
-5. **App Store review risk (payments).** The Safari-handoff / no-IAP model must be validated against **current** Apple review rules (external-purchase / anti-steering guidelines change frequently and vary by region). Confirm the current entitlement/allowance before submission — do not assume the handoff will pass review as-is.
+Production `HOLDING_MODE=true` means a plain Capacitor load of `https://voiceora.io` shows the coming-soon page. For local Xcode / internal TestFlight builds, pick one:
+
+| Option | Env (in `.env.local`) | When to use |
+| --- | --- | --- |
+| **A — Vercel Preview** | `CAPACITOR_SERVER_URL=https://<preview>.vercel.app` | Branch Preview with no `HOLDING_MODE`; good for unmerged web changes |
+| **B — Production + bypass** | `HOLDING_BYPASS_TOKEN=<same as Vercel>` (optional alias `CAPACITOR_HOLDING_BYPASS_TOKEN`) | Shell should match live production; first load hits `https://www.voiceora.io/?preview=<token>` and sets `vo-preview` |
+
+Then:
+
+```bash
+npx cap sync ios
+# open ios/App/App.xcodeproj → ⌘R
+```
+
+`capacitor.config.ts` reads `.env.local` at sync time (Capacitor CLI does not load Next env files). Generated `ios/App/App/capacitor.config.json` is gitignored.
+
+**WKWebView note:** bypass used to set `vo-preview` via a 307 redirect. iOS WKWebView often ignores `Set-Cookie` on redirects, so the shell stayed on the holding page even with a correct `?preview=` URL. Middleware now sets the cookie on the **200** response (no redirect). That fix must be **deployed to the URL the shell loads** (Production or a Preview) before Xcode will show the real product.
+
+**Xcode after sync:** Product → Clean Build Folder, then ⌘R (stale bundles keep an old `capacitor.config.json`).
+
+**Release rule:** before any App Store or external TestFlight archive, unset `CAPACITOR_SERVER_URL` / bypass tokens and re-run `npx cap sync ios` so the binary’s `server.url` is plain `https://www.voiceora.io` with no embedded preview token.
+
+**Host note:** Production canonical URL is `www.voiceora.io` (apex `voiceora.io` returns 308). The shell defaults to `www` so the bypass cookie is set on the host the WebView actually stays on.
 
 ---
 
-## 6. Critical-path items
+## 6. Constraints & gotchas
+
+1. **Free Apple ID limits.** Do **not** add Push Notifications or App Groups capabilities until a **paid** Apple Developer account exists — they break builds on a Personal Team. Push (Phase 3) is gated on enrollment.
+2. **Remote-URL mode.** The simulator/app shows whatever is deployed at `server.url` (default `voiceora.io`). Local web changes are invisible until pushed **and** deployed. Any WebView-facing fix (like safe-area) lands in the **web app**, not native files. See §5 while holding is on.
+3. **Google OAuth breaks in the default WKWebView.** Google blocks OAuth in embedded webviews; sign-in needs an in-app-browser / `ASWebAuthenticationSession` fix (Phase 1) before the app is usable for new users.
+4. **Capacitor 8 uses SPM.** Open `App.xcodeproj`, not `App.xcworkspace`; there is no `Podfile`. CocoaPods is installed on Phil's Mac for future briefs that may need it, but this project doesn't use it.
+5. **App Store review risk (payments).** The Safari-handoff / no-IAP model must be validated against **current** Apple review rules (external-purchase / anti-steering guidelines change frequently and vary by region). Confirm the current entitlement/allowance before submission — do not assume the handoff will pass review as-is.
+6. **Stale sync.** After changing `capacitor.config.ts` or adding Capacitor plugins, always `npx cap sync ios` and rebuild in Xcode — the embedded JSON + SPM package list will otherwise lag the repo.
+
+---
+
+## 7. Critical-path items
 
 - **Apple Developer Program enrollment** — $99/yr, individual. Required for push, TestFlight, and App Store submission. Start early; enrollment can take days.
 - **Privacy policy page** — see §4. Blocks App Store copy claims about privacy.
 - **App icon** — a real icon is a hard submission requirement (see branding decision, tracked separately).
+- **Holding bypass / Preview URL for shell testing** — see §5 until `HOLDING_MODE` is unset.
 
 ---
 
-## 7. Verification split
+## 8. Verification split
 
 | Layer | Owner | Method |
 | --- | --- | --- |
