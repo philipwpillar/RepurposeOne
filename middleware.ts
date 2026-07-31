@@ -16,34 +16,40 @@ const HOLDING_ALLOWLIST = [
   "/manifest.webmanifest",
 ];
 
+const BYPASS_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: true,
+  sameSite: "lax" as const,
+  maxAge: 60 * 60 * 24 * 30,
+  path: "/",
+};
+
 export async function middleware(request: NextRequest) {
   if (process.env.HOLDING_MODE === "true") {
     const { pathname, searchParams } = request.nextUrl;
     const token = process.env.HOLDING_BYPASS_TOKEN;
 
-    // One-time bypass: /?preview=<token> sets a cookie, then strips the param.
-    if (token && searchParams.get("preview") === token) {
-      const url = request.nextUrl.clone();
-      url.searchParams.delete("preview");
-      const res = NextResponse.redirect(url);
-      res.cookies.set(HOLDING_BYPASS_COOKIE, token, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "lax",
-        maxAge: 60 * 60 * 24 * 30,
-        path: "/",
-      });
-      return res;
-    }
-
-    const bypassed =
+    // Query-param bypass must NOT use a 3xx redirect to set the cookie.
+    // WKWebView (Capacitor) often drops Set-Cookie on redirect responses, so
+    // the follow-up request has no vo-preview cookie and lands on /holding.
+    const previewMatch = Boolean(
+      token && searchParams.get("preview") === token
+    );
+    const cookieMatch =
       Boolean(token) &&
       request.cookies.get(HOLDING_BYPASS_COOKIE)?.value === token;
+    const bypassed = previewMatch || cookieMatch;
     const allowed = HOLDING_ALLOWLIST.some((p) => pathname.startsWith(p));
 
     if (!bypassed && !allowed) {
       return NextResponse.rewrite(new URL("/holding", request.url));
     }
+
+    const res = await updateSession(request);
+    if (previewMatch && token) {
+      res.cookies.set(HOLDING_BYPASS_COOKIE, token, BYPASS_COOKIE_OPTIONS);
+    }
+    return res;
   }
 
   return await updateSession(request);

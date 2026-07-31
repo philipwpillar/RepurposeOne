@@ -83,6 +83,8 @@ const config: CapacitorConfig = {
   server: {
     url: resolveServerUrl(),
     cleartext: false,
+    // Keep apex + www in-app (production 308s apex → www).
+    allowNavigation: ["voiceora.io", "www.voiceora.io", "*.voiceora.io"],
   },
 };
 

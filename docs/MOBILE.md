@@ -78,6 +78,10 @@ npx cap sync ios
 
 `capacitor.config.ts` reads `.env.local` at sync time (Capacitor CLI does not load Next env files). Generated `ios/App/App/capacitor.config.json` is gitignored.
 
+**WKWebView note:** bypass used to set `vo-preview` via a 307 redirect. iOS WKWebView often ignores `Set-Cookie` on redirects, so the shell stayed on the holding page even with a correct `?preview=` URL. Middleware now sets the cookie on the **200** response (no redirect). That fix must be **deployed to the URL the shell loads** (Production or a Preview) before Xcode will show the real product.
+
+**Xcode after sync:** Product → Clean Build Folder, then ⌘R (stale bundles keep an old `capacitor.config.json`).
+
 **Release rule:** before any App Store or external TestFlight archive, unset `CAPACITOR_SERVER_URL` / bypass tokens and re-run `npx cap sync ios` so the binary’s `server.url` is plain `https://www.voiceora.io` with no embedded preview token.
 
 **Host note:** Production canonical URL is `www.voiceora.io` (apex `voiceora.io` returns 308). The shell defaults to `www` so the bypass cookie is set on the host the WebView actually stays on.
