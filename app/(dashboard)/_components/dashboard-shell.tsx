@@ -304,8 +304,16 @@ export function DashboardShell({
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="vo-topbar chrome-dark sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border bg-card px-4">
+      <div className="relative flex min-w-0 flex-1 flex-col">
+        {/* Mobile: fixed topbar needs a flow spacer so content clears safe-area + bar.
+            Desktop keeps sticky within this column (sidebar layout). */}
+        <div
+          className="shrink-0 md:hidden"
+          style={{ height: "calc(3.5rem + env(safe-area-inset-top, 0px))" }}
+          aria-hidden
+        />
+        <header className="vo-topbar chrome-dark sticky top-0 z-40 border-b border-border bg-card pt-[env(safe-area-inset-top)] max-md:fixed max-md:inset-x-0 max-md:top-0">
+          <div className="flex h-14 items-center justify-between px-4">
           <div className="flex min-w-0 items-center gap-3">
             <Button
               variant="ghost"
@@ -358,6 +366,7 @@ export function DashboardShell({
             </Button>
             <AccountMenu user={user} usage={usage} />
           </div>
+          </div>
         </header>
 
         <main
@@ -387,7 +396,7 @@ export function DashboardShell({
             onClick={() => setMobileNavOpen(false)}
           />
           <aside
-            className="vo-slide-in-left chrome-dark absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-card shadow-xl"
+            className="vo-slide-in-left chrome-dark absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-card pt-[env(safe-area-inset-top)] shadow-xl"
             aria-label="Primary"
           >
             <div className="flex h-14 items-center justify-between border-b border-border px-4">

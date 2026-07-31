@@ -11,7 +11,7 @@ interface AuthShellProps {
 /** Shared aurora/ink chrome for sign-in, sign-up, and onboarding. */
 export function AuthShell({ children, footerNote }: AuthShellProps) {
   return (
-    <div className="chrome-dark vo-auth relative flex min-h-screen flex-col items-center justify-center px-4 py-10">
+    <div className="chrome-dark vo-auth relative flex min-h-screen flex-col items-center justify-center px-4 py-10 pt-[max(2.5rem,env(safe-area-inset-top))] pb-[max(2.5rem,env(safe-area-inset-bottom))]">
       <NativeOAuthListener />
       <div className="vo-auth-glow" aria-hidden="true" />
       <div className="relative z-10 flex w-full max-w-md flex-col items-center gap-6">
