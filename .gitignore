@@ -124,3 +124,4 @@ ios/App/build/
 e2e/.auth/
 # Phase review screenshots from e2e/capture.mjs
 e2e/captures/
+.env*
