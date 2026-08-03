@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { isNativeUserAgent, NATIVE_HEADER } from "@/lib/native-ua";
 import { updateSession } from "@/lib/supabase/middleware";
 
 const HOLDING_BYPASS_COOKIE = "vo-preview";
@@ -24,7 +25,18 @@ const BYPASS_COOKIE_OPTIONS = {
   path: "/",
 };
 
+function withNativeHeader(request: NextRequest): Headers {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set(
+    NATIVE_HEADER,
+    isNativeUserAgent(request.headers.get("user-agent")) ? "1" : "0"
+  );
+  return requestHeaders;
+}
+
 export async function middleware(request: NextRequest) {
+  const requestHeaders = withNativeHeader(request);
+
   if (process.env.HOLDING_MODE === "true") {
     const { pathname, searchParams } = request.nextUrl;
     const token = process.env.HOLDING_BYPASS_TOKEN;
@@ -42,17 +54,22 @@ export async function middleware(request: NextRequest) {
     const allowed = HOLDING_ALLOWLIST.some((p) => pathname.startsWith(p));
 
     if (!bypassed && !allowed) {
-      return NextResponse.rewrite(new URL("/holding", request.url));
+      // Rewrite still needs the native header on the request for RSC.
+      const rewriteHeaders = withNativeHeader(request);
+      const rewriteResponse = NextResponse.rewrite(new URL("/holding", request.url), {
+        request: { headers: rewriteHeaders },
+      });
+      return rewriteResponse;
     }
 
-    const res = await updateSession(request);
+    const res = await updateSession(request, requestHeaders);
     if (previewMatch && token) {
       res.cookies.set(HOLDING_BYPASS_COOKIE, token, BYPASS_COOKIE_OPTIONS);
     }
     return res;
   }
 
-  return await updateSession(request);
+  return await updateSession(request, requestHeaders);
 }
 
 export const config = {

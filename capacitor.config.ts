@@ -96,6 +96,11 @@ const config: CapacitorConfig = {
       "127.0.0.1",
     ],
   },
+  // Server-visible identity for App Store 3.1.3(f) purchase-surface strip.
+  // Token must match NATIVE_UA_TOKEN in lib/native-request.ts.
+  ios: {
+    appendUserAgent: "VoiceoraiOS/1",
+  },
 };
 
 export default config;

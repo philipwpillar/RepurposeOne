@@ -18,12 +18,14 @@ interface PhotoInputSectionProps {
   userPlan: Plan;
   disabled?: boolean;
   onReadyChange: (ready: PhotoInputReady | null) => void;
+  native?: boolean;
 }
 
 export default function PhotoInputSection({
   userPlan,
   disabled = false,
   onReadyChange,
+  native = false,
 }: PhotoInputSectionProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [photo, setPhoto] = useState<PhotoInputState>(EMPTY_PHOTO_INPUT_STATE);
@@ -189,7 +191,7 @@ export default function PhotoInputSection({
         </div>
       ) : null}
 
-      <PhotoUpgradeGate plan={userPlan} />
+      <PhotoUpgradeGate plan={userPlan} native={native} />
     </div>
   );
 }
