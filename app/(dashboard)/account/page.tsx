@@ -11,6 +11,7 @@ import { formatUsageReset } from "@/lib/billing/format-usage-period";
 import { CheckoutBanner } from "@/components/billing/checkout-banner";
 import { UpgradePlans } from "@/components/billing/UpgradePlans";
 import { PageHeader } from "@/components/ui/page-header";
+import { isNativeRequest } from "@/lib/native-request";
 import { planLabel } from "@/lib/plan-label";
 import { ProfileSection } from "./_components/ProfileSection";
 import { AppearanceSection } from "./_components/AppearanceSection";
@@ -41,8 +42,8 @@ const SECTION_NAV = [
   { href: "#appearance", label: "Appearance" },
   { href: "#profile", label: "Profile" },
   { href: "#usage", label: "Usage" },
-  { href: "#plans", label: "Plans" },
-  { href: "#billing", label: "Billing" },
+  { href: "#plans", label: "Plans", purchase: true },
+  { href: "#billing", label: "Billing", purchase: true },
   { href: "#voice", label: "Voice" },
   { href: "#danger", label: "Delete" },
 ] as const;
@@ -105,12 +106,18 @@ export default async function AccountPage() {
   const remaining = Math.max(0, usage.limit - usage.used);
   const resetsOn = formatUsageReset(usage.period_end);
   const paymentFailed = Boolean(profile?.payment_failed_at);
+  const native = await isNativeRequest();
+  const sectionNav = SECTION_NAV.filter((item) =>
+    native ? !("purchase" in item && item.purchase) : true
+  );
 
   return (
     <div className="mx-auto max-w-lg space-y-10">
-      <Suspense fallback={null}>
-        <CheckoutBanner />
-      </Suspense>
+      {!native ? (
+        <Suspense fallback={null}>
+          <CheckoutBanner />
+        </Suspense>
+      ) : null}
 
       <PageHeader
         title="Account"
@@ -127,12 +134,18 @@ export default async function AccountPage() {
           </span>
         </p>
         {paymentFailed ? (
-          <p className="mt-1 text-xs text-destructive">
-            Payment failed - {" "}
-            <Link href="#billing" className="underline underline-offset-2">
-              update payment method
-            </Link>
-          </p>
+          native ? (
+            <p className="mt-1 text-xs text-destructive">
+              There&apos;s a problem with your subscription.
+            </p>
+          ) : (
+            <p className="mt-1 text-xs text-destructive">
+              Payment failed -{" "}
+              <Link href="#billing" className="underline underline-offset-2">
+                update payment method
+              </Link>
+            </p>
+          )
         ) : null}
       </div>
 
@@ -140,7 +153,7 @@ export default async function AccountPage() {
         aria-label="Account sections"
         className="flex flex-wrap gap-2 border-b border-border pb-3"
       >
-        {SECTION_NAV.map((item) => (
+        {sectionNav.map((item) => (
           <a
             key={item.href}
             href={item.href}
@@ -160,23 +173,33 @@ export default async function AccountPage() {
         signedInVia={signedInViaLabel(user.identities)}
       />
 
-      <UsageSection usage={usage} bundleUsed={bundleUsed} />
+      <UsageSection usage={usage} bundleUsed={bundleUsed} native={native} />
 
-      <section id="plans" className="space-y-4 scroll-mt-20">
-        <div>
-          <h2 className="text-lg font-semibold">Plans</h2>
+      {native ? (
+        <section id="plans" className="space-y-2 scroll-mt-20">
+          <h2 className="text-lg font-semibold">Plan</h2>
           <p className="text-sm text-muted-foreground">
-            {usage.plan === "free"
-              ? "Choose a plan to unlock more generations each month."
-              : `You're on ${planLabel(usage.plan)}. Upgrade for more capacity or Moment Bundles.`}
+            Plan: {planLabel(usage.plan)}
           </p>
-        </div>
-        <UpgradePlans currentPlan={usage.plan} />
-      </section>
+        </section>
+      ) : (
+        <section id="plans" className="space-y-4 scroll-mt-20">
+          <div>
+            <h2 className="text-lg font-semibold">Plans</h2>
+            <p className="text-sm text-muted-foreground">
+              {usage.plan === "free"
+                ? "Choose a plan to unlock more generations each month."
+                : `You're on ${planLabel(usage.plan)}. Upgrade for more capacity or Moment Bundles.`}
+            </p>
+          </div>
+          <UpgradePlans currentPlan={usage.plan} />
+        </section>
+      )}
 
       <BillingSection
         currentPlan={usage.plan}
         paymentFailed={paymentFailed}
+        native={native}
       />
 
       <BrandVoiceSummary

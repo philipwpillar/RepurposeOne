@@ -19,6 +19,7 @@ import { ScrollReveal } from "@/components/landing/scroll-reveal";
 import { VoiceLab } from "@/components/landing/voice-lab";
 import { VoLogoMark } from "@/components/landing/vo-logo-mark";
 import { PLAN_LIMITS } from "@/lib/config";
+import { isNativeRequest } from "@/lib/native-request";
 import "./landing.css";
 
 export const metadata: Metadata = {
@@ -32,6 +33,7 @@ export default async function HomePage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const native = await isNativeRequest();
 
   return (
     <main className="vo-landing">
@@ -253,9 +255,11 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <ScrollReveal>
-        <LandingPricing signedIn={Boolean(user)} />
-      </ScrollReveal>
+      {!native ? (
+        <ScrollReveal>
+          <LandingPricing signedIn={Boolean(user)} />
+        </ScrollReveal>
+      ) : null}
 
       <section className="final-cta">
         <div className="aurora-glow" aria-hidden="true" />
@@ -291,8 +295,12 @@ export default async function HomePage() {
           </div>
           <div>
             <Link href="#how">How it works</Link>
-            <span className="sep">·</span>
-            <Link href="#pricing">Pricing</Link>
+            {!native ? (
+              <>
+                <span className="sep">·</span>
+                <Link href="#pricing">Pricing</Link>
+              </>
+            ) : null}
             <span className="sep">·</span>
             <Link href="/privacy">Privacy</Link>
             <span className="sep">·</span>

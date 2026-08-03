@@ -7,11 +7,13 @@ import type { Plan } from "@/types";
 type BillingSectionProps = {
   currentPlan: Plan;
   paymentFailed: boolean;
+  native?: boolean;
 };
 
 export function BillingSection({
   currentPlan,
   paymentFailed,
+  native = false,
 }: BillingSectionProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +40,26 @@ export function BillingSection({
       );
       setLoading(false);
     }
+  }
+
+  if (native) {
+    return (
+      <section id="billing" className="space-y-4 scroll-mt-20">
+        <div>
+          <h2 className="text-lg font-semibold">Billing</h2>
+          <p className="text-sm text-muted-foreground">
+            Your current plan is shown under Plan &amp; usage.
+          </p>
+        </div>
+        {paymentFailed ? (
+          <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3">
+            <p className="text-sm text-destructive">
+              There&apos;s a problem with your subscription.
+            </p>
+          </div>
+        ) : null}
+      </section>
+    );
   }
 
   return (

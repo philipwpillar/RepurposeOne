@@ -50,8 +50,19 @@ function safeRedirectUrl(
   }
 }
 
-export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
+/**
+ * Optional `requestHeaders` must be forwarded on every `NextResponse.next`
+ * construction (initial + cookie setAll) or custom headers never reach RSC.
+ */
+export async function updateSession(
+  request: NextRequest,
+  requestHeaders?: Headers
+) {
+  const nextOpts = requestHeaders
+    ? { request: { headers: requestHeaders } }
+    : { request };
+
+  let supabaseResponse = NextResponse.next(nextOpts);
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -65,7 +76,7 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
-          supabaseResponse = NextResponse.next({ request });
+          supabaseResponse = NextResponse.next(nextOpts);
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           );

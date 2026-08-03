@@ -190,6 +190,7 @@ interface DashboardShellProps {
   user: DashboardUser;
   usage: UsageInfo;
   paymentFailed?: boolean;
+  native?: boolean;
 }
 
 const SIDEBAR_COLLAPSED_KEY = "vo-sidebar-collapsed";
@@ -199,6 +200,7 @@ export function DashboardShell({
   user,
   usage,
   paymentFailed = false,
+  native = false,
 }: DashboardShellProps) {
   const pathname = usePathname();
   const { setPaletteOpen } = useShortcuts();
@@ -364,7 +366,7 @@ export function DashboardShell({
                 ⌘K
               </kbd>
             </Button>
-            <AccountMenu user={user} usage={usage} />
+            <AccountMenu user={user} usage={usage} native={native} />
           </div>
           </div>
         </header>
@@ -378,7 +380,7 @@ export function DashboardShell({
           )}
         >
           <RouteViewTransition>
-            {paymentFailed ? <PaymentFailedBanner /> : null}
+            {paymentFailed ? <PaymentFailedBanner native={native} /> : null}
             {children}
           </RouteViewTransition>
         </main>

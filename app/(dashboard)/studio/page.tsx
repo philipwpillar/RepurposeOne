@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { checkUsageLimit } from "@/lib/usage";
 import { STUDIO_EXAMPLE_INPUT, getStudioTemplate } from "@/lib/repurpose/templates";
+import { isNativeRequest } from "@/lib/native-request";
 import RepurposeWorkspace from "./_components/RepurposeWorkspace";
 
 export default async function StudioPage({
@@ -71,6 +72,7 @@ export default async function StudioPage({
         repurposesLimit={usage.limit}
         userPlan={usage.plan}
         brandVoice={defaultVoice}
+        native={await isNativeRequest()}
       />
     </Suspense>
   );

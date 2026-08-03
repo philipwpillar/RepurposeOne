@@ -62,12 +62,14 @@ interface BundleWorkspaceProps {
   pastBundles: PastBundleItem[];
   userPlan: Plan;
   viewClipBundleId?: string;
+  native?: boolean;
 }
 
 export default function BundleWorkspace({
   pastBundles,
   userPlan,
   viewClipBundleId,
+  native = false,
 }: BundleWorkspaceProps) {
   const [photos, setPhotos] = useState<BundlePhotoItem[]>([]);
   const [videos, setVideos] = useState<BundleVideoItem[]>([]);
@@ -522,8 +524,9 @@ export default function BundleWorkspace({
           <UpgradePrompt
             gate={bundleErrorUpgradeGate(error.code)!}
             plan={userPlan}
-            message={error.message}
+            message={native ? undefined : error.message}
             billingHint={error.billingHint}
+            native={native}
             className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-3"
           />
         ) : error ? (

@@ -30,20 +30,28 @@ import type { UsageInfo } from "@/types";
 interface AccountMenuProps {
   user: DashboardUser;
   usage: UsageInfo;
+  native?: boolean;
 }
 
 const ACCOUNT_LINKS = [
   { href: "/account#profile", label: "Profile", icon: User },
   { href: "/account#appearance", label: "Appearance", icon: Palette },
   { href: "/account#usage", label: "Usage", icon: Gauge },
-  { href: "/account#plans", label: "Plans", icon: Sparkles },
-  { href: "/account#billing", label: "Billing", icon: CreditCard },
+  { href: "/account#plans", label: "Plans", icon: Sparkles, purchase: true },
+  { href: "/account#billing", label: "Billing", icon: CreditCard, purchase: true },
 ] as const;
 
-export function AccountMenu({ user, usage }: AccountMenuProps) {
+export function AccountMenu({
+  user,
+  usage,
+  native = false,
+}: AccountMenuProps) {
   const signOut = useSignOut();
   const atLimit = usage.used >= usage.limit;
   const usagePercent = Math.min(100, (usage.used / usage.limit) * 100);
+  const links = ACCOUNT_LINKS.filter((link) =>
+    native ? !("purchase" in link && link.purchase) : true
+  );
 
   return (
     <DropdownMenu modal={false}>
@@ -104,18 +112,20 @@ export function AccountMenu({ user, usage }: AccountMenuProps) {
                 style={{ width: `${usagePercent}%` }}
               />
             </div>
-            <Link
-              href="/account#plans"
-              className="inline-block text-[11px] font-medium text-primary hover:text-primary/80"
-            >
-              Upgrade →
-            </Link>
+            {!native ? (
+              <Link
+                href="/account#plans"
+                className="inline-block text-[11px] font-medium text-primary hover:text-primary/80"
+              >
+                Upgrade →
+              </Link>
+            ) : null}
           </div>
         </div>
 
         <DropdownMenuGroup className="p-1">
           <DropdownMenuLabel>Account</DropdownMenuLabel>
-          {ACCOUNT_LINKS.map(({ href, label, icon: Icon }) => (
+          {links.map(({ href, label, icon: Icon }) => (
             <DropdownMenuItem key={href} asChild>
               <Link href={href} className="gap-2">
                 <Icon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />

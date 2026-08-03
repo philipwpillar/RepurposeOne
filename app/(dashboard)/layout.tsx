@@ -7,6 +7,7 @@ import { ShortcutProvider } from "@/components/shortcut-provider";
 import { CommandPalette } from "@/components/command-palette";
 import { ShortcutSheet } from "@/components/shortcut-sheet";
 import { createClient } from "@/lib/supabase/server";
+import { isNativeRequest } from "@/lib/native-request";
 import { checkUsageLimit } from "@/lib/usage";
 
 function getDisplayName(metadata: Record<string, unknown> | undefined, email: string | undefined) {
@@ -59,6 +60,7 @@ export default async function DashboardLayout({
   };
 
   const paymentFailed = Boolean(profile?.payment_failed_at);
+  const native = await isNativeRequest();
 
   return (
     <ShortcutProvider>
@@ -66,6 +68,7 @@ export default async function DashboardLayout({
         user={dashboardUser}
         usage={usage}
         paymentFailed={paymentFailed}
+        native={native}
       >
         {children}
       </DashboardShell>

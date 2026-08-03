@@ -300,6 +300,7 @@ interface RepurposeWorkspaceProps {
   userPlan: Plan;
   brandVoice?: BrandVoiceProp | null;
   onTwitterGenerate?: (output: string) => void;
+  native?: boolean;
 }
 
 export default function RepurposeWorkspace({
@@ -310,6 +311,7 @@ export default function RepurposeWorkspace({
   userPlan,
   brandVoice = null,
   onTwitterGenerate,
+  native = false,
 }: RepurposeWorkspaceProps) {
   const searchParams = useSearchParams();
   const useStream =
@@ -1145,6 +1147,7 @@ export default function RepurposeWorkspace({
           userPlan={userPlan}
           disabled={isAnyLoading}
           onReadyChange={setPhotoInput}
+          native={native}
         />
       ) : isLinkMode ? (
         <LinkSourceCard
@@ -1192,13 +1195,13 @@ export default function RepurposeWorkspace({
       </div>
 
       {(atLimit || reactiveUpgradeGate === "monthly_limit") && (
-        <UpgradePrompt gate="monthly_limit" plan={userPlan} />
+        <UpgradePrompt gate="monthly_limit" plan={userPlan} native={native} />
       )}
       {reactiveUpgradeGate === "vision" && (
-        <UpgradePrompt gate="vision" plan={userPlan} />
+        <UpgradePrompt gate="vision" plan={userPlan} native={native} />
       )}
       {reactiveUpgradeGate === "rate_limit" && (
-        <UpgradePrompt gate="rate_limit" plan={userPlan} />
+        <UpgradePrompt gate="rate_limit" plan={userPlan} native={native} />
       )}
 
       <StudioFormatPicker

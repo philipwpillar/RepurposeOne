@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/ui/page-header";
+import { isNativeRequest } from "@/lib/native-request";
 import DashboardRecentEmpty from "./_components/DashboardRecentEmpty";
 import {
   buildDashboardNextActions,
@@ -82,6 +83,7 @@ export default async function DashboardPage() {
   const paymentFailed = Boolean(profile?.payment_failed_at);
   const onboardingComplete = Boolean(profile?.onboarding_completed_at);
   const resetsOn = formatUsageReset(usage.period_end);
+  const native = await isNativeRequest();
 
   const nextActions = buildDashboardNextActions({
     paymentFailed,
@@ -89,22 +91,25 @@ export default async function DashboardPage() {
     hasVoice,
     hasRecent,
     onboardingComplete,
+    native,
   });
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
-      <Suspense fallback={null}>
-        <CheckoutBanner />
-      </Suspense>
+      {!native ? (
+        <Suspense fallback={null}>
+          <CheckoutBanner />
+        </Suspense>
+      ) : null}
 
       <PageHeader
         title="Dashboard"
         description="What to do next - create, review, or fix billing and limits."
         actions={
           <Button asChild size="lg">
-            <Link href={atLimit ? "/account#plans" : "/studio"}>
+            <Link href={atLimit && !native ? "/account#plans" : "/studio"}>
               <Plus />
-              {atLimit ? "Upgrade to continue" : "New Repurpose"}
+              {atLimit && !native ? "Upgrade to continue" : "New Repurpose"}
             </Link>
           </Button>
         }

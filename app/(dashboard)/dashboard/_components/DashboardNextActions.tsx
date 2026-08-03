@@ -16,8 +16,8 @@ export type DashboardNextAction = {
   kind: NextActionKind;
   title: string;
   description: string;
-  href: string;
-  cta: string;
+  href?: string;
+  cta?: string;
   tone?: "default" | "warning" | "destructive";
 };
 
@@ -103,27 +103,38 @@ export function DashboardNextActions({
               </p>
             </div>
           </div>
-          <Button asChild size="sm" className="shrink-0">
-            <Link href={primary.href}>
-              {primary.cta}
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </Button>
+          {primary.href && primary.cta ? (
+            <Button asChild size="sm" className="shrink-0">
+              <Link href={primary.href}>
+                {primary.cta}
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          ) : null}
         </div>
       ) : null}
 
       {secondary.length > 0 ? (
         <div className="grid gap-2 sm:grid-cols-2">
-          {secondary.map((action) => (
-            <Link
-              key={action.kind}
-              href={action.href}
-              className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-3 py-3 text-sm transition-colors hover:bg-muted/40"
-            >
-              <span className="font-medium text-foreground">{action.title}</span>
-              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-            </Link>
-          ))}
+          {secondary.map((action) =>
+            action.href ? (
+              <Link
+                key={action.kind}
+                href={action.href}
+                className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-3 py-3 text-sm transition-colors hover:bg-muted/40"
+              >
+                <span className="font-medium text-foreground">{action.title}</span>
+                <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              </Link>
+            ) : (
+              <div
+                key={action.kind}
+                className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-3 py-3 text-sm"
+              >
+                <span className="font-medium text-foreground">{action.title}</span>
+              </div>
+            )
+          )}
         </div>
       ) : null}
     </div>
@@ -136,30 +147,50 @@ export function buildDashboardNextActions(input: {
   hasVoice: boolean;
   hasRecent: boolean;
   onboardingComplete: boolean;
+  native?: boolean;
 }): DashboardNextAction[] {
   const actions: DashboardNextAction[] = [];
+  const native = Boolean(input.native);
 
   if (input.paymentFailed) {
-    actions.push({
-      kind: "payment_failed",
-      title: "Update your payment method",
-      description:
-        "Your latest payment failed. Fix billing to avoid interruption.",
-      href: "/account#billing",
-      cta: "Open billing",
-      tone: "destructive",
-    });
+    if (native) {
+      actions.push({
+        kind: "payment_failed",
+        title: "There's a problem with your subscription.",
+        description: "Some features may be unavailable until this is resolved.",
+        tone: "destructive",
+      });
+    } else {
+      actions.push({
+        kind: "payment_failed",
+        title: "Update your payment method",
+        description:
+          "Your latest payment failed. Fix billing to avoid interruption.",
+        href: "/account#billing",
+        cta: "Open billing",
+        tone: "destructive",
+      });
+    }
   }
 
   if (input.atLimit) {
-    actions.push({
-      kind: "at_limit",
-      title: "You've used this month's generations",
-      description: "Upgrade to keep creating, or wait until usage resets.",
-      href: "/account#plans",
-      cta: "View plans",
-      tone: "warning",
-    });
+    if (native) {
+      actions.push({
+        kind: "at_limit",
+        title: "You've reached this month's generation limit.",
+        description: "Your usage resets at the start of the next billing period.",
+        tone: "warning",
+      });
+    } else {
+      actions.push({
+        kind: "at_limit",
+        title: "You've used this month's generations",
+        description: "Upgrade to keep creating, or wait until usage resets.",
+        href: "/account#plans",
+        cta: "View plans",
+        tone: "warning",
+      });
+    }
   }
 
   if (!input.hasVoice) {

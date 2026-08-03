@@ -22,7 +22,7 @@ This is an initiative on top of the live web product. It must **not** slow the r
 | Wrapper | **Capacitor 8** (SPM, **not** CocoaPods) | Thin native shell over the existing web app; no second frontend to maintain |
 | Load strategy | **Remote-URL mode** — `server.url` → live Vercel site | One codebase; the app always shows production. No bundled static export in v1 |
 | Push | **OneSignal** (over raw APNs), **generation-complete only** | Managed APNs, simpler tokens; notifications limited to "your content is ready" — no marketing spam in v1 |
-| Payments | **Safari-handoff to web Stripe Checkout** — no Apple IAP | Avoids Apple's 30% cut and IAP integration. See §5 review risk |
+| Payments | **3.1.3(f) companion** — no IAP, no in-app purchase CTAs; subscribe on web only | Avoids Apple's cut and IAP; requires server-side purchase-surface strip |
 | Share extension | **In v1** | Core value: repurpose from any app's share sheet |
 | Android | **Deferred** post-iOS | Prove demand on one platform first |
 | Bundle ID | `com.voiceora.io` | — |
@@ -51,7 +51,7 @@ Phase numbers describe intended sequencing, not commitments to bundle everything
 
 - **Phase 0 — Shell (DONE):** Capacitor scaffold + safe-area fix.
 - **Phase 1 — Make it usable:** Google OAuth fix (sign-in is broken in the default WKWebView — see §5), then app chrome (custom icon, splash, optional native tab bar).
-- **Phase 2 — Monetise:** Safari-handoff to Stripe Checkout so users can subscribe from the app.
+- **Phase 2 — Monetise (revised for 3.1.3(f)):** iOS shell is a **free companion** to the web product. No in-app purchase CTAs, prices, Stripe Checkout, or billing portal. Subscribe only on the web (Safari / desktop). Server detects the shell via `appendUserAgent` + `x-vo-native` and strips purchase surfaces from SSR HTML.
 - **Phase 3 — Engagement:** OneSignal push (generation-complete), share extension, and **"Open in Platform" deep links** (confirmed Phase 3 — not earlier).
 
 **Note:** Web acceptance Phase 6 shipped BottomTabs / haptics / domain cutover / manifest — that is the **web UX** half of "make it usable," not a substitute for native OAuth (still Phase 1 above).
@@ -94,7 +94,7 @@ npx cap sync ios
 2. **Remote-URL mode.** The simulator/app shows whatever is deployed at `server.url` (default `voiceora.io`). Local web changes are invisible until pushed **and** deployed. Any WebView-facing fix (like safe-area) lands in the **web app**, not native files. See §5 while holding is on.
 3. **Google OAuth breaks in the default WKWebView.** Google blocks OAuth in embedded webviews; sign-in needs an in-app-browser / `ASWebAuthenticationSession` fix (Phase 1) before the app is usable for new users.
 4. **Capacitor 8 uses SPM.** Open `App.xcodeproj`, not `App.xcworkspace`; there is no `Podfile`. CocoaPods is installed on Phil's Mac for future briefs that may need it, but this project doesn't use it.
-5. **App Store review risk (payments).** The Safari-handoff / no-IAP model must be validated against **current** Apple review rules (external-purchase / anti-steering guidelines change frequently and vary by region). Confirm the current entitlement/allowance before submission — do not assume the handoff will pass review as-is.
+5. **App Store review (payments).** The iOS shell relies on Guideline **3.1.3(f)** Free Stand-alone Apps: no purchasing and no CTAs to purchase outside the app. Do not add Safari-handoff subscribe buttons, US-storefront conditionals, or IAP without a new brief. Confirm current App Review Guidelines before each submission.
 6. **Stale sync.** After changing `capacitor.config.ts` or adding Capacitor plugins, always `npx cap sync ios` and rebuild in Xcode — the embedded JSON + SPM package list will otherwise lag the repo.
 
 ---

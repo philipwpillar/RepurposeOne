@@ -8,9 +8,14 @@ import type { UsageInfo } from "@/types";
 type UsageSectionProps = {
   usage: UsageInfo;
   bundleUsed: number | null;
+  native?: boolean;
 };
 
-export function UsageSection({ usage, bundleUsed }: UsageSectionProps) {
+export function UsageSection({
+  usage,
+  bundleUsed,
+  native = false,
+}: UsageSectionProps) {
   const remaining = Math.max(0, usage.limit - usage.used);
   const resetsOn = formatUsageReset(usage.period_end);
   const pct = Math.min(100, Math.round((usage.used / Math.max(1, usage.limit)) * 100));
@@ -68,12 +73,14 @@ export function UsageSection({ usage, bundleUsed }: UsageSectionProps) {
             <p className="mt-1 text-sm text-muted-foreground">
               Available on Pro Plus
             </p>
-            <Link
-              href="#plans"
-              className="mt-2 inline-block text-sm font-medium text-primary hover:text-primary/80"
-            >
-              View plans →
-            </Link>
+            {!native ? (
+              <Link
+                href="#plans"
+                className="mt-2 inline-block text-sm font-medium text-primary hover:text-primary/80"
+              >
+                View plans →
+              </Link>
+            ) : null}
           </div>
         )}
         <div className="rounded-2xl border border-border p-4">

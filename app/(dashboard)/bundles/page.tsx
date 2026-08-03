@@ -5,6 +5,7 @@ import { checkUsageLimit } from "@/lib/usage";
 import BundleUpgradeGate from "./_components/BundleUpgradeGate";
 import BundleWorkspace from "./_components/BundleWorkspace";
 import type { PastBundleItem } from "./_components/PastBundlesList";
+import { isNativeRequest } from "@/lib/native-request";
 
 const clipBundleParamSchema = z.string().uuid();
 
@@ -31,9 +32,10 @@ export default async function BundlesPage({
   if (!user) return null;
 
   const { usage } = await checkUsageLimit(supabase, user.id);
+  const native = await isNativeRequest();
 
   if (!planAllowsBundles(usage.plan)) {
-    return <BundleUpgradeGate />;
+    return <BundleUpgradeGate native={native} />;
   }
 
   if (viewClipBundleId) {
@@ -129,6 +131,7 @@ export default async function BundlesPage({
       pastBundles={pastBundles}
       userPlan={usage.plan}
       viewClipBundleId={viewClipBundleId}
+      native={native}
     />
   );
 }

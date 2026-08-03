@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
  * Non-dismissible - no X, no localStorage. Cleared only when Stripe clears
  * payment_failed_* on the profile via webhook.
  */
-export function PaymentFailedBanner() {
+export function PaymentFailedBanner({ native = false }: { native?: boolean }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,6 +27,18 @@ export function PaymentFailedBanner() {
       setError(err instanceof Error ? err.message : "Could not open billing portal");
       setLoading(false);
     }
+  }
+
+  if (native) {
+    return (
+      <Alert variant="destructive" className="mb-4 md:mb-6">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Subscription issue</AlertTitle>
+        <AlertDescription>
+          <p>There&apos;s a problem with your subscription.</p>
+        </AlertDescription>
+      </Alert>
+    );
   }
 
   return (
