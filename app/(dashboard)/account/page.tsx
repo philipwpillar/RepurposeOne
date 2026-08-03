@@ -173,6 +173,17 @@ export default async function AccountPage() {
         signedInVia={signedInViaLabel(user.identities)}
       />
 
+      <p className="text-sm text-muted-foreground">
+        For account help, email{" "}
+        <a
+          href="mailto:support@voiceora.io"
+          className="text-foreground underline underline-offset-2 hover:text-foreground/80"
+        >
+          support@voiceora.io
+        </a>
+        .
+      </p>
+
       <UsageSection usage={usage} bundleUsed={bundleUsed} native={native} />
 
       {native ? (
