@@ -45,7 +45,7 @@ const GATE_COPY: Record<
   },
 };
 
-/** Approved App Store 3.1.3(f) copy — states the fact, gives no destination. */
+/** Approved App Store 3.1.3(f) copy - states the fact, gives no destination. */
 const NATIVE_GATE_COPY: Record<
   UpgradeGate,
   { title: string; body: string }
