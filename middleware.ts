@@ -4,10 +4,23 @@ import { updateSession } from "@/lib/supabase/middleware";
 
 const HOLDING_BYPASS_COOKIE = "vo-preview";
 
+/**
+ * Paths that must never be rewritten by holding mode and never incur a
+ * Supabase session round-trip. Each authenticates itself:
+ *   /api/stripe/webhook - Stripe signature verification
+ *   /api/cron           - CRON_SECRET bearer token
+ *
+ * Prefix-matched. Do not shorten to the stripe API root: that would also
+ * expose checkout and portal, which must stay behind holding.
+ */
+const SESSION_EXEMPT_PREFIXES = ["/api/stripe/webhook", "/api/cron"];
+
 const HOLDING_ALLOWLIST = [
   "/holding",
   "/auth/callback",
-  "/api/cron",
+  "/api/cron", // redundant with SESSION_EXEMPT_PREFIXES; kept as belt-and-braces
+  "/privacy",
+  "/terms",
   "/opengraph-image",
   "/twitter-image",
   "/icon",
@@ -36,9 +49,14 @@ function withNativeHeader(request: NextRequest): Headers {
 
 export async function middleware(request: NextRequest) {
   const requestHeaders = withNativeHeader(request);
+  const { pathname } = request.nextUrl;
+
+  if (SESSION_EXEMPT_PREFIXES.some((p) => pathname.startsWith(p))) {
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  }
 
   if (process.env.HOLDING_MODE === "true") {
-    const { pathname, searchParams } = request.nextUrl;
+    const { searchParams } = request.nextUrl;
     const token = process.env.HOLDING_BYPASS_TOKEN;
 
     // Query-param bypass must NOT use a 3xx redirect to set the cookie.

@@ -78,6 +78,14 @@ run_floor(){
   # Typographic dashes banned in app/components (UI + CSS). lib/ai/strip-em-dashes.ts
   # is intentionally out of scope so the stripper can still match — – ―.
   assert "no em/en/horizontal dashes in UI"  "$(n '[—–―]' $A $C)" eq 0
+  # Holding / auth surface regression gates (B2, 2026-08-04).
+  # Fixed-string '"/api/stripe"' must stay eq 0 so checkout/portal are never
+  # allowlisted; '/api/stripe/webhook' is a longer literal and does not match.
+  assert "webhook exempt present"           "$(n '/api/stripe/webhook' middleware.ts)" ge 1
+  assert "privacy allowlisted"              "$(n '/privacy' middleware.ts)" ge 1
+  assert "terms allowlisted"                "$(n '/terms' middleware.ts)" ge 1
+  assert "no over-broad stripe prefix"      "$(n -F '"/api/stripe"' middleware.ts)" eq 0
+  assert "bundles protected"                "$(n '/bundles' lib/supabase/middleware.ts)" ge 1
   # Studio generate fence (ratified 2026-07-23; floor re-spec proposed 2026-07-30).
   # Floors use current counts (ge N) so UI additions around the fence do not
   # break the gate, while deletions of usage-sync or error classes still fail.
