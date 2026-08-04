@@ -81,7 +81,7 @@ run_floor(){
   # Holding / auth surface regression gates (B2, 2026-08-04).
   # Fixed-string '"/api/stripe"' must stay eq 0 so checkout/portal are never
   # allowlisted; '/api/stripe/webhook' is a longer literal and does not match.
-  assert "webhook exempt present"           "$(n '/api/stripe/webhook' middleware.ts)" ge 1
+  assert "webhook exempt present"           "$(n '/api/stripe/webhook' middleware.ts)" ge 2
   assert "privacy allowlisted"              "$(n '/privacy' middleware.ts)" ge 1
   assert "terms allowlisted"                "$(n '/terms' middleware.ts)" ge 1
   assert "no over-broad stripe prefix"      "$(n -F '"/api/stripe"' middleware.ts)" eq 0
