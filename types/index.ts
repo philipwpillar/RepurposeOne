@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   INPUT_CONTENT_MAX_LENGTH,
   INPUT_CONTENT_MIN_LENGTH,
+  USER_COMMENTARY_MAX_LENGTH,
 } from "@/lib/config";
 import {
   PHOTO_CONTEXT_MAX_LENGTH,
@@ -141,6 +142,11 @@ export const TextGenerateRequestSchema = GenerateRequestSharedSchema.extend({
       `Source content must be at most ${INPUT_CONTENT_MAX_LENGTH.toLocaleString()} characters`
     ),
   refinement: z.string().trim().min(1).max(200).optional(),
+  user_commentary: z
+    .string()
+    .trim()
+    .max(USER_COMMENTARY_MAX_LENGTH)
+    .optional(),
 });
 
 export const ImageGenerateRequestSchema = GenerateRequestSharedSchema.extend({

@@ -37,6 +37,7 @@ import LinkSourceCard from "./LinkSourceCard";
 import PhotoInputSection from "./PhotoInputSection";
 import StudioTemplatePicker from "./StudioTemplatePicker";
 import TextSourceCard from "./TextSourceCard";
+import UserCommentaryField from "./UserCommentaryField";
 import VoiceSetupBanner from "./VoiceSetupBanner";
 import StudioFormatPicker from "./StudioFormatPicker";
 import StudioRunSettings from "./StudioRunSettings";
@@ -322,6 +323,7 @@ export default function RepurposeWorkspace({
 
   const [inputSummary, setInputSummary] = useState(initialInput);
   const [inputMode, setInputMode] = useState<InputMode>("paste");
+  const [userCommentary, setUserCommentary] = useState("");
   const [photoInput, setPhotoInput] = useState<PhotoInputReady | null>(null);
   const [pendingMode, setPendingMode] = useState<InputMode | null>(null);
 
@@ -541,7 +543,8 @@ export default function RepurposeWorkspace({
       targetFormat: TargetFormat,
       targetWords: number,
       voiceVariant: VoiceVariantId,
-      generationId?: string
+      generationId?: string,
+      userCommentary?: string
     ): Promise<{ output: RepurposeOutput; usage: UsageInfo; repurposeId: string }> => {
       const body: Record<string, unknown> = {
         input_type: "paste",
@@ -567,6 +570,11 @@ export default function RepurposeWorkspace({
 
       if (generationId) {
         body.generation_id = generationId;
+      }
+
+      const trimmedCommentary = userCommentary?.trim();
+      if (trimmedCommentary) {
+        body.user_commentary = trimmedCommentary;
       }
 
       const response = await fetch("/api/generate", {
@@ -743,6 +751,7 @@ export default function RepurposeWorkspace({
       return;
     }
 
+    setUserCommentary("");
     setInputMode(mode);
   };
 
@@ -753,6 +762,7 @@ export default function RepurposeWorkspace({
     }
     if (pendingMode === "photo") {
       setInputSummary("");
+      setUserCommentary("");
     }
     setInputMode(pendingMode);
     setPendingMode(null);
@@ -863,6 +873,7 @@ export default function RepurposeWorkspace({
               format === "x_thread" ? wordsToTweets(targetWords) : undefined,
             generationId: options?.generationId,
             refinement: options?.refinement,
+            userCommentary: userCommentary.trim() || undefined,
             signal: controller.signal,
             onPartial: (partial) => applyPartialOutput(format, partial),
           });
@@ -874,7 +885,8 @@ export default function RepurposeWorkspace({
             format,
             targetWords,
             voiceVariants[format],
-            options?.generationId
+            options?.generationId,
+            userCommentary.trim() || undefined
           );
           applyOutput(format, output, repurposeId);
           setUsedCount(usage.used);
@@ -903,6 +915,7 @@ export default function RepurposeWorkspace({
       lengthWords,
       resolveGenerateError,
       useStream,
+      userCommentary,
       voiceVariants,
     ]
   );
@@ -1169,6 +1182,14 @@ export default function RepurposeWorkspace({
           />
         </>
       )}
+
+      {!isPhotoMode ? (
+        <UserCommentaryField
+          value={userCommentary}
+          disabled={isAnyLoading}
+          onChange={setUserCommentary}
+        />
+      ) : null}
 
       <ProcessingTrustNote />
 

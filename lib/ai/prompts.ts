@@ -17,6 +17,8 @@ export interface PromptContext {
   targetWords?: number;
   /** Optional direction for a newly generated variant. */
   refinement?: string;
+  /** Optional paste/link angle / opinion for this run (not part of source). */
+  userCommentary?: string;
   /** Optional voice exemplars from rated/edited past outputs (Brief S2). */
   exemplarsText?: string;
 }
@@ -152,6 +154,9 @@ export function buildGenerationPrompt(ctx: PromptContext): {
   const wordTarget = ctx.targetWords ?? getDefaultWords(ctx.targetFormat);
   const tweetTarget = ctx.targetTweets ?? wordsToTweets(wordTarget);
   const wordBudget = `- Target approximately ${wordTarget} words for the main body (respect hard character caps).`;
+  const commentaryBlock = ctx.userCommentary?.trim()
+    ? `\n\nUser commentary (authoritative angle and opinion - shape the take and emphasis from this; stay factually faithful to the source; do not invent facts the source does not support):\n${ctx.userCommentary.trim()}`
+    : "";
   const refinementBlock = ctx.refinement?.trim()
     ? `\n\nRefinement for this new version:\n${ctx.refinement.trim()}`
     : "";
@@ -164,7 +169,7 @@ export function buildGenerationPrompt(ctx: PromptContext): {
   const baseUser = `${voiceLayers}
 
 Source content:
-${ctx.sourceText}${refinementBlock}`;
+${ctx.sourceText}${commentaryBlock}${refinementBlock}`;
 
   switch (ctx.targetFormat) {
     case "x_thread":
