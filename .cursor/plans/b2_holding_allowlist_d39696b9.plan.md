@@ -16,7 +16,7 @@ todos:
     status: completed
   - id: b2-verify-pr
     content: typecheck/build/floor; push PR with Mode B curl evidence; no merge
-    status: in_progress
+    status: completed
 isProject: false
 ---
 
