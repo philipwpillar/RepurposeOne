@@ -68,6 +68,8 @@ assert(){
 
 run_floor(){
   echo "── GLOBAL FLOOR (every phase) ──"
+  assert "no obsolete armv7 capability"  "$(n 'armv7' ios/App/App/Info.plist)" eq 0
+  assert "export compliance declared"    "$(n -U 'ITSAppUsesNonExemptEncryption</key>\s*<false/>' ios/App/App/Info.plist)" ge 1
   assert "no window.confirm / alert()"      "$(n 'window\.confirm|(^|[^.[:alnum:]_])alert\(' $A $C)" eq 0
   assert "live regions preserved"           "$(n 'aria-live|role="status"|role="alert"' $A $C)" ge 11
   assert "prefers-reduced-motion present"   "$(n 'prefers-reduced-motion' $A $C)" ge 4
