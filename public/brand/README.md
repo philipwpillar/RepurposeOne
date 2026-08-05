@@ -10,7 +10,8 @@ Processed from the Voiceora logo pack for product UI.
 | `mark-favicon-ui.png` | 128px mark for collapsed sidebar |
 | `mark-white.png` | Mark on dark fields (derived from primary alpha) |
 | `mark-black.png` | Monochrome on light fields |
-| `app-icon.png` | App icon source (1024) |
+| `app-icon.png` | App icon source (1024); full-bleed on ink, no baked corners or shadow. Apple applies the corner mask — replacements must stay square, opaque (colour type 2), and edge-to-edge. |
+| `apple-touch-180.png` | Apple touch / PWA icon (180); same rules as `app-icon.png` |
 | `og-social.jpg` | Open Graph / social share |
 | `banner-*.jpg` | Social profile headers (manual upload) |
 | `lockup-*.jpg` | Reference lockups (UI uses `BrandLockup` + Space Grotesk) |
