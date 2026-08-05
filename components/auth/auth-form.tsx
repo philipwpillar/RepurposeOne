@@ -124,7 +124,7 @@ export function AuthForm({
       }
 
       // With Confirm email enabled, duplicate signups return a fake user
-      // (empty identities) and no error — surface that instead of the OTP step.
+      // (empty identities) and no error - surface that instead of the OTP step.
       if (isExistingAccountSignUp(signUpData.user)) {
         setError(EXISTING_ACCOUNT_MESSAGE);
         setLoading(false);
