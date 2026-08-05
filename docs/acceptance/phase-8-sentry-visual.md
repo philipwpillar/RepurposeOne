@@ -14,7 +14,7 @@ bash scripts/ac-check.sh 8
 
 | Area | Evidence |
 |---|---|
-| Sentry | `@sentry/nextjs`; `sentry.client.config.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`; `instrumentation.ts` + `instrumentation-client.ts`; `withSentryConfig` in `next.config.ts` |
+| Sentry | `@sentry/nextjs`; client init + `onRouterTransitionStart` in `instrumentation-client.ts`; `sentry.server.config.ts`, `sentry.edge.config.ts`; `instrumentation.ts` (`onRequestError`); `withSentryConfig` in `next.config.ts`. *(2026-08-05 B9: inlined client config out of `sentry.client.config.ts` so Turbopack + App Router nav instrumentation work; deprecated `disableLogger` / `automaticVercelMonitors` moved under `webpack`.)* |
 | Capture points | `app/global-error.tsx`; generate / stream / bundle-generate unexpected failure paths |
 | Visual project | `playwright.config.ts` project `visual` (empty storageState); chromium `testIgnore` includes `visual.spec.ts` |
 | Visual specs | Four un-skipped screenshots: landing 1440, landing 390, sign-in, privacy |
