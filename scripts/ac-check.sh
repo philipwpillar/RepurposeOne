@@ -113,6 +113,11 @@ run_floor(){
     fi
     rm -f "$VV_OUT"
   fi
+  # App icon must stay opaque RGB (PNG colour type 2). Types 4/6 mean alpha —
+  # a recurring App Store rejection cause when optimisers re-export with alpha.
+  ICON=ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png
+  CT=$(od -An -tu1 -j25 -N1 "$ICON" | tr -d ' ')
+  assert "app icon has no alpha channel" "$([ "$CT" = "4" ] || [ "$CT" = "6" ] && echo 1 || echo 0)" eq 0
 }
 run_0(){ echo "── PHASE 0 ──"
   assert "@vercel/analytics+speed-insights" "$(n '@vercel/analytics|@vercel/speed-insights' app/layout.tsx package.json)" ge 2
