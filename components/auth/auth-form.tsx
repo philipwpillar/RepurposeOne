@@ -30,6 +30,9 @@ interface AuthFormProps {
 
 const RESEND_COOLDOWN_SEC = 60;
 
+const EXISTING_ACCOUNT_MESSAGE =
+  "An account with this email already exists. Sign in instead.";
+
 function mapOtpError(message: string): string {
   const lower = message.toLowerCase();
   if (lower.includes("expired")) {
@@ -42,6 +45,28 @@ function mapOtpError(message: string): string {
     return "Too many attempts. Wait a minute and try again.";
   }
   return message;
+}
+
+function mapSignUpError(message: string, code?: string): string {
+  const lower = message.toLowerCase();
+  const lowerCode = (code ?? "").toLowerCase();
+  if (
+    lowerCode === "user_already_exists" ||
+    lowerCode === "email_exists" ||
+    lower.includes("already registered") ||
+    lower.includes("already been registered") ||
+    lower.includes("already exists")
+  ) {
+    return EXISTING_ACCOUNT_MESSAGE;
+  }
+  return message;
+}
+
+/** Confirm-email projects return a fake user with empty identities for duplicates. */
+function isExistingAccountSignUp(user: {
+  identities?: { id?: string }[] | null;
+} | null): boolean {
+  return Array.isArray(user?.identities) && user.identities.length === 0;
 }
 
 export function AuthForm({
@@ -81,18 +106,27 @@ export function AuthForm({
     const supabase = createClient();
 
     if (isSignUp) {
-      const { error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          // Keep ConfirmationURL working until the email template also includes
-          // {{ .Token }}. Either path completes signup.
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent("/onboarding")}`,
-        },
-      });
+      const { data: signUpData, error: signUpError } =
+        await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            // Keep ConfirmationURL working until the email template also includes
+            // {{ .Token }}. Either path completes signup.
+            emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent("/onboarding")}`,
+          },
+        });
 
       if (signUpError) {
-        setError(signUpError.message);
+        setError(mapSignUpError(signUpError.message, signUpError.code));
+        setLoading(false);
+        return;
+      }
+
+      // With Confirm email enabled, duplicate signups return a fake user
+      // (empty identities) and no error — surface that instead of the OTP step.
+      if (isExistingAccountSignUp(signUpData.user)) {
+        setError(EXISTING_ACCOUNT_MESSAGE);
         setLoading(false);
         return;
       }
