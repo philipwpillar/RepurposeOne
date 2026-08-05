@@ -35,6 +35,9 @@ export function rateLimitMaxForPlan(plan: Plan): number {
 export const INPUT_CONTENT_MAX_LENGTH = 20_000;
 export const INPUT_CONTENT_MIN_LENGTH = 50;
 
+/** Optional paste/link angle commentary (prompt-only; not stored on input_content). */
+export const USER_COMMENTARY_MAX_LENGTH = 2000;
+
 export const UPGRADE_MESSAGES: Record<Plan, string> = {
   free: "You've used all your free generations this month. Upgrade to Creator (£19/mo) for 100 generations/month.",
   creator:

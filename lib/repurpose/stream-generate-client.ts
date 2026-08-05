@@ -71,6 +71,7 @@ export async function callGenerateStreamApi(params: {
   voiceVariant: VoiceVariantId;
   generationId?: string;
   refinement?: string;
+  userCommentary?: string;
   signal?: AbortSignal;
   onPartial?: (partial: StreamPartialEvent["object"]) => void;
 }): Promise<{ output: RepurposeOutput; usage: UsageInfo; repurposeId: string }> {
@@ -104,6 +105,10 @@ export async function callGenerateStreamApi(params: {
 
   if (params.refinement) {
     body.refinement = params.refinement;
+  }
+
+  if (params.userCommentary?.trim()) {
+    body.user_commentary = params.userCommentary.trim();
   }
 
   const response = await fetch("/api/generate/stream", {

@@ -36,6 +36,8 @@ export interface GenerateInput {
   targetWords?: number;
   /** Optional tier override; defaults to FORMAT_MODEL_TIER mapping. */
   modelTier?: ModelTier;
+  /** Optional paste/link angle / opinion for this run. */
+  userCommentary?: string;
   /** Optional voice exemplars prompt block (Brief S2). */
   exemplarsText?: string;
   /** Optional completion token ceiling (public demo). */
@@ -95,6 +97,7 @@ export async function generateRepurpose(
     targetFormat: input.targetFormat,
     targetTweets: input.targetTweets,
     targetWords: input.targetWords,
+    userCommentary: input.userCommentary,
     exemplarsText: input.exemplarsText,
   };
 

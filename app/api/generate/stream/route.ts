@@ -168,6 +168,7 @@ export async function POST(request: Request) {
     voice_variant,
     generation_id,
     refinement,
+    user_commentary,
   } = requestData;
 
   let plan;
@@ -317,6 +318,7 @@ export async function POST(request: Request) {
     targetWords: target_words,
     exemplarsText: exemplarsText || undefined,
     refinement,
+    userCommentary: user_commentary,
   });
 
   const schema = schemaForFormat(target_format);

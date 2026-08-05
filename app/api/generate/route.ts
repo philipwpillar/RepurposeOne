@@ -300,6 +300,8 @@ export async function POST(request: Request) {
           targetTweets: target_tweets,
           targetWords: target_words,
           exemplarsText: exemplarsText || undefined,
+          userCommentary:
+            input_type === "paste" ? requestData.user_commentary : undefined,
         });
 
     const { error: updateError } = await admin

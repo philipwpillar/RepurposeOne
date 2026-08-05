@@ -36,7 +36,7 @@ and/or 2–3 pasted samples. Injected into every format's user prompt. Distilled
 profile caching (run once, store on `brand_voices`) is a future optimisation — not
 wired yet.
 
-**Variables:** `{{brand_voice}}`, `{{source_text}}`
+**Variables:** `{{brand_voice}}`, `{{source_text}}`, optional `{{user_commentary}}`, optional `{{refinement}}`
 
 **User prompt prefix** (shared across all formats):
 
@@ -46,8 +46,15 @@ Brand voice:
 
 Source content:
 {{source_text}}
+
+[optional] User commentary (authoritative angle and opinion - shape the take and emphasis from this; stay factually faithful to the source; do not invent facts the source does not support):
+{{user_commentary}}
+
+[optional] Refinement for this new version:
+{{refinement}}
 ```
 
+`user_commentary` is paste/link only (Studio). It is prompt-only in v1 - not appended to `input_content` or `source_hash`. Photo path uses required `photo_context` instead.
 `{{brand_voice}}` is assembled as:
 
 ```
@@ -358,6 +365,8 @@ hard-coded names in this doc.
 
 ## Changelog
 
+- 2026-08-05 — Optional paste/link `user_commentary` on text generation prompts
+  (authoritative angle; source stays factual; prompt-only, not in `input_content`).
 - 2026-07-28 — Wave 1: ban em/en dashes in all system prompts + `stripEmDashes`
   post-processor (Studio, stream partials/final, bundles, exemplars). Email:
   forbid image captions / alt-text / media labels in body.
