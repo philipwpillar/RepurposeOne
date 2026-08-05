@@ -14,8 +14,10 @@
     "test:native-ua": "node --experimental-strip-types --test lib/native-ua.test.mjs",
     "variant-separation": "node --experimental-strip-types scripts/variant-separation.mjs",
     "ac-check": "bash scripts/ac-check.sh",
+    "check:dashes": "bash scripts/check-no-typographic-dashes.sh",
     "contrast-check": "node scripts/contrast-check.mjs",
-    "cap:sync": "npx cap sync ios"
+    "cap:sync": "npx cap sync ios",
+    "prepare": "git config core.hooksPath .githooks || true"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^3.0.14",

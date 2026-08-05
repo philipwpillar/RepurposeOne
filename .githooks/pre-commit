@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Installed automatically: the package.json `prepare` script points
+# core.hooksPath at .githooks on every npm install.
+set -euo pipefail
+ROOT="$(git rev-parse --show-toplevel)"
+bash "$ROOT/scripts/check-no-typographic-dashes.sh"

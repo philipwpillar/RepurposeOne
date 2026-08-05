@@ -46,6 +46,8 @@ cp .env.example .env.local
 npm run dev
 ```
 
+`npm install` also installs a pre-commit hook that blocks typographic dashes under `app/` and `components/`. Run `npm run check:dashes` to check manually.
+
 ## MVP Scope (Strict — Do Not Expand Without Approval)
 **In Scope for Launch**
 - Email + Google authentication (Supabase)
