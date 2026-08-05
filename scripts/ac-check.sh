@@ -87,6 +87,7 @@ run_floor(){
   assert "terms allowlisted"                "$(n '/terms' middleware.ts)" ge 1
   assert "no over-broad stripe prefix"      "$(n -F '"/api/stripe"' middleware.ts)" eq 0
   assert "bundles protected"                "$(n '/bundles' lib/supabase/middleware.ts)" ge 1
+  assert "sentry nav instrumentation"       "$(n 'onRouterTransitionStart' instrumentation-client.ts)" ge 1
   # Studio generate fence (ratified 2026-07-23; floor re-spec proposed 2026-07-30).
   # Floors use current counts (ge N) so UI additions around the fence do not
   # break the gate, while deletions of usage-sync or error classes still fail.
