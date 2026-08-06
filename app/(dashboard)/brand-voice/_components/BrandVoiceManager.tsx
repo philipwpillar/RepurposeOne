@@ -27,6 +27,7 @@ import {
   type BrandVoiceWizardDraft,
 } from "@/types";
 import { BrandVoiceWizard } from "./BrandVoiceWizard";
+import { VoiceLearnedPanel } from "./VoiceLearnedPanel";
 
 const SAMPLE_FIELD_COUNT = 3;
 const EMPTY_SAMPLES = () => Array.from({ length: SAMPLE_FIELD_COUNT }, () => "");
@@ -666,6 +667,11 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
                           ))}
                         </div>
                       ) : null}
+
+                      <VoiceLearnedPanel
+                        brandVoiceId={voice.id}
+                        disabled={loadingId === voice.id}
+                      />
                     </div>
                     <div className="flex shrink-0 flex-wrap gap-2">
                       {!voice.is_default && (

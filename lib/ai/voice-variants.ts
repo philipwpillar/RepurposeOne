@@ -83,6 +83,28 @@ export function buildVoiceIdentityBlock(input: ResolvedBrandVoice): string {
   return `Voice identity (follow strictly - this is your primary tone anchor):\n${identityBody}\n${VOICE_IDENTITY_PRECEDENCE}`;
 }
 
+/**
+ * Learned preference rules - always below VOICE_IDENTITY_PRECEDENCE.
+ * Samples take precedence in every conflict.
+ */
+export function buildLearnedRulesBlock(input: ResolvedBrandVoice): string {
+  const rules = (input.learned_rules ?? []).filter(
+    (r) =>
+      (r.status === "active" || r.status === "pinned") &&
+      typeof r.rule === "string" &&
+      r.rule.trim()
+  );
+  if (!rules.length) return "";
+
+  const lines = rules.map((r, i) => `${i + 1}. ${r.rule.trim()}`).join("\n");
+  return (
+    "Learned preferences (observed from how this user edits their drafts; " +
+    "apply where they do not conflict with the writing samples; " +
+    "the samples take precedence in every conflict):\n" +
+    lines
+  );
+}
+
 export function buildVoiceSamplesBlock(input: ResolvedBrandVoice): string {
   if (!input.samples?.length) return "";
   return (
@@ -102,6 +124,7 @@ export function assembleVoiceLayers(
 
   return [
     buildVoiceIdentityBlock(input),
+    buildLearnedRulesBlock(input),
     `Delivery variant:\n${VOICE_VARIANT_BY_ID[variantId].promptFragment}`,
     sampleLayers,
   ]

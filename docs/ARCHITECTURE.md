@@ -59,7 +59,7 @@ Text inputs are plain text at the prompt layer. Photo inputs use a vision model 
 | Dashboard | `app/(dashboard)/dashboard` | Usage summary + recent library items |
 | Studio | `app/(dashboard)/studio` | Paste + photo create flow → `/api/generate` |
 | Library | `app/(dashboard)/library` | Grouped by `source_hash`; detail at `/library/[hash]/[id]` |
-| Brand voice | `app/(dashboard)/brand-voice` | Samples + description; `is_default` |
+| Brand voice | `app/(dashboard)/brand-voice` | Samples + description + `voice_range`; learned rules panel |
 | Account | `app/(dashboard)/account` | Profile, plan/usage, Stripe upgrade + portal, brand-voice summary, delete |
 | Bundles | `app/(dashboard)/bundles` | Moment Bundle photo (+ video when flagged) |
 
@@ -131,8 +131,21 @@ brand_voices (
   user_id     uuid not null references auth.users(id),
   samples     text[],
   description text,
+  voice_range jsonb,                   -- wizard characterisation (summary + markers)
+  rules_derived_at timestamptz,        -- last voice-rule derivation stamp
   is_default  boolean not null default false,
   created_at  timestamptz default now()
+)
+
+voice_rules (
+  id              uuid primary key,
+  user_id         uuid not null references auth.users(id),
+  brand_voice_id  uuid not null references brand_voices(id),
+  rule            text not null,       -- short imperative preference (<=15 words)
+  evidence_ids    uuid[],              -- >=2 repurposes.id citations
+  status          text not null,       -- active | dismissed | pinned
+  created_at      timestamptz default now()
+  -- Owner: select/delete + update(status) only (column grants). Insert: service_role.
 )
 
 repurposes (
@@ -196,7 +209,7 @@ The single biggest variable cost is AI tokens. Treat model choice as a per-task 
 | Output generation | Quality first, then cost | Per-format tier via `FORMAT_MODEL_TIER` (`fast` / `strong`) |
 | Photo / vision | Quality + multimodal | `AI_MODEL_VISION` (defaults to strong Qwen VLM) |
 | Voice input (bundles) | Native OS dictation | Server ASR withdrawn (PR #46); type or dictate into bundle `context` |
-| Brand-voice extraction | Quality | Run once per voice, cache the distilled profile — don't re-derive every generation |
+| Brand-voice learning | Quality | Edit-derived preference rules (`voice_rules`), rebuilt off hot path with citations; samples stay ground truth. No distilled_profile (self-compression). |
 
 Cost-control patterns:
 - **Cache the brand-voice profile** rather than re-sending raw samples on every call.

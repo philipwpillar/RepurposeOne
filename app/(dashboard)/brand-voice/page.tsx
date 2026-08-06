@@ -25,7 +25,7 @@ export default async function BrandVoicePage() {
     <div className="mx-auto max-w-3xl space-y-6">
       <PageHeader
         title="Brand Voice"
-        description="Named profiles with writing samples - your default voice steers every Studio generate."
+        description="Your samples stay the ground truth. Voiceora learns from how you edit, then rewrites each piece in your voice - without ever overriding those samples."
       />
 
       <BrandVoiceManager initialVoices={voices ?? []} />

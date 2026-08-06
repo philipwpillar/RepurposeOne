@@ -53,7 +53,7 @@ Primary objective: **speed to first revenue.** Every decision is weighed against
   - [x] Instagram caption + hook ideas
   - [x] Email newsletter draft
   - [ ] *(Optional bonus)* short blog outline OR YouTube description
-- **Brand voice:** Simple — learn from 2–3 pasted samples OR a short written description. Applied consistently across all outputs.
+- **Brand voice:** Samples + description + optional `voice_range` characterisation, plus edit-derived preference rules (Stage D) scoped per brand voice. Samples remain ground truth; learned rules are subordinate and user-correctable.
 - **History / library:** List of past repurposes, re-openable (`/library`).
 - **Export:** One-click copy + export to Markdown / plain text. (Carousel *images* are later.)
 - **Dashboard:** Basic usage view + upgrade prompts.

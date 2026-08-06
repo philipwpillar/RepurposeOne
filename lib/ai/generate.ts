@@ -258,6 +258,8 @@ export interface CompleteOpenRouterJsonInput<T> {
   model: string;
   messages: OpenRouterMessage[];
   schema: { safeParse: (data: unknown) => { success: true; data: T } | { success: false; error: { issues: { message: string }[] } } };
+  /** Override default AI_CONFIG.temperature (e.g. low temp for rule derivation). */
+  temperature?: number;
 }
 
 export interface CompleteOpenRouterJsonResult<T> {
@@ -279,7 +281,10 @@ async function completeOpenRouterJsonOnce<T>(
 
   const completionParams: OpenRouterChatCompletionParams = {
     model: input.model,
-    temperature: AI_CONFIG.temperature,
+    temperature:
+      input.temperature !== undefined
+        ? input.temperature
+        : AI_CONFIG.temperature,
     response_format: { type: "json_object" },
     reasoning: { enabled: false },
     provider: { only: [...OPENROUTER_ALLOWED_PROVIDERS] },

@@ -31,10 +31,21 @@ prompts (`buildBundlePhotoAnalysisPrompt`, video moments, pack synthesis). Studi
 
 ## Shared: Brand Voice Block
 
-Built at request time by `buildBrandVoiceBlock()` from the user's description
-and/or 2–3 pasted samples. Injected into every format's user prompt. Distilled
-profile caching (run once, store on `brand_voices`) is a future optimisation — not
-wired yet.
+Studio generation assembles voice via `assembleVoiceLayers()` in
+`lib/ai/voice-variants.ts` (not only `buildBrandVoiceBlock`). Layer order:
+
+1. Identity (description + optional `voice_range.summary`) + `VOICE_IDENTITY_PRECEDENCE`
+2. Learned preference rules (`ResolvedBrandVoice.learned_rules`) - subordinate to samples
+3. Delivery variant fragment
+4. Writing samples + optional few-shot exemplars
+
+Learned rules are derived off the hot path from edit diffs (`lib/ai/voice-derive.ts`,
+Qwen via OpenRouter `deepinfra/fp8`). Evidence filters are deterministic
+(`lib/ai/voice-evidence.ts`). Users can dismiss, pin, or reset rules on Brand Voice.
+
+Built at request time from the user's description and/or 2–3 pasted samples, plus
+optional wizard `voice_range` and learned rules. Injected into every format's user
+prompt. A full `distilled_profile` cache is deliberately out of scope (self-compression).
 
 **Variables:** `{{brand_voice}}`, `{{source_text}}`, optional `{{user_commentary}}`, optional `{{refinement}}`
 
@@ -55,22 +66,11 @@ Source content:
 ```
 
 `user_commentary` is paste/link only (Studio). It is prompt-only in v1 - not appended to `input_content` or `source_hash`. Photo path uses required `photo_context` instead.
-`{{brand_voice}}` is assembled as:
-
-```
-Description: <user description>   // if provided
-
-Writing samples:
---- Sample 1 ---
-<sample text>
-
---- Sample 2 ---
-<sample text>
-```
+`{{brand_voice}}` layers identity, optional learned rules, delivery variant, and samples as above.
 
 **Eval note:** Spot-check that a casual sample and a formal sample produce
 visibly different register on the same input. If they read identically, the
-voice block isn't being weighted enough.
+voice block isn't being weighted enough. `npm run voice-eval` gates E3-E7a.
 
 ---
 

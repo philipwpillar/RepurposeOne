@@ -5,6 +5,7 @@ import * as Sentry from "@sentry/nextjs";
 import { fetchVoiceExemplarsText } from "@/lib/ai/exemplars";
 import { buildGenerationPrompt } from "@/lib/ai/prompts";
 import { stripEmDashes } from "@/lib/ai/strip-em-dashes";
+import { maybeDeriveVoiceRulesAfterGenerate } from "@/lib/ai/voice-derive";
 import {
   AI_CONFIG,
   OPENROUTER_ALLOWED_PROVIDERS,
@@ -400,6 +401,14 @@ export async function POST(request: Request) {
       if (updateError) {
         settled = false;
         await markFailed(updateError.message);
+      } else {
+        after(() =>
+          maybeDeriveVoiceRulesAfterGenerate(
+            admin,
+            user.id,
+            brand_voice_id ?? null
+          )
+        );
       }
     },
   });
