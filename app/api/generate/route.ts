@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { generateRepurpose, generateRepurposeFromImage } from "@/lib/ai/generate";
 import { fetchVoiceExemplarsText } from "@/lib/ai/exemplars";
+import { maybeDeriveVoiceRulesAfterGenerate } from "@/lib/ai/voice-derive";
 import { AI_CONFIG, planAllowsVision } from "@/lib/config";
 import {
   computeSourceHash,
@@ -322,6 +323,10 @@ export async function POST(request: Request) {
     if (updateError) {
       throw new Error(updateError.message);
     }
+
+    after(() =>
+      maybeDeriveVoiceRulesAfterGenerate(admin, user.id, brand_voice_id ?? null)
+    );
 
     // Re-fetch usage after successful generation
     const { usage } = await checkUsageLimit(supabase, user.id);

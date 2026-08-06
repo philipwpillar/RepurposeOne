@@ -1,6 +1,6 @@
 # Voice eval artefact
 
-Generated: 2026-08-06T13:57:27.304Z
+Generated: 2026-08-06T15:51:59.768Z
 Model: qwen/qwen3.5-397b-a17b
 Provider pin: deepinfra/fp8
 Temperature: 0.7 (from AI_CONFIG)
@@ -13,8 +13,8 @@ API key present: false
 | E3 | PASS | negative block uses model output only |
 | E4 | PASS | arity=4; scoped assembly excludes voice B marker |
 | E5 | PASS | voice_range.summary present above precedence; null path well-formed |
-| E6 | SKIP | learned rules not injected yet (Stage D); assembleVoiceLayers ignores rule fields on main |
-| E7a | SKIP | lib/ai/voice-derive.ts not present yet (Stage D) |
+| E6 | PASS | learned rule appears below VOICE_IDENTITY_PRECEDENCE |
+| E7a | PASS | validator dropped under-cited, over-long, and foreign-id rules |
 | E1 | SKIP | no OPENROUTER_API_KEY |
 | E2 | SKIP | no OPENROUTER_API_KEY |
 | E7b | SKIP | no OPENROUTER_API_KEY |

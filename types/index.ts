@@ -73,9 +73,34 @@ export const BrandVoiceInputSchema = z.object({
 );
 export type BrandVoiceInput = z.infer<typeof BrandVoiceInputSchema>;
 
-/** Server-resolved voice including wizard voice_range. Not a client body schema. */
+export const VoiceRuleStatusSchema = z.enum([
+  "active",
+  "dismissed",
+  "pinned",
+]);
+export type VoiceRuleStatus = z.infer<typeof VoiceRuleStatusSchema>;
+
+export const VoiceRuleSchema = z.object({
+  id: z.string().uuid(),
+  user_id: z.string().uuid(),
+  brand_voice_id: z.string().uuid(),
+  rule: z.string().min(1),
+  evidence_ids: z.array(z.string().uuid()),
+  status: VoiceRuleStatusSchema,
+  created_at: z.string(),
+});
+export type VoiceRule = z.infer<typeof VoiceRuleSchema>;
+
+/** Injected preference rule (active or pinned only). */
+export type LearnedVoiceRule = {
+  rule: string;
+  status: "active" | "pinned";
+};
+
+/** Server-resolved voice including wizard voice_range and learned rules. */
 export type ResolvedBrandVoice = BrandVoiceInput & {
   voice_range?: VoiceRange | null;
+  learned_rules?: LearnedVoiceRule[] | null;
 };
 
 export const BrandVoiceWizardRequestSchema = z.object({
