@@ -1,8 +1,16 @@
 import { NextResponse } from "next/server";
+import {
+  isNativeApiRequest,
+  nativePurchaseForbiddenResponse,
+} from "@/lib/native-request";
 import { stripe } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
+  if (isNativeApiRequest(request)) {
+    return nativePurchaseForbiddenResponse();
+  }
+
   const supabase = await createClient();
 
   const {

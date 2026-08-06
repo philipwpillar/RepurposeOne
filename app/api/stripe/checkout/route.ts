@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import {
+  isNativeApiRequest,
+  nativePurchaseForbiddenResponse,
+} from "@/lib/native-request";
 import { getStripePriceId, stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -9,6 +13,10 @@ const CheckoutRequestSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  if (isNativeApiRequest(request)) {
+    return nativePurchaseForbiddenResponse();
+  }
+
   const supabase = await createClient();
 
   const {

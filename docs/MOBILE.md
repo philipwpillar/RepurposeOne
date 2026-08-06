@@ -22,7 +22,7 @@ This is an initiative on top of the live web product. It must **not** slow the r
 | Wrapper | **Capacitor 8** (SPM, **not** CocoaPods) | Thin native shell over the existing web app; no second frontend to maintain |
 | Load strategy | **Remote-URL mode** — `server.url` → live Vercel site | One codebase; the app always shows production. No bundled static export in v1 |
 | Push | **OneSignal** (over raw APNs), **generation-complete only** | Managed APNs, simpler tokens; notifications limited to "your content is ready" — no marketing spam in v1 |
-| Payments | **3.1.3(f) companion** — no IAP, no in-app purchase CTAs; subscribe on web only | Avoids Apple's cut and IAP; requires server-side purchase-surface strip |
+| Payments | **3.1.3(f) companion** - no IAP, no in-app purchase CTAs; Stripe Checkout/Portal APIs return 403 from the iOS shell; subscribe on web only | Avoids Apple's cut and IAP; UI strip + server API deny |
 | Share extension | **In v1** | Core value: repurpose from any app's share sheet |
 | Android | **Deferred** post-iOS | Prove demand on one platform first |
 | Bundle ID | `com.voiceora.io` | — |
@@ -51,7 +51,7 @@ Phase numbers describe intended sequencing, not commitments to bundle everything
 
 - **Phase 0 — Shell (DONE):** Capacitor scaffold + safe-area fix.
 - **Phase 1 — Make it usable:** Google OAuth fix (sign-in is broken in the default WKWebView — see §5), then app chrome (custom icon, splash, optional native tab bar).
-- **Phase 2 — Monetise (revised for 3.1.3(f)):** iOS shell is a **free companion** to the web product. No in-app purchase CTAs, prices, Stripe Checkout, or billing portal. Subscribe only on the web (Safari / desktop). Server detects the shell via `appendUserAgent` + `x-vo-native` and strips purchase surfaces from SSR HTML.
+- **Phase 2 — Monetise (revised for 3.1.3(f)):** iOS shell is a **free companion** to the web product. No in-app purchase CTAs, prices, Stripe Checkout, or billing portal. Subscribe only on the web (Safari / desktop). Server detects the shell via `appendUserAgent` + `x-vo-native`, strips purchase surfaces from SSR HTML, and returns **403** from `/api/stripe/checkout` and `/api/stripe/portal`.
 - **Phase 3 — Engagement:** OneSignal push (generation-complete), share extension, and **"Open in Platform" deep links** (confirmed Phase 3 — not earlier).
 
 **Note:** Web acceptance Phase 6 shipped BottomTabs / haptics / domain cutover / manifest — that is the **web UX** half of "make it usable," not a substitute for native OAuth (still Phase 1 above).
