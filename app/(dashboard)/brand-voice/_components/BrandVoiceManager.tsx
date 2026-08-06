@@ -479,7 +479,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
       {formMode !== null && (
         <Card className="border-border">
           <CardHeader>
-            <CardTitle className="text-lg">
+            <CardTitle>
               {formMode === "create" ? "Create brand voice" : "Edit brand voice"}
             </CardTitle>
             <CardDescription>
@@ -595,7 +595,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
             <Mic className="h-6 w-6 text-primary" />
           </div>
-          <h2 className="mb-2 text-base font-semibold text-foreground">
+          <h2 className="text-panel mb-2 text-foreground">
             Teach Voiceora how you write
           </h2>
           <p className="mx-auto mb-6 max-w-md text-sm text-muted-foreground">

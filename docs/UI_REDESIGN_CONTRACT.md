@@ -52,7 +52,23 @@ Semantic tokens re-point at the scale so elevation has one source of truth. `.da
 | Dashboard | Medium | `max-w-4xl` |
 | Studio, Bundles | Richer working surface | Studio `max-w-screen-md`; Bundles `max-w-3xl` |
 
-Page titles use `font-display`, `text-2xl`, `font-semibold`, `tracking-tight`. Subtitles use `text-sm text-muted-foreground`.
+### Type roles
+
+Pick a **role**, not a one-off pixel size. Utilities live in `app/globals.css`.
+
+| Role | Utility | Size | Family | Weight | Use for |
+| --- | --- | --- | --- | --- | --- |
+| Page title | `.text-page-title` | 24px | Display | 600 | `PageHeader` `<h1>` only |
+| Section | `.text-section` | 18px | Body | 600 | Page subsections `<h2>` |
+| Panel | `.text-panel` | 16px | Body | 600 | `CardTitle`, `DialogTitle` |
+| Body | `text-sm` (default) | 14px | Body | 400 | UI copy, inputs, buttons |
+| Subheading | `text-sm font-semibold` | 14px | Body | 600 | Nested labels under a section |
+| Caption | `.text-caption` / `text-xs` | 12px | Body | 400–500 | Helpers, timestamps, badges |
+| Meta | `.eyebrow` | 11px | Mono | 500 | Uppercase group labels only |
+| Micro | `.text-micro` | 10px | Mono | 500 | `<kbd>` and bottom-tab labels only |
+| Display | landing clamps | 40–56px | Display | 700 | Marketing hero only |
+
+Subtitles under a page title use `text-sm text-muted-foreground`. Do not use `text-[10px]` / `text-[11px]` outside Micro / Meta. Do not size card titles at page-title scale.
 
 ## 6. Icons
 

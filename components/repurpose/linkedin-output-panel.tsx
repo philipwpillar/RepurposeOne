@@ -232,7 +232,7 @@ export function LinkedInOutputPanel({
       <Card>
         <CardHeader>
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <CardTitle className="text-lg">LinkedIn post</CardTitle>
+            <CardTitle>LinkedIn post</CardTitle>
             {copyActions}
           </div>
         </CardHeader>

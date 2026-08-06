@@ -216,7 +216,7 @@ export function AuthForm({
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgba(45,212,191,0.15)]">
           <Mail className="h-5 w-5 text-[color:var(--teal)]" aria-hidden />
         </div>
-        <h1 className="font-display text-xl font-semibold tracking-tight">
+        <h1 className="text-page-title">
           Enter your code
         </h1>
         <p className="text-sm text-muted-foreground">
@@ -282,7 +282,7 @@ export function AuthForm({
   return (
     <Card className="vo-auth-card w-full max-w-md border-0 shadow-none">
       <CardHeader className="text-center">
-        <h1 className="font-display text-2xl text-foreground">
+        <h1 className="text-page-title text-foreground">
           {isSignUp ? "Create your account" : "Welcome back"}
         </h1>
         <CardDescription>

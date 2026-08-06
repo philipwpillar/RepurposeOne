@@ -9,7 +9,7 @@ export function AppearanceSection() {
   return (
     <section id="appearance" className="space-y-4 scroll-mt-20">
       <div>
-        <h2 className="text-lg font-semibold">Appearance</h2>
+        <h2 className="text-section">Appearance</h2>
         <p className="text-sm text-muted-foreground">
           Choose Light, Dark, or match your system setting.
         </p>

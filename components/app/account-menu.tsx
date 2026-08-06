@@ -115,7 +115,7 @@ export function AccountMenu({
             {!native ? (
               <Link
                 href="/account#plans"
-                className="inline-block text-[11px] font-medium text-primary hover:text-primary/80"
+                className="inline-block text-xs font-medium text-primary hover:text-primary/80"
               >
                 Upgrade →
               </Link>
