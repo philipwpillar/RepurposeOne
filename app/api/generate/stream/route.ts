@@ -241,7 +241,8 @@ export async function POST(request: Request) {
   const exemplarsText = await fetchVoiceExemplarsText(
     supabase,
     user.id,
-    target_format
+    target_format,
+    brand_voice_id ?? null
   );
 
   const truncatedContent = input_content.slice(0, AI_CONFIG.maxInputChars);

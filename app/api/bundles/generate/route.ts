@@ -763,7 +763,8 @@ export async function POST(request: Request) {
       const exemplarsText = await fetchVoiceExemplarsText(
         supabase,
         user.id,
-        targetFormat
+        targetFormat,
+        brandVoiceId
       );
 
       const repurposeId = reservedByFormat.get(targetFormat);

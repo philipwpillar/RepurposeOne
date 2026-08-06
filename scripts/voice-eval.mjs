@@ -7,10 +7,9 @@
  * OPENROUTER_API_KEY is set. Missing key skips live work with a log; it does
  * not prevent offline checks.
  *
- * E3 / E4 / E5 are EXPECTED_FAIL against main until Stage C
- * (`fix/voice-exemplar-correctness`). They are recorded as expected-red so
- * this stage can ship without gating CI. Stage C removes those entries once
- * the bugs are fixed and wires `voice-eval` into CI.
+ * E3 / E4 / E5 are green after Stage C (`fix/voice-exemplar-correctness`).
+ * Wire this script into CI (C5). E1 uses a pinned floor (C6); null means
+ * uncalibrated (CALIBRATE), not a tautological pass.
  *
  * Run:
  *   npm run voice-eval
@@ -55,14 +54,22 @@ const model = "qwen/qwen3.5-397b-a17b";
 const temperature = configMod.AI_CONFIG.temperature;
 
 /**
- * Known-red against main. Stage C removes an id from this map when that
- * assertion goes green, then wires voice-eval into CI.
+ * Known-red map. Empty after Stage C: E3/E4/E5 pass. Stage D may add E6.
  */
-const EXPECTED_FAIL_UNTIL = {
-  E3: "Stage C (negative exemplar polarity)",
-  E4: "Stage C (brand_voice_id exemplar scope)",
-  E5: "Stage C (voice_range injection)",
-};
+const EXPECTED_FAIL_UNTIL = {};
+
+/**
+ * E1 floor. null means uncalibrated: the harness measures and reports but
+ * does not gate.
+ *
+ * Derivation (fill in on calibration, do not overwrite the history):
+ *   (uncalibrated - no OPENROUTER_API_KEY during Stage C; leave null)
+ *
+ * A later change to this number must argue against the recorded derivation.
+ * Never recompute it from the run being checked.
+ */
+const E1_FLOOR = null;
+const E1_MARGIN = 0.05;
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -201,7 +208,9 @@ function record(id, status, detail) {
           ? "SKIP"
           : status === "ADVISORY_FAIL"
             ? "ADVISORY_FAIL"
-            : "FAIL";
+            : status === "CALIBRATE"
+              ? "CALIBRATE"
+              : "FAIL";
   console.log(`[${tag}] ${id}: ${detail}`);
 }
 
@@ -523,13 +532,6 @@ async function runE7a() {
 // ---------------------------------------------------------------------------
 
 async function runE1() {
-  /**
-   * E1 floor derivation (do not invent a threshold):
-   * On first live run, compute normalised lexical distance across all
-   * voice-pair x source combinations, write the full distribution into the
-   * artefact, and set the floor at observed minimum minus a margin (0.05).
-   * Later changes to the floor must argue against that recorded derivation.
-   */
   const voiceKeys = /** @type {const} */ (["terse", "warm", "blunt"]);
   const sourceKeys = Object.keys(sources);
   /** @type {{ pair: string, source: string, distance: number }[]} */
@@ -574,19 +576,49 @@ async function runE1() {
   }
 
   const values = distances.map((d) => d.distance);
-  const observedMin = Math.min(...values);
-  const margin = 0.05;
-  // Floor derivation: observedMin - margin, floored at 0.
-  // Recorded so a later change is an argued change, not a silent one.
-  const floor = Math.max(0, Number((observedMin - margin).toFixed(4)));
-  const allAbove = values.every((v) => v >= floor);
+  const observedMin = values.length ? Math.min(...values) : NaN;
+  const suggestedFloor = Number.isFinite(observedMin)
+    ? Math.max(0, Number((observedMin - E1_MARGIN).toFixed(4)))
+    : null;
 
-  runE1._artefact = { distances, observedMin, margin, floor, outputs };
+  runE1._artefact = {
+    distances,
+    observedMin,
+    margin: E1_MARGIN,
+    floor: E1_FLOOR,
+    suggestedFloor,
+    outputs,
+  };
 
+  if (E1_FLOOR === null) {
+    console.log(
+      `E1 CALIBRATE: paste suggested floor ${suggestedFloor} into E1_FLOOR with a dated derivation comment (observed min ${observedMin}, margin ${E1_MARGIN}).`
+    );
+    record(
+      "E1",
+      "CALIBRATE",
+      `uncalibrated; n=${values.length}, observedMin=${observedMin}, suggestedFloor=${suggestedFloor} (= min - ${E1_MARGIN}); set E1_FLOOR to gate`
+    );
+    return;
+  }
+
+  const below = distances.filter((d) => d.distance < E1_FLOOR);
+  if (below.length === 0 && values.length > 0) {
+    expectFailOrPass(
+      "E1",
+      true,
+      `lexical distances n=${values.length}, min=${observedMin}, floor=${E1_FLOOR}; all >= floor`
+    );
+    return;
+  }
+
+  const first = below[0];
   expectFailOrPass(
     "E1",
-    allAbove && values.length > 0,
-    `lexical distances n=${values.length}, min=${observedMin.toFixed(4)}, floor=${floor} (min - ${margin}); all>=floor=${allAbove}`
+    false,
+    first
+      ? `pair=${first.pair} source=${first.source} distance=${first.distance} below floor=${E1_FLOOR} (observedMin=${observedMin}; ${below.length} below)`
+      : `no distances measured`
   );
 }
 
@@ -714,27 +746,34 @@ for (const r of results) {
   lines.push(`| ${r.id} | ${r.status} | ${r.detail.replace(/\|/g, "\\|")} |`);
 }
 lines.push("");
-lines.push("## Expected-red map (Stage B)");
+lines.push("## Expected-red map");
 lines.push("");
-lines.push(
-  "E3, E4, E5 fail against main until Stage C. Entries in `EXPECTED_FAIL_UNTIL` keep the harness exit green while those bugs remain. Stage C deletes each entry when the matching fix lands, then adds `voice-eval` to CI."
-);
-lines.push("");
-for (const [id, stage] of Object.entries(EXPECTED_FAIL_UNTIL)) {
-  lines.push(`- **${id}** - ${stage}`);
+if (Object.keys(EXPECTED_FAIL_UNTIL).length === 0) {
+  lines.push(
+    "Empty after Stage C. E3, E4, E5 pass. Stage D may add entries for E6."
+  );
+} else {
+  lines.push(
+    "Entries keep the harness exit green while listed bugs remain. Remove each entry when the matching fix lands."
+  );
+  lines.push("");
+  for (const [id, stage] of Object.entries(EXPECTED_FAIL_UNTIL)) {
+    lines.push(`- **${id}** - ${stage}`);
+  }
 }
 lines.push("");
 
 if (runE1._artefact) {
-  const { distances, observedMin, margin, floor } = runE1._artefact;
+  const { distances, observedMin, margin, floor, suggestedFloor } =
+    runE1._artefact;
   lines.push("## E1 lexical distance distribution");
   lines.push("");
   lines.push(
-    `Observed min: ${observedMin}. Margin: ${margin}. Floor: ${floor} (= min - margin, floored at 0).`
+    `Observed min: ${observedMin}. Margin: ${margin}. E1_FLOOR: ${floor === null ? "null (uncalibrated)" : floor}. Suggested floor: ${suggestedFloor} (= min - margin, floored at 0).`
   );
   lines.push("");
   lines.push(
-    "Floor derivation: first live run sets floor to observed minimum lexical distance across all voice-pair and source combinations, minus 0.05. Changing this number later requires an argued comment, not a silent edit."
+    "Floor is a module constant. Never recompute it from the run being checked. When null, status is CALIBRATE. When set, every distance must be at or above it."
   );
   lines.push("");
   lines.push("| pair | source | distance |");

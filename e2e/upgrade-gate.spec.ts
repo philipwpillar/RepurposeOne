@@ -21,7 +21,12 @@ test("at-limit generation surfaces the upgrade prompt", async ({ page }) => {
 
   await page.goto("/studio");
   await page.getByRole("button", { name: "Change" }).click();
-  await page.locator("textarea").fill("E2E source content. ".repeat(20));
+  // Scope to the source modal - studio also has #user-commentary.
+  await page
+    .locator("div.fixed.inset-0")
+    .filter({ hasText: "Source Content" })
+    .locator("textarea")
+    .fill("E2E source content. ".repeat(20));
   await page.getByRole("button", { name: /Update & Regenerate All/ }).click();
 
   await expect(page.getByText("Monthly generation limit reached")).toBeVisible({

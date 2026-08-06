@@ -12,7 +12,7 @@ import {
   BundlePackAiSchema,
   BundlePhotoAnalysisSchema,
   BundleVideoMomentsSchema,
-  type BrandVoiceInput,
+  type ResolvedBrandVoice,
   type BundleClipSpec,
   type BundlePack,
   type BundlePhotoAnalysis,
@@ -39,7 +39,7 @@ export interface RunBundleGenerationInput {
   photos: BundlePhotoInput[];
   videos?: BundleVideoInput[];
   context: string;
-  brandVoice: BrandVoiceInput;
+  brandVoice: ResolvedBrandVoice;
 }
 
 export interface RunBundleGenerationResult {

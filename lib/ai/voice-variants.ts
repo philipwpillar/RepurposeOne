@@ -1,4 +1,4 @@
-import type { BrandVoiceInput, TargetFormat } from "@/types";
+import type { ResolvedBrandVoice, TargetFormat } from "@/types";
 
 export const VOICE_VARIANT_IDS = ["signature", "explain", "provoke"] as const;
 
@@ -73,11 +73,17 @@ export const DEFAULT_VOICE_VARIANT_BY_FORMAT: Record<
 export const VOICE_IDENTITY_PRECEDENCE =
   "The voice identity above is fixed. Follow it strictly - this is your primary tone anchor. Later instructions may adjust delivery but must not change vocabulary, self-reference, audience-reference, formatting conventions, or stated positions.";
 
-export function buildVoiceIdentityBlock(input: BrandVoiceInput): string {
-  return `Voice identity (follow strictly - this is your primary tone anchor):\n${input.description?.trim() || "No description provided."}\n${VOICE_IDENTITY_PRECEDENCE}`;
+export function buildVoiceIdentityBlock(input: ResolvedBrandVoice): string {
+  const description =
+    input.description?.trim() || "No description provided.";
+  const summary = input.voice_range?.summary?.trim();
+  const identityBody = summary
+    ? `${description}\nVoice range: ${summary}`
+    : description;
+  return `Voice identity (follow strictly - this is your primary tone anchor):\n${identityBody}\n${VOICE_IDENTITY_PRECEDENCE}`;
 }
 
-export function buildVoiceSamplesBlock(input: BrandVoiceInput): string {
+export function buildVoiceSamplesBlock(input: ResolvedBrandVoice): string {
   if (!input.samples?.length) return "";
   return (
     "Writing samples:\n" +
@@ -86,7 +92,7 @@ export function buildVoiceSamplesBlock(input: BrandVoiceInput): string {
 }
 
 export function assembleVoiceLayers(
-  input: BrandVoiceInput,
+  input: ResolvedBrandVoice,
   variantId: VoiceVariantId,
   exemplarsText?: string
 ): string {

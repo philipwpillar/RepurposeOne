@@ -15,7 +15,7 @@ import {
 import type { VoiceVariantId } from "@/lib/ai/voice-variants";
 import {
   RepurposeOutputSchema,
-  type BrandVoiceInput,
+  type ResolvedBrandVoice,
   type RepurposeOutput,
   type TargetFormat,
 } from "@/types";
@@ -29,7 +29,7 @@ type OpenRouterChatCompletionParams =
 
 export interface GenerateInput {
   inputContent: string;
-  brandVoice: BrandVoiceInput;
+  brandVoice: ResolvedBrandVoice;
   voiceVariant: VoiceVariantId;
   targetFormat: TargetFormat;
   targetTweets?: number;
@@ -159,7 +159,7 @@ export interface GenerateImageInput {
   imageMime: PhotoMimeType;
   context: string;
   cta?: string;
-  brandVoice: BrandVoiceInput;
+  brandVoice: ResolvedBrandVoice;
   voiceVariant: VoiceVariantId;
   targetFormat: TargetFormat;
   targetTweets?: number;

@@ -1,4 +1,4 @@
-import type { BrandVoiceInput, TargetFormat } from "@/types";
+import type { ResolvedBrandVoice, TargetFormat } from "@/types";
 import {
   getDefaultWords,
   wordsToTweets,
@@ -9,7 +9,7 @@ import {
 } from "@/lib/ai/voice-variants";
 
 export interface PromptContext {
-  brandVoice: BrandVoiceInput;
+  brandVoice: ResolvedBrandVoice;
   voiceVariant: VoiceVariantId;
   sourceText: string;
   targetFormat: TargetFormat;
@@ -24,7 +24,7 @@ export interface PromptContext {
 }
 
 export interface PhotoPromptContext {
-  brandVoice: BrandVoiceInput;
+  brandVoice: ResolvedBrandVoice;
   voiceVariant: VoiceVariantId;
   context: string;
   cta?: string;
@@ -39,7 +39,7 @@ export interface PhotoPromptContext {
  * Build the distilled brand voice block from samples and/or description.
  * In a future slice this profile can be cached on brand_voices after extraction.
  */
-export function buildBrandVoiceBlock(input: BrandVoiceInput): string {
+export function buildBrandVoiceBlock(input: ResolvedBrandVoice): string {
   const parts: string[] = [];
 
   if (input.description) {
