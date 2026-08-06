@@ -231,9 +231,11 @@ export function DashboardShell({
         Skip to main content
       </a>
 
-      {/* Desktop sidebar - width driven by html.vo-sidebar-collapsed (boot script). */}
+      {/* Desktop sidebar - width driven by html.vo-sidebar-collapsed (boot script).
+          sticky + self-start + h-dvh keeps nav pinned while the main column scrolls
+          (same pattern as vercel.com dashboard). */}
       <aside
-        className="vo-sidebar chrome-dark hidden shrink-0 flex-col border-r border-border bg-card md:flex"
+        className="vo-sidebar chrome-dark sticky top-0 hidden h-dvh shrink-0 flex-col self-start border-r border-border bg-card md:flex"
         aria-label="Primary"
       >
         <div
