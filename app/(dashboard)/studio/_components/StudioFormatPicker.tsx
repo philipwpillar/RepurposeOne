@@ -63,7 +63,7 @@ export default function StudioFormatPicker({
           );
         })}
       </div>
-      <p className="mt-1.5 text-[11px] text-muted-foreground">
+      <p className="mt-1.5 text-xs text-muted-foreground">
         Selected formats run together. You can still regenerate one card at a
         time after results appear.
       </p>

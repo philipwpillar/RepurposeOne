@@ -128,7 +128,7 @@ export default async function DashboardPage() {
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Recent work</h2>
+          <h2 className="text-section">Recent work</h2>
           <Button asChild variant="ghost" size="sm">
             <Link href="/library">
               View all

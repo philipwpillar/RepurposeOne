@@ -195,6 +195,42 @@ body {
   letter-spacing: -0.03em;
 }
 
+/* Type roles - see docs/UI_REDESIGN_CONTRACT.md section 5 */
+.text-page-title {
+  font-family: var(--font-display), "Space Grotesk", system-ui, sans-serif;
+  font-size: 1.5rem; /* 24px */
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.25;
+}
+
+.text-section {
+  font-size: 1.125rem; /* 18px */
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+
+.text-panel {
+  font-size: 1rem; /* 16px */
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+
+.text-caption {
+  font-size: 0.75rem; /* 12px */
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.text-micro {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.625rem; /* 10px */
+  font-weight: 500;
+  line-height: 1.3;
+}
+
 .aurora {
   background: var(--aurora);
 }
@@ -208,9 +244,21 @@ body {
 
 .eyebrow {
   font-family: var(--font-mono), ui-monospace, monospace;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  font-size: 0.6875rem; /* ~11px */
+  font-size: 0.6875rem; /* 11px - meta role */
+  line-height: 1.3;
+}
+
+/* cmdk group headings share the meta (eyebrow) role */
+.vo-cmdk [cmdk-group-heading] {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.6875rem;
+  line-height: 1.3;
 }
 
 /* Skip link - first focusable control in the app shell */

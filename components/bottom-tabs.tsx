@@ -42,7 +42,7 @@ export function BottomTabs() {
                 aria-current={active ? "page" : undefined}
                 onClick={() => void hapticImpact("Light")}
                 className={cn(
-                  "flex h-full flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors",
+                  "flex h-full flex-col items-center justify-center gap-0.5 text-micro transition-colors",
                   active
                     ? "text-primary"
                     : "text-muted-foreground hover:text-foreground",

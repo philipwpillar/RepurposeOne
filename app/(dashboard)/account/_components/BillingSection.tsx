@@ -46,7 +46,7 @@ export function BillingSection({
     return (
       <section id="billing" className="space-y-4 scroll-mt-20">
         <div>
-          <h2 className="text-lg font-semibold">Billing</h2>
+          <h2 className="text-section">Billing</h2>
           <p className="text-sm text-muted-foreground">
             Your current plan is shown under Plan &amp; usage.
           </p>
@@ -65,7 +65,7 @@ export function BillingSection({
   return (
     <section id="billing" className="space-y-4 scroll-mt-20">
       <div>
-        <h2 className="text-lg font-semibold">Billing</h2>
+        <h2 className="text-section">Billing</h2>
         <p className="text-sm text-muted-foreground">
           Invoices, payment method, cancellations, and downgrades are managed
           in the Stripe customer portal.

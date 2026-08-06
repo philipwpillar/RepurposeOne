@@ -40,7 +40,7 @@ export function ShortcutSheet() {
         <div className="space-y-5">
           {groups.map(({ group, items }) => (
             <section key={group} className="space-y-2">
-              <h3 className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+              <h3 className="eyebrow text-muted-foreground">
                 {group}
               </h3>
               <ul className="space-y-1.5">
@@ -50,7 +50,7 @@ export function ShortcutSheet() {
                     className="flex items-center justify-between gap-3 text-sm"
                   >
                     <span className="text-foreground">{item.label}</span>
-                    <kbd className="shrink-0 rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
+                    <kbd className="text-micro shrink-0 rounded border border-border bg-muted px-1.5 py-0.5 text-muted-foreground">
                       {formatShortcutKeys(item.keys)}
                     </kbd>
                   </li>

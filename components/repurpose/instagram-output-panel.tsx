@@ -193,7 +193,7 @@ export function InstagramOutputPanel({
       <Card>
         <CardHeader>
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <CardTitle className="text-lg">Instagram caption</CardTitle>
+            <CardTitle>Instagram caption</CardTitle>
             {copyActions}
           </div>
         </CardHeader>

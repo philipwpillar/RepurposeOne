@@ -70,7 +70,7 @@ export function ProfileSection({
   return (
     <section id="profile" className="space-y-4 scroll-mt-20">
       <div>
-        <h2 className="text-lg font-semibold">Profile</h2>
+        <h2 className="text-section">Profile</h2>
         <p className="text-sm text-muted-foreground">
           How you appear in Voiceora. Email changes are not available in-app
           yet.

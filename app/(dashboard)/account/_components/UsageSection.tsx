@@ -24,7 +24,7 @@ export function UsageSection({
     <section id="usage" className="space-y-4 scroll-mt-20">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold">Plan &amp; usage</h2>
+          <h2 className="text-section">Plan &amp; usage</h2>
           <p className="text-sm text-muted-foreground">
             Generations are successful runs this calendar month - not tokens.
           </p>

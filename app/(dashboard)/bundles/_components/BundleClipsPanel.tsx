@@ -97,7 +97,7 @@ export default function BundleClipsPanel({
       }
     >
       <div>
-        <h3 className="text-base font-semibold text-foreground">
+        <h3 className="text-panel text-foreground">
           Suggested clips
         </h3>
         <p className="mt-1 text-xs text-muted-foreground">

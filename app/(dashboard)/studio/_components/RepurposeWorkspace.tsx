@@ -1058,7 +1058,7 @@ export default function RepurposeWorkspace({
         <button
           type="button"
           onClick={() => regenerateFormat(format)}
-          className="mt-1 text-[11px] font-medium text-destructive underline underline-offset-2"
+          className="mt-1 text-xs font-medium text-destructive underline underline-offset-2"
         >
           Try again
         </button>
@@ -1087,7 +1087,7 @@ export default function RepurposeWorkspace({
             <div className="mb-3 flex flex-wrap items-center gap-1.5">
               {variants.length > 1 ? (
                 <>
-                  <span className="text-[11px] font-medium text-muted-foreground">
+                  <span className="text-xs font-medium text-muted-foreground">
                     Versions
                   </span>
                   {variants.map((variant, index) => (
@@ -1099,8 +1099,8 @@ export default function RepurposeWorkspace({
                       aria-label={`Show version ${index + 1}`}
                       className={
                         index === activeIdx
-                          ? "rounded-full border border-primary bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary transition-colors"
-                          : "rounded-full border border-border px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+                          ? "rounded-full border border-primary bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary transition-colors"
+                          : "rounded-full border border-border px-2.5 py-0.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
                       }
                     >
                       v{index + 1}
@@ -1109,7 +1109,7 @@ export default function RepurposeWorkspace({
                 </>
               ) : null}
               {activeId ? (
-                <span className="ml-auto font-mono text-[10px] text-muted-foreground">
+                <span className="text-caption ml-auto font-mono text-muted-foreground">
                   ID {activeId.slice(0, 8)}
                 </span>
               ) : null}
@@ -1138,7 +1138,7 @@ export default function RepurposeWorkspace({
   return (
     <div className="mx-auto min-h-screen max-w-screen-md bg-background px-4 pb-40 pt-6 md:pb-28">
       <div className="mb-6">
-        <h1 className="font-display text-2xl font-semibold tracking-tight">
+        <h1 className="text-page-title">
           Content Studio
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">

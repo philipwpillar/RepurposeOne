@@ -11,7 +11,7 @@ export default function HoldingPage() {
     <main className="chrome-dark vo-auth relative flex min-h-screen flex-col items-center justify-center px-4 py-10">
       <div className="vo-auth-glow" aria-hidden="true" />
       <div className="relative z-10 flex flex-col items-center gap-5 text-center">
-        <BrandLockup size={32} wordmarkClassName="text-2xl" />
+        <BrandLockup size={32} wordmarkClassName="text-xl" />
         <p className="text-base text-muted-foreground">
           Voiceora is coming soon
         </p>

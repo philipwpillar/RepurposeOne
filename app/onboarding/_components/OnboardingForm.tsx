@@ -135,7 +135,7 @@ export function OnboardingForm() {
           <div className="mb-1 text-xs font-semibold tracking-wider text-primary">
             QUICK SETUP · 1 OF 1
           </div>
-          <h1 className="font-display text-2xl text-foreground">
+          <h1 className="text-page-title text-foreground">
             Teach Voiceora how you write
           </h1>
           <CardDescription>

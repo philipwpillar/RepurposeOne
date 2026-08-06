@@ -580,7 +580,7 @@ export default function BundleWorkspace({
       {pack && (
         <section className="space-y-4">
           <div>
-            <h2 className="text-lg font-semibold text-foreground">Your pack</h2>
+            <h2 className="text-section text-foreground">Your pack</h2>
             <p className="text-sm text-muted-foreground">
               Captions in recommended posting order. Platform posts live in the
               Library - this page keeps the pack preview for this session.

@@ -75,10 +75,10 @@ export default function BundleVideoPicker({
                 className="aspect-square w-full object-cover"
               />
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-2 py-1.5">
-                <p className="truncate text-[11px] font-medium text-white">
+                <p className="truncate text-xs font-medium text-white">
                   Video {index + 1} · {video.durationS.toFixed(0)}s
                 </p>
-                <p className="truncate text-[10px] text-white/80">
+                <p className="text-caption truncate text-white/80">
                   {video.fileName}
                 </p>
               </div>

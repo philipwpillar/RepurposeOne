@@ -94,7 +94,7 @@ export function CommandPalette() {
         </DialogDescription>
         <Command
           label="Command palette"
-          className="flex max-h-[min(70vh,28rem)] flex-col"
+          className="vo-cmdk flex max-h-[min(70vh,28rem)] flex-col"
         >
           <CommandInput
             placeholder="Search or jump to…"
@@ -107,7 +107,7 @@ export function CommandPalette() {
 
             <CommandGroup
               heading="Navigate"
-              className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:font-mono [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted-foreground"
+              className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-muted-foreground"
             >
               {NAVIGATE_SHORTCUTS.map((item) =>
                 item.href ? (
@@ -118,7 +118,7 @@ export function CommandPalette() {
                     className="flex cursor-pointer items-center justify-between gap-3 rounded-md px-2 py-2 text-sm aria-selected:bg-accent aria-selected:text-accent-foreground"
                   >
                     <span>{item.label.replace(/^Go to /, "")}</span>
-                    <kbd className="font-mono text-[10px] text-muted-foreground">
+                    <kbd className="text-micro text-muted-foreground">
                       {formatShortcutKeys(item.keys)}
                     </kbd>
                   </CommandItem>
@@ -130,7 +130,7 @@ export function CommandPalette() {
 
             <CommandGroup
               heading="Create"
-              className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:font-mono [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted-foreground"
+              className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-muted-foreground"
             >
               {PALETTE_CREATE_ITEMS.map((item) => (
                 <CommandItem
@@ -148,7 +148,7 @@ export function CommandPalette() {
 
             <CommandGroup
               heading="Recent"
-              className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:font-mono [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted-foreground"
+              className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-muted-foreground"
             >
               {recentStatus === "loading" || recentStatus === "idle" ? (
                 <CommandItem
@@ -196,7 +196,7 @@ export function CommandPalette() {
 
             <CommandGroup
               heading="General"
-              className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:font-mono [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted-foreground"
+              className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-muted-foreground"
             >
               <CommandItem
                 value="keyboard shortcuts"
@@ -207,7 +207,7 @@ export function CommandPalette() {
                 className="flex cursor-pointer items-center justify-between gap-3 rounded-md px-2 py-2 text-sm aria-selected:bg-accent aria-selected:text-accent-foreground"
               >
                 <span>Keyboard shortcuts</span>
-                <kbd className="font-mono text-[10px] text-muted-foreground">
+                <kbd className="text-micro text-muted-foreground">
                   ?
                 </kbd>
               </CommandItem>

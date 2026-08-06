@@ -186,7 +186,7 @@ export function EmailOutputPanel({
         <CardHeader>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <CardTitle className="text-lg">Email newsletter</CardTitle>
+              <CardTitle>Email newsletter</CardTitle>
               <CardDescription>{display.subject_line}</CardDescription>
             </div>
             {copyActions}

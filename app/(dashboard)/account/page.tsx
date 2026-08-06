@@ -188,7 +188,7 @@ export default async function AccountPage() {
 
       {native ? (
         <section id="plans" className="space-y-2 scroll-mt-20">
-          <h2 className="text-lg font-semibold">Plan</h2>
+          <h2 className="text-section">Plan</h2>
           <p className="text-sm text-muted-foreground">
             Plan: {planLabel(usage.plan)}
           </p>
@@ -196,7 +196,7 @@ export default async function AccountPage() {
       ) : (
         <section id="plans" className="space-y-4 scroll-mt-20">
           <div>
-            <h2 className="text-lg font-semibold">Plans</h2>
+            <h2 className="text-section">Plans</h2>
             <p className="text-sm text-muted-foreground">
               {usage.plan === "free"
                 ? "Choose a plan to unlock more generations each month."
@@ -225,7 +225,7 @@ export default async function AccountPage() {
         className="space-y-4 scroll-mt-20 rounded-2xl border-2 border-destructive/40 bg-destructive/5 p-5"
       >
         <div>
-          <h2 className="text-lg font-semibold text-destructive">
+          <h2 className="text-section text-destructive">
             Delete account
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">

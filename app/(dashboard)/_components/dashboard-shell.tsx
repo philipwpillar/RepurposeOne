@@ -163,7 +163,7 @@ function GroupedNavLinks({
         <div key={group.id} className="pt-3">
           <p
             className={cn(
-              "vo-sidebar-group-label mb-1 px-3 font-mono text-[10px] uppercase tracking-wider text-muted-foreground",
+              "vo-sidebar-group-label eyebrow mb-1 px-3 text-muted-foreground",
               collapsed && "sr-only"
             )}
           >
@@ -364,7 +364,7 @@ export function DashboardShell({
             >
               <Search className="h-3.5 w-3.5" aria-hidden="true" />
               <span className="text-xs">Search</span>
-              <kbd className="rounded border border-border bg-muted px-1.5 font-mono text-[10px]">
+              <kbd className="text-micro rounded border border-border bg-muted px-1.5 text-muted-foreground">
                 ⌘K
               </kbd>
             </Button>
