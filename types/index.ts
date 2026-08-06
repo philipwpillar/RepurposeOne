@@ -73,6 +73,11 @@ export const BrandVoiceInputSchema = z.object({
 );
 export type BrandVoiceInput = z.infer<typeof BrandVoiceInputSchema>;
 
+/** Server-resolved voice including wizard voice_range. Not a client body schema. */
+export type ResolvedBrandVoice = BrandVoiceInput & {
+  voice_range?: VoiceRange | null;
+};
+
 export const BrandVoiceWizardRequestSchema = z.object({
   audience: z.string().trim().min(2).max(500),
   tone_words: z.string().trim().min(2).max(300),

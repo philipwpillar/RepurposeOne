@@ -207,7 +207,8 @@ export async function POST(request: Request) {
   const exemplarsText = await fetchVoiceExemplarsText(
     supabase,
     user.id,
-    target_format
+    target_format,
+    brand_voice_id ?? null
   );
   if (exemplarsText) {
     console.info(
