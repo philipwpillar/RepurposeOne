@@ -48,7 +48,7 @@ export function BillingSection({
         <div>
           <h2 className="text-section">Billing</h2>
           <p className="text-sm text-muted-foreground">
-            Your current plan is shown under Plan &amp; usage.
+            Your current plan is shown under Plan &amp; Usage.
           </p>
         </div>
         {paymentFailed ? (

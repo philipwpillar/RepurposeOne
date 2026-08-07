@@ -63,7 +63,7 @@
 .vo-landing .hero-grid { position:relative; z-index:2; display:grid; grid-template-columns:1.05fr 0.95fr; gap:56px; align-items:center; padding:56px 0 92px; }
 .vo-landing .eyebrow { display:inline-flex; align-items:center; gap:8px; font-family:var(--font-mono); font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-lo); margin-bottom:22px; }
 .vo-landing .eyebrow .dot { width:6px; height:6px; border-radius:50%; background:var(--aur-1); box-shadow:0 0 10px var(--aur-1); }
-.vo-landing h1.head { font-family:var(--font-display); font-weight:700; color:var(--text-hi); font-size:clamp(38px,5vw,62px); line-height:1.02; letter-spacing:-0.03em; }
+.vo-landing h1.head { font-weight:700; color:var(--text-hi); font-size:clamp(38px,5vw,62px); line-height:1.02; letter-spacing:-0.03em; }
 .vo-landing h1.head .grad { background:var(--aurora); -webkit-background-clip:text; background-clip:text; color:transparent; }
 .vo-landing .sub { color:var(--text-lo); font-size:16px; max-width:30em; margin:22px 0 30px; line-height:1.6; }
 .vo-landing .cta-row { display:flex; flex-wrap:wrap; gap:14px; align-items:center; }
@@ -99,7 +99,7 @@
 .vo-landing .how { padding:78px 0; background:var(--paper); }
 .vo-landing .how h2,
 .vo-landing .zone-title {
-  font-family:var(--font-display); font-weight:600; font-size:18px; letter-spacing:0.06em;
+  font-weight:600; font-size:18px; letter-spacing:0.06em;
   text-transform:uppercase; color:var(--ink-muted); text-align:center; margin:0;
 }
 .vo-landing .steps {
@@ -120,14 +120,14 @@
 }
 .vo-landing .step { position:relative; z-index:1; padding:0 4px; background:transparent; border:0; }
 .vo-landing .step .n {
-  font-family:var(--font-display); font-weight:600; font-size:clamp(34px,4vw,44px);
+  font-weight:600; font-size:clamp(34px,4vw,44px);
   letter-spacing:-0.03em; line-height:1; color:var(--metal); margin-bottom:18px;
 }
 .vo-landing .step .n.grad {
   background:var(--aurora); -webkit-background-clip:text; background-clip:text; color:transparent;
 }
 .vo-landing .step .glyph { display:block; color:var(--aur-2); margin-bottom:12px; }
-.vo-landing .step .st { font-family:var(--font-display); font-weight:600; font-size:18px; letter-spacing:-0.01em; margin:0 0 8px; }
+.vo-landing .step .st { font-weight:600; font-size:18px; letter-spacing:-0.01em; margin:0 0 8px; }
 .vo-landing .step .sd { color:var(--ink-muted); font-size:14px; line-height:1.55; margin:0; }
 .vo-landing .step .tiertag {
   display:inline-block; margin-top:10px; font-family:var(--font-mono); font-size:11px;
@@ -216,7 +216,7 @@
 .vo-landing .fmeta .fmark-neutral { color:var(--platform-x); }
 .vo-landing .fmeta .fmark-teal { color:var(--teal); }
 .vo-landing .fmeta h3 {
-  font-family:var(--font-display); font-weight:600; font-size:16px; letter-spacing:-0.01em;
+  font-weight:600; font-size:16px; letter-spacing:-0.01em;
   color:var(--text-hi); margin:0 0 6px;
 }
 .vo-landing .fmeta p { color:var(--text-lo); font-size:14px; line-height:1.55; margin:0; }
@@ -233,7 +233,7 @@
 .vo-landing .voice-lab .wrap { position:relative; z-index:2; }
 .vo-landing .voice-lab .zone-title { color:var(--text-lo); }
 .vo-landing .voice-lab h2.big {
-  font-family:var(--font-display); font-weight:700; color:var(--text-hi);
+  font-weight:700; color:var(--text-hi);
   font-size:clamp(30px,4vw,46px); letter-spacing:-0.025em; text-align:center; margin:14px 0 0;
 }
 .vo-landing .voice-lab h2.big .grad {
@@ -388,7 +388,7 @@
   text-transform:uppercase; color:var(--ink-muted);
 }
 .vo-landing .price-amount {
-  font-family:var(--font-display); font-weight:700; font-size:28px;
+  font-weight:700; font-size:28px;
   letter-spacing:-0.03em; color:var(--ink);
 }
 .vo-landing .price-blurb {
@@ -414,7 +414,7 @@
 .vo-landing .final-cta .aurora-glow { animation-duration:20s; opacity:0.8; }
 .vo-landing .final-cta .wrap { position:relative; z-index:2; }
 .vo-landing .final-cta h2 {
-  font-family:var(--font-display); font-weight:700; color:var(--text-hi);
+  font-weight:700; color:var(--text-hi);
   font-size:clamp(28px,3.6vw,42px); letter-spacing:-0.025em; margin:0;
 }
 .vo-landing .final-cta p { color:var(--text-lo); margin:16px 0 30px; font-size:16px; }

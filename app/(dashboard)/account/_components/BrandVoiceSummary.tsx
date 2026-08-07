@@ -25,7 +25,7 @@ export function BrandVoiceSummary({
   return (
     <section id="voice" className="space-y-4 scroll-mt-20">
       <div>
-        <h2 className="text-section">Brand voice</h2>
+        <h2 className="text-section">Brand Voice</h2>
         <p className="text-sm text-muted-foreground">
           Applied across Studio and Moment Bundle outputs.
         </p>

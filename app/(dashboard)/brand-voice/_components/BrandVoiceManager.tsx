@@ -480,7 +480,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
         <Card className="border-border">
           <CardHeader>
             <CardTitle>
-              {formMode === "create" ? "Create brand voice" : "Edit brand voice"}
+              {formMode === "create" ? "Create Brand Voice" : "Edit Brand Voice"}
             </CardTitle>
             <CardDescription>
               Name the profile, then add a style note and/or writing samples.
@@ -596,7 +596,7 @@ export function BrandVoiceManager({ initialVoices }: BrandVoiceManagerProps) {
             <Mic className="h-6 w-6 text-primary" />
           </div>
           <h2 className="text-panel mb-2 text-foreground">
-            Teach Voiceora how you write
+            Teach Voiceora How You Write
           </h2>
           <p className="mx-auto mb-6 max-w-md text-sm text-muted-foreground">
             Your default voice is applied automatically in Studio. Without one,

@@ -63,7 +63,7 @@ export default function PastBundlesList({ bundles }: PastBundlesListProps) {
   if (!bundles.length) {
     return (
       <section className="space-y-3 rounded-2xl border border-dashed border-border bg-muted/20 px-4 py-6 text-center">
-        <h2 className="text-section text-foreground">Past bundles</h2>
+        <h2 className="text-section text-foreground">Past Bundles</h2>
         <p className="text-sm text-muted-foreground">
           Completed packs appear here. Open posts in the Library to copy, edit,
           or reuse.
@@ -75,7 +75,7 @@ export default function PastBundlesList({ bundles }: PastBundlesListProps) {
   return (
     <section className="space-y-3">
       <div>
-        <h2 className="text-section text-foreground">Past bundles</h2>
+        <h2 className="text-section text-foreground">Past Bundles</h2>
         <p className="text-sm text-muted-foreground">
           Job history - open complete packs in the Library. In-progress jobs keep
           updating if you leave and return.

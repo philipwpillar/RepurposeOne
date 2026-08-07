@@ -27,7 +27,7 @@ export default function RootError({
     <div className="flex min-h-screen items-center justify-center bg-background p-4 text-foreground">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Something went wrong</CardTitle>
+          <CardTitle>Something Went Wrong</CardTitle>
           <CardDescription>
             Something went wrong loading this page. You can try again or return
             home.

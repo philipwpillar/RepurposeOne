@@ -197,10 +197,11 @@ body {
 
 /* Type roles - see docs/UI_REDESIGN_CONTRACT.md section 5 */
 .text-page-title {
-  font-family: var(--font-display), "Space Grotesk", system-ui, sans-serif;
+  font-family: var(--font-body), system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, sans-serif;
   font-size: 1.5rem; /* 24px */
   font-weight: 600;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
   line-height: 1.25;
 }
 

@@ -33,7 +33,7 @@ export default function TermsPage() {
 
         <div className="mt-10 space-y-8 text-foreground">
           <section>
-            <h2 className="text-section">The service</h2>
+            <h2 className="text-section">The Service</h2>
             <p className="mt-3 leading-relaxed text-muted-foreground">
               Voiceora provides AI-assisted content repurposing tools. You
               retain ownership of content you submit and outputs generated for
@@ -49,7 +49,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-section">Accounts &amp; plans</h2>
+            <h2 className="text-section">Accounts &amp; Plans</h2>
             <p className="mt-3 leading-relaxed text-muted-foreground">
               You must provide accurate account information and keep your
               credentials secure. Free and paid plans include monthly generation
@@ -60,7 +60,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-section">Acceptable use</h2>
+            <h2 className="text-section">Acceptable Use</h2>
             <p className="mt-3 leading-relaxed text-muted-foreground">
               Do not use Voiceora to generate unlawful, harmful, or infringing
               content; abuse the service; attempt to bypass plan limits; or
@@ -70,7 +70,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-section">AI processing</h2>
+            <h2 className="text-section">AI Processing</h2>
             <p className="mt-3 leading-relaxed text-muted-foreground">
               Content you submit is processed by third-party AI providers to
               produce outputs. Outputs may be imperfect - review before
@@ -80,7 +80,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-section">Limitation of liability</h2>
+            <h2 className="text-section">Limitation of Liability</h2>
             <p className="mt-3 leading-relaxed text-muted-foreground">
               To the fullest extent permitted by law, Voiceora is provided
               &ldquo;as is&rdquo; and we are not liable for indirect or

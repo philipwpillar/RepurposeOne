@@ -185,7 +185,7 @@ export default async function LibraryPage({
     if (formatFilter) {
       return `No ${formatLabel(formatFilter)} outputs yet`;
     }
-    return "No history yet";
+    return "No History Yet";
   })();
 
   const emptyFilterDescription = searchQuery
@@ -245,7 +245,7 @@ export default async function LibraryPage({
       ) : totalItems === 0 ? (
         <Card>
           <CardHeader>
-            <CardTitle>No history yet</CardTitle>
+            <CardTitle>No History Yet</CardTitle>
             <CardDescription>
               When you generate in Studio, each source and its platform outputs
               land here - ready to review, copy, or reuse.

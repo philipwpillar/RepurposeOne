@@ -33,7 +33,7 @@ export default function PrivacyPage() {
 
         <div className="mt-10 space-y-8 text-foreground">
           <section>
-            <h2 className="text-section">Who we are</h2>
+            <h2 className="text-section">Who We Are</h2>
             <p className="mt-3 leading-relaxed text-muted-foreground">
               Voiceora is an AI content repurposing service operated from the
               United Kingdom. If you have questions about this policy, contact us
@@ -49,7 +49,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-section">What we collect</h2>
+            <h2 className="text-section">What We Collect</h2>
             <ul className="mt-3 list-disc space-y-3 pl-6 leading-relaxed text-muted-foreground">
               <li>
                 <strong className="font-medium text-foreground">
@@ -86,7 +86,7 @@ export default function PrivacyPage() {
 
 
           <section>
-            <h2 className="text-section">Landing page demo</h2>
+            <h2 className="text-section">Landing Page Demo</h2>
             <p className="mt-3 leading-relaxed text-muted-foreground">
               Visitors without an account can try the Voice Lab demo on our
               homepage. Text they paste is sent to our AI provider via
@@ -124,7 +124,7 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="text-section">
-              How we use your content with AI providers
+              How We Use Your Content with AI Providers
             </h2>
             <p className="mt-3 leading-relaxed text-muted-foreground">
               Content you submit for generation is sent to third-party AI model
@@ -135,7 +135,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-section">Legal basis (UK GDPR)</h2>
+            <h2 className="text-section">Legal Basis (UK GDPR)</h2>
             <p className="mt-3 leading-relaxed text-muted-foreground">
               We process your personal data on the following bases: contract
               performance (providing the service you signed up for), legitimate
@@ -145,7 +145,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-section">Data retention</h2>
+            <h2 className="text-section">Data Retention</h2>
             <p className="mt-3 leading-relaxed text-muted-foreground">
               We retain your account and content data while your account is
               active, including text sources, brand-voice samples, generated
@@ -179,7 +179,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-section">Your rights (UK GDPR)</h2>
+            <h2 className="text-section">Your Rights (UK GDPR)</h2>
             <p className="mt-3 leading-relaxed text-muted-foreground">
               Under UK GDPR, you have the right to access, rectify, erase, and
               port your personal data, and to object to certain processing. You
@@ -198,7 +198,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-section">Third parties / processors</h2>
+            <h2 className="text-section">Third Parties / Processors</h2>
             <ul className="mt-3 list-disc space-y-2 pl-6 leading-relaxed text-muted-foreground">
               <li>
                 <strong className="font-medium text-foreground">Supabase</strong>

@@ -26,7 +26,7 @@ export default function DashboardError({
     <div className="flex min-h-[50vh] items-center justify-center">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Something went wrong</CardTitle>
+          <CardTitle>Something Went Wrong</CardTitle>
           <CardDescription>
             Something went wrong loading this page. You can try again or head
             back to your dashboard.
