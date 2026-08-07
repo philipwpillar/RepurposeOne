@@ -48,7 +48,7 @@ export async function POST(request: Request) {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("stripe_customer_id")
+    .select("stripe_customer_id, stripe_subscription_id, plan")
     .eq("id", user.id)
     .single();
 
@@ -57,6 +57,20 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "Failed to load billing profile" },
       { status: 500 }
+    );
+  }
+
+  if (
+    profile?.stripe_subscription_id &&
+    profile.plan &&
+    profile.plan !== "free"
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          "You already have an active subscription. Use Manage billing to change plans.",
+      },
+      { status: 409 }
     );
   }
 

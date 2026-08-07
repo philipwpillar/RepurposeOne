@@ -82,7 +82,7 @@ npx cap sync ios
 
 **Xcode after sync:** Product → Clean Build Folder, then ⌘R (stale bundles keep an old `capacitor.config.json`).
 
-**Release rule:** before any App Store or external TestFlight archive, unset `CAPACITOR_SERVER_URL` / bypass tokens and re-run `npx cap sync ios` so the binary’s `server.url` is plain `https://www.voiceora.io` with no embedded preview token.
+**Release rule:** before any App Store or external TestFlight archive, unset `CAPACITOR_SERVER_URL` / bypass tokens and re-run `npx cap sync ios` so the binary’s `server.url` is plain `https://www.voiceora.io` with no embedded preview token. Confirm `ios/App/App/PrivacyInfo.xcprivacy` and photo/camera usage strings are present in `Info.plist`.
 
 **Host note:** Production canonical URL is `www.voiceora.io` (apex `voiceora.io` returns 308). The shell defaults to `www` so the bypass cookie is set on the host the WebView actually stays on.
 

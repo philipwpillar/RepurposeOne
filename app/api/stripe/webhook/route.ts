@@ -117,8 +117,9 @@ async function shouldApplyPaymentFailedEvent(
 async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
   const userId = getSupabaseUserId(session);
   if (!userId) {
+    // Throw so Stripe retries - silent 200 leaves a paid user on free.
     console.error("checkout.session.completed: missing supabase_user_id");
-    return;
+    throw new Error("checkout.session.completed: missing supabase_user_id");
   }
 
   const customerId = getStripeCustomerId(session.customer);
@@ -129,7 +130,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
 
   if (!subscriptionId) {
     console.error("checkout.session.completed: missing subscription id");
-    return;
+    throw new Error("checkout.session.completed: missing subscription id");
   }
 
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
@@ -140,7 +141,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       "checkout.session.completed: unknown price id",
       subscription.items.data[0]?.price.id
     );
-    return;
+    throw new Error("checkout.session.completed: unknown price id");
   }
 
   await updateProfileByUserId(userId, {
@@ -163,7 +164,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
         "customer.subscription.updated: unknown price id",
         subscription.items.data[0]?.price.id
       );
-      return;
+      throw new Error("customer.subscription.updated: unknown price id");
     }
 
     await updateProfileByCustomerId(customerId, {

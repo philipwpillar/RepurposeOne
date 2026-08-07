@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PAID_PLAN_CATALOG, type PaidPlanId } from "@/lib/billing/plan-catalog";
+import { isNativePlatform } from "@/lib/platform";
 import type { Plan } from "@/types";
 
 const PLAN_RANK: Record<Plan, number> = {
@@ -85,6 +86,15 @@ function PlanAction({
 export function UpgradePlans({ currentPlan }: UpgradePlansProps) {
   const [loadingPlan, setLoadingPlan] = useState<PaidPlanId | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Belt-and-braces for 3.1.3(f) if UA-based SSR strip is missing.
+  if (isNativePlatform()) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Plan: manage subscriptions on the web at voiceora.io.
+      </p>
+    );
+  }
 
   async function handleUpgrade(plan: PaidPlanId) {
     setError(null);

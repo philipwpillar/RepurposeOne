@@ -13,8 +13,6 @@ export const PHOTO_ACCEPTED_MIMES = [
 
 export type PhotoMimeType = (typeof PHOTO_ACCEPTED_MIMES)[number];
 
-export const PHOTO_ACCEPT_ATTRIBUTE = PHOTO_ACCEPTED_MIMES.join(",");
-
 /** HEIC/HEIF input only — decoded via Image()/canvas on Safari / iOS shell. */
 export const PHOTO_HEIC_INPUT_MIMES = [
   "image/heic",
@@ -23,13 +21,16 @@ export const PHOTO_HEIC_INPUT_MIMES = [
 
 export type PhotoHeicInputMime = (typeof PHOTO_HEIC_INPUT_MIMES)[number];
 
-/** Bundles picker accept — studio PHOTO_ACCEPT_ATTRIBUTE unchanged. */
-export const BUNDLE_PHOTO_ACCEPT_ATTRIBUTE = [
+/** Studio + Bundles file picker accept (HEIC decoded client-side where possible). */
+export const PHOTO_ACCEPT_ATTRIBUTE = [
   ...PHOTO_ACCEPTED_MIMES,
   ...PHOTO_HEIC_INPUT_MIMES,
   ".heic",
   ".heif",
 ].join(",");
+
+/** @deprecated Prefer PHOTO_ACCEPT_ATTRIBUTE — same value for Studio/Bundles parity. */
+export const BUNDLE_PHOTO_ACCEPT_ATTRIBUTE = PHOTO_ACCEPT_ATTRIBUTE;
 
 export const HEIC_DECODE_ERROR =
   "This photo format couldn't be read by your browser — export it as JPG and try again";

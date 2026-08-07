@@ -55,6 +55,11 @@
 			</array>
 		</dict>
 	</array>
+	<!-- Studio / Bundles photo pickers in the WKWebView shell. -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Voiceora needs access to your photos so you can generate posts from images in Studio and Moment Bundles.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Voiceora needs camera access so you can take a photo to generate posts in Studio and Moment Bundles.</string>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
 </dict>

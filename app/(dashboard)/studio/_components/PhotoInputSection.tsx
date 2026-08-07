@@ -7,7 +7,10 @@ import {
   type PhotoInputReady,
   type PhotoInputState,
 } from "@/types/photo-input";
-import { PHOTO_CONTEXT_MIN_LENGTH } from "@/lib/image/constants";
+import {
+  PHOTO_ACCEPT_ATTRIBUTE,
+  PHOTO_CONTEXT_MIN_LENGTH,
+} from "@/lib/image/constants";
 import { downscaleImage, validateImageFile } from "@/lib/image/downscale";
 import PhotoDropZone from "./PhotoDropZone";
 import PhotoPreviewCard from "./PhotoPreviewCard";
@@ -144,7 +147,7 @@ export default function PhotoInputSection({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept={PHOTO_ACCEPT_ATTRIBUTE}
         className="sr-only"
         aria-hidden
         onChange={(event) => {
