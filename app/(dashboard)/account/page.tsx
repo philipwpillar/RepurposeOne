@@ -226,7 +226,7 @@ export default async function AccountPage() {
       >
         <div>
           <h2 className="text-section text-destructive">
-            Delete account
+            Delete Account
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
             This permanently deletes your Voiceora account, brand voices,

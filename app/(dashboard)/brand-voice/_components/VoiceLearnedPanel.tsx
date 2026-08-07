@@ -6,6 +6,14 @@ import { RefreshCw, Pin, Ban, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { VoiceRule } from "@/types";
 
 type EvidenceLink = {
@@ -25,6 +33,7 @@ export function VoiceLearnedPanel({ brandVoiceId, disabled }: Props) {
   );
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
 
   const loadRules = useCallback(async () => {
     const supabase = createClient();
@@ -131,14 +140,8 @@ export function VoiceLearnedPanel({ brandVoiceId, disabled }: Props) {
     }
   }
 
-  async function handleReset() {
-    if (
-      !window.confirm(
-        "Clear all learned preferences for this voice? Samples and description are kept."
-      )
-    ) {
-      return;
-    }
+  async function confirmReset() {
+    setResetOpen(false);
     setBusy(true);
     try {
       const res = await fetch(
@@ -183,7 +186,7 @@ export function VoiceLearnedPanel({ brandVoiceId, disabled }: Props) {
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => void handleReset()}
+              onClick={() => setResetOpen(true)}
               disabled={locked}
               className="text-destructive hover:text-destructive/80"
             >
@@ -193,6 +196,34 @@ export function VoiceLearnedPanel({ brandVoiceId, disabled }: Props) {
           ) : null}
         </div>
       </div>
+
+      <Dialog open={resetOpen} onOpenChange={setResetOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset Learned Preferences?</DialogTitle>
+            <DialogDescription>
+              Clear all learned preferences for this voice? Samples and
+              description are kept.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setResetOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => void confirmReset()}
+            >
+              Reset
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading preferences…</p>

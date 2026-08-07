@@ -20,7 +20,7 @@ export default async function NotFound() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4 text-foreground">
       <Card className="w-full max-w-md text-center">
         <CardHeader>
-          <CardTitle>Page not found</CardTitle>
+          <CardTitle>Page Not Found</CardTitle>
           <CardDescription>
             The page you&apos;re looking for doesn&apos;t exist or may have been
             moved.

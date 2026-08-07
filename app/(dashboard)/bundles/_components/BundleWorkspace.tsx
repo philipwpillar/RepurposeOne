@@ -402,7 +402,7 @@ export default function BundleWorkspace({
   return (
     <div className="mx-auto max-w-3xl space-y-10">
       <PageHeader
-        title={VIDEO_BUNDLES_DEV ? "Moment pack" : "Photo pack"}
+        title={VIDEO_BUNDLES_DEV ? "Moment Pack" : "Photo Pack"}
         description={`Upload up to ${BUNDLE_MAX_PHOTOS} photos${
           VIDEO_BUNDLES_DEV ? " and 2 short videos" : ""
         }, add context, and get captions, a posting order, and drafts for X, LinkedIn, Instagram, and email in one run.`}
@@ -425,7 +425,7 @@ export default function BundleWorkspace({
 
       <section className="space-y-5 rounded-3xl border border-border bg-card p-5 sm:p-6">
         <div>
-          <h2 className="text-sm font-semibold text-foreground">New pack</h2>
+          <h2 className="text-sm font-semibold text-foreground">New Pack</h2>
           <p className="text-xs text-muted-foreground">
             Assets → context → generate. Long runs keep a job row in Past bundles
             if you leave this page.
@@ -555,7 +555,7 @@ export default function BundleWorkspace({
             aria-live="polite"
           >
             Generating your pack… You can leave this page - check{" "}
-            <span className="font-medium text-foreground">Past bundles</span>{" "}
+            <span className="font-medium text-foreground">Past Bundles</span>{" "}
             when you return for status and Library links.
           </p>
         ) : null}
@@ -580,7 +580,7 @@ export default function BundleWorkspace({
       {pack && (
         <section className="space-y-4">
           <div>
-            <h2 className="text-section text-foreground">Your pack</h2>
+            <h2 className="text-section text-foreground">Your Pack</h2>
             <p className="text-sm text-muted-foreground">
               Captions in recommended posting order. Platform posts live in the
               Library - this page keeps the pack preview for this session.

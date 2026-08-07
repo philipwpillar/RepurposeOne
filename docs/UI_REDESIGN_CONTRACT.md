@@ -58,7 +58,7 @@ Pick a **role**, not a one-off pixel size. Utilities live in `app/globals.css`.
 
 | Role | Utility | Size | Family | Weight | Use for |
 | --- | --- | --- | --- | --- | --- |
-| Page title | `.text-page-title` | 24px | Display | 600 | `PageHeader` `<h1>` only |
+| Page title | `.text-page-title` | 24px | Body | 600 | `PageHeader` `<h1>` only |
 | Section | `.text-section` | 18px | Body | 600 | Page subsections `<h2>` |
 | Panel | `.text-panel` | 16px | Body | 600 | `CardTitle`, `DialogTitle` |
 | Body | `text-sm` (default) | 14px | Body | 400 | UI copy, inputs, buttons |
@@ -66,9 +66,9 @@ Pick a **role**, not a one-off pixel size. Utilities live in `app/globals.css`.
 | Caption | `.text-caption` / `text-xs` | 12px | Body | 400–500 | Helpers, timestamps, badges |
 | Meta | `.eyebrow` | 11px | Mono | 500 | Uppercase group labels only |
 | Micro | `.text-micro` | 10px | Mono | 500 | `<kbd>` and bottom-tab labels only |
-| Display | landing clamps | 40–56px | Display | 700 | Marketing hero only |
+| Display | `.font-display` | as sized | Display | 600–700 | **Voiceora wordmark only** (BrandLockup, landing brand/footer name) |
 
-Subtitles under a page title use `text-sm text-muted-foreground`. Do not use `text-[10px]` / `text-[11px]` outside Micro / Meta. Do not size card titles at page-title scale.
+Subtitles under a page title use `text-sm text-muted-foreground`. Do not use `text-[10px]` / `text-[11px]` outside Micro / Meta. Do not size card titles at page-title scale. Main page and section titles use Title Case. Space Grotesk is reserved for the Voiceora brand name - all other reading UI uses Inter.
 
 ## 6. Icons
 

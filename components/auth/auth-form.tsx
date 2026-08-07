@@ -217,7 +217,7 @@ export function AuthForm({
           <Mail className="h-5 w-5 text-[color:var(--teal)]" aria-hidden />
         </div>
         <h1 className="text-page-title">
-          Enter your code
+          Enter Your Code
         </h1>
         <p className="text-sm text-muted-foreground">
           We sent a 6-digit code to{" "}
@@ -283,7 +283,7 @@ export function AuthForm({
     <Card className="vo-auth-card w-full max-w-md border-0 shadow-none">
       <CardHeader className="text-center">
         <h1 className="text-page-title text-foreground">
-          {isSignUp ? "Create your account" : "Welcome back"}
+          {isSignUp ? "Create Your Account" : "Welcome Back"}
         </h1>
         <CardDescription>
           {isSignUp

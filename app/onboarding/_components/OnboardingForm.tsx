@@ -136,7 +136,7 @@ export function OnboardingForm() {
             QUICK SETUP · 1 OF 1
           </div>
           <h1 className="text-page-title text-foreground">
-            Teach Voiceora how you write
+            Teach Voiceora How You Write
           </h1>
           <CardDescription>
             Paste a sample or a one-line style note. Next you’ll land in Studio

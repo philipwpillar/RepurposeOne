@@ -3,7 +3,7 @@ import Link from "next/link";
 export default function AccountDeletedPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-6 py-16">
-      <h1 className="text-page-title">Account deleted</h1>
+      <h1 className="text-page-title">Account Deleted</h1>
       <p className="mt-3 text-muted-foreground">
         Your Voiceora account and associated app data have been deleted. If you
         have questions, contact{" "}

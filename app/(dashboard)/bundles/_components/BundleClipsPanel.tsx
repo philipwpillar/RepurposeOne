@@ -98,7 +98,7 @@ export default function BundleClipsPanel({
     >
       <div>
         <h3 className="text-panel text-foreground">
-          Suggested clips
+          Suggested Clips
         </h3>
         <p className="mt-1 text-xs text-muted-foreground">
           Preview and download rendered clips when they&apos;re ready.

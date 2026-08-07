@@ -34,7 +34,7 @@ export function XThreadOutputDisplay({
       <CardHeader>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <CardTitle>X / Twitter thread</CardTitle>
+            <CardTitle>X / Twitter Thread</CardTitle>
             <CardDescription>
               {tweetCount} tweets - preview, edit, and copy like Studio
             </CardDescription>
