@@ -7,6 +7,7 @@ import {
   registerNativeOAuthDeepLinkListener,
   setNativeOAuthExchangeHandler,
 } from "@/lib/auth/native-oauth";
+import { safeRedirectPath } from "@/lib/safe-redirect";
 
 /** Mount once on auth (and app) surfaces so native Google OAuth can complete PKCE. */
 export function NativeOAuthListener() {
@@ -18,7 +19,7 @@ export function NativeOAuthListener() {
     setNativeOAuthExchangeHandler(async (code, nextPath) => {
       const { error } = await supabase.auth.exchangeCodeForSession(code);
       if (error) return;
-      router.push(nextPath);
+      router.push(safeRedirectPath(nextPath));
       router.refresh();
     });
 

@@ -19,6 +19,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { isGoogleAuthEnabled } from "@/lib/auth-config";
 import { isNativePlatform } from "@/lib/platform";
+import { safeRedirectPath } from "@/lib/safe-redirect";
 import { Separator } from "@/components/ui/separator";
 import "@/app/landing.css";
 
@@ -71,10 +72,11 @@ function isExistingAccountSignUp(user: {
 
 export function AuthForm({
   mode,
-  redirectTo = "/dashboard",
+  redirectTo: redirectToProp = "/dashboard",
   initialError,
 }: AuthFormProps) {
   const router = useRouter();
+  const redirectTo = safeRedirectPath(redirectToProp);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otpCode, setOtpCode] = useState("");

@@ -1,5 +1,6 @@
 import { AuthForm } from "@/components/auth/auth-form";
 import { AuthShell } from "@/components/auth/auth-shell";
+import { safeRedirectPath } from "@/lib/safe-redirect";
 import "@/app/landing.css";
 
 interface SignInPageProps {
@@ -8,7 +9,7 @@ interface SignInPageProps {
 
 export default async function SignInPage({ searchParams }: SignInPageProps) {
   const params = await searchParams;
-  const redirectTo = params.redirect ?? "/dashboard";
+  const redirectTo = safeRedirectPath(params.redirect);
 
   return (
     <AuthShell

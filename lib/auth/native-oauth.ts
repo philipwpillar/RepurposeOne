@@ -2,6 +2,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isNativePlatform } from "@/lib/platform";
+import { safeRedirectPath } from "@/lib/safe-redirect";
 
 /** Must match CFBundleURLTypes in ios/App/App/Info.plist and Supabase redirect allowlist. */
 export const NATIVE_OAUTH_REDIRECT = "com.voiceora.io://auth/callback";
@@ -19,7 +20,7 @@ export async function startNativeGoogleOAuth(
   supabase: SupabaseClient,
   nextPath: string
 ): Promise<{ error?: string }> {
-  pendingNextPath = nextPath.startsWith("/") ? nextPath : "/dashboard";
+  pendingNextPath = safeRedirectPath(nextPath);
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",

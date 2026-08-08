@@ -25,6 +25,9 @@ import {
   type GenerateErrorResponse,
 } from "@/types";
 
+/** Align with /api/generate/stream - vision/photo work needs a hard ceiling. */
+export const maxDuration = 60;
+
 function errorResponse(
   status: number,
   body: GenerateErrorResponse

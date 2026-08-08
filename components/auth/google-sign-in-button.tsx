@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isGoogleAuthEnabled } from "@/lib/auth-config";
 import { startNativeGoogleOAuth } from "@/lib/auth/native-oauth";
 import { isNativePlatform } from "@/lib/platform";
+import { safeRedirectPath } from "@/lib/safe-redirect";
 import { Button } from "@/components/ui/button";
 
 interface GoogleSignInButtonProps {
@@ -14,11 +15,12 @@ interface GoogleSignInButtonProps {
 }
 
 export function GoogleSignInButton({
-  redirectTo = "/dashboard",
+  redirectTo: redirectToProp = "/dashboard",
   onError,
 }: GoogleSignInButtonProps) {
   const [loading, setLoading] = useState(false);
   const googleEnabled = isGoogleAuthEnabled();
+  const redirectTo = safeRedirectPath(redirectToProp);
 
   // Keep hidden on native until Phil verifies CFBundleURLTypes + Xcode flow.
   if (isNativePlatform()) return null;
